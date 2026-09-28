@@ -1,0 +1,6 @@
+# Vidéo /brag : fichiers régénérables
+brag-output/work/node_modules/
+brag-output/work/frames/
+brag-output/work/stills/
+brag-output/work/audio.wav
+brag-output/work/timeline.json

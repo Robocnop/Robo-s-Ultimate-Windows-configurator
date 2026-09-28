@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #0a0e18; }
+  * { box-sizing: border-box; }
+  #stage { position: relative; width: 1080px; height: 1920px; overflow: hidden;
+           font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif; }
+  .abs { position: absolute; }
+  .bloom { position: absolute; border-radius: 50%; filter: blur(90px); }
+  .center { left: 60px; width: 960px; text-align: center; }
+  .h1 { font-size: 80px; font-weight: 700; letter-spacing: -1.5px; line-height: 1.05; }
+  .h2 { font-size: 88px; font-weight: 800; letter-spacing: -2px; line-height: 1.02; }
+  .grad { background: linear-gradient(92deg, #d946ef 0%, #8b5cf6 45%, #4cc2ff 100%);
+          -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .chore { left: 110px; width: 860px; height: 100px; border-radius: 22px; display: flex; align-items: center;
+           gap: 28px; padding: 0 34px; font-size: 44px; font-weight: 600;
+           background: rgba(255,255,255,.82); border: 2px solid rgba(15,27,45,.08);
+           box-shadow: 0 10px 30px rgba(15,40,80,.10); color: #0f1b2d; }
+  .box { width: 46px; height: 46px; border-radius: 10px; border: 4px solid #9aa9bd; flex: none; }
+  /* Terminal */
+  #term { left: 50px; top: 250px; width: 980px; height: 1110px; border-radius: 18px; overflow: hidden;
+          background: #0c0c0c; box-shadow: 0 40px 120px rgba(0,0,0,.45), 0 0 0 1.5px rgba(255,255,255,.10); }
+  #termbar { height: 64px; background: #1f1f1f; display: flex; align-items: center; gap: 16px; padding: 0 22px;
+             color: #d4d4d4; font-size: 24px; }
+  #termbar .ttl { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #termbar .ctl { letter-spacing: 26px; color: #bdbdbd; font-size: 22px; }
+  #termbody { position: absolute; top: 64px; left: 0; right: 0; bottom: 0; padding: 26px 30px; overflow: hidden; }
+  #lines { position: absolute; left: 30px; right: 30px; top: 26px; font-family: "Cascadia Mono", Consolas, monospace;
+           font-size: 29px; line-height: 43px; color: #cccccc; white-space: pre; }
+  .ln { height: 43px; border-radius: 6px; }
+  .c-mag { color: #e040fb; } .c-cyan { color: #22d3ee; } .c-ok { color: #4ade80; } .c-dim { color: #a3a3a3; }
+  .chip { font-size: 42px; font-weight: 700; padding: 18px 30px; border-radius: 999px; white-space: nowrap; }
+  /* Cartes */
+  .card { left: 60px; width: 960px; height: 200px; border-radius: 30px; display: flex; align-items: center; gap: 34px;
+          padding: 0 40px; background: rgba(255,255,255,.06); border: 2px solid rgba(255,255,255,.12);
+          box-shadow: 0 20px 60px rgba(0,0,0,.35); color: #f2f6fb; }
+  .card .name { font-size: 56px; font-weight: 800; letter-spacing: -1px; }
+  .card .note { font-size: 30px; color: #9fb0c6; margin-top: 2px; font-weight: 500; }
+  .card .pill { margin-left: auto; font-size: 34px; font-weight: 800; padding: 14px 26px; border-radius: 999px;
+                background: rgba(74,222,128,.16); color: #4ade80; border: 2px solid rgba(74,222,128,.45); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bg" class="abs" style="inset:0"></div>
+  <div id="b1" class="bloom" style="width:900px;height:900px"></div>
+  <div id="b2" class="bloom" style="width:800px;height:800px"></div>
+  <div id="b3" class="bloom" style="width:700px;height:700px"></div>
+
+  <!-- Scène 1 -->
+  <div id="s1h1" class="abs center h1" style="top:330px">Windows vient<br>de s'installer.</div>
+  <div id="chores"></div>
+  <div id="s1h2" class="abs center h2" style="top:1235px;color:#0067c0">…et tu fais tout<br>à la main ?</div>
+
+  <!-- Scène 2 -->
+  <div id="icon" class="abs" style="left:430px;top:640px;width:220px;height:290px">
+    <div id="iconsel" class="abs" style="inset:-18px -30px;border-radius:14px;background:rgba(0,120,212,.16);border:2px solid rgba(0,120,212,.55)"></div>
+    <svg class="abs" style="left:10px;top:0" width="200" height="200" viewBox="0 0 100 100">
+      <path d="M18 5h44l20 20v70H18z" fill="#f7f9fc" stroke="#8d9ab0" stroke-width="2.2" stroke-linejoin="round"/>
+      <path d="M62 5v20h20" fill="#dfe5ee" stroke="#8d9ab0" stroke-width="2.2" stroke-linejoin="round"/>
+      <rect x="27" y="40" width="46" height="38" rx="4" fill="#1b2433"/>
+      <rect x="27" y="40" width="46" height="8" rx="3" fill="#0078d4"/>
+      <path d="M34 56l7 6-7 6" stroke="#4cc2ff" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M45 70h13" stroke="#e5e7eb" stroke-width="3.4" stroke-linecap="round"/>
+    </svg>
+    <div id="iconlbl" class="abs" style="left:-40px;width:300px;top:212px;text-align:center;font-size:40px;font-weight:600;color:#0f1b2d">Lancer.bat</div>
+  </div>
+  <div id="rip1" class="abs" style="border-radius:50%;border:5px solid #0078d4"></div>
+  <div id="rip2" class="abs" style="border-radius:50%;border:5px solid #0078d4"></div>
+  <div id="s2title" class="abs center h2" style="top:980px"><span class="grad">Robo's Ultimate<br>Windows Configurator</span></div>
+  <div id="s2sub" class="abs center" style="top:1215px;font-size:54px;font-weight:600">Un double-clic.<br>Il fait le reste.</div>
+
+  <!-- Scène 3 -->
+  <div id="term" class="abs">
+    <div id="termbar">
+      <svg width="34" height="34" viewBox="0 0 34 34"><rect width="34" height="34" rx="7" fill="#0f5ea8"/><path d="M9 11l7 6-7 6" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 24h8" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
+      <div class="ttl">Administrateur : Robo's Ultimate Windows Configurator</div>
+      <div class="ctl">—☐✕</div>
+    </div>
+    <div id="termbody"><div id="lines"></div></div>
+  </div>
+  <div id="chips" class="abs" style="left:40px;width:1000px;top:1420px;display:flex;flex-wrap:wrap;justify-content:center;gap:20px"></div>
+
+  <!-- Scène 4 -->
+  <div id="s4h" class="abs center h1" style="top:300px;color:#f2f6fb">Puis il enchaîne.</div>
+  <div id="cards"></div>
+  <div id="s4q" class="abs center" style="top:1230px;font-size:66px;font-weight:800;color:#f2f6fb;letter-spacing:-1px">Ça plante ?</div>
+  <div id="s4a" class="abs center" style="top:1325px;font-size:48px;font-weight:600;color:#c7d3e3;line-height:1.2">Relance : il reprend là<br>où il s'était arrêté.</div>
+
+  <!-- Scène 5 -->
+  <div id="s5title" class="abs center" style="top:470px;font-size:110px;font-weight:800;letter-spacing:-3px;line-height:1"><span class="grad">Robo's<br>Ultimate<br>Windows<br>Configurator</span></div>
+  <div id="s5btn" class="abs" style="left:290px;width:500px;top:990px;height:118px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:22px;background:#0078d4;color:#fff;font-size:52px;font-weight:700;box-shadow:0 20px 60px rgba(0,120,212,.45)">
+    <svg width="58" height="58" viewBox="0 0 100 100"><path d="M18 5h44l20 20v70H18z" fill="#fff"/><path d="M62 5v20h20" fill="#cfe4f7"/><rect x="27" y="40" width="46" height="38" rx="4" fill="#0b3d6b"/><path d="M34 56l7 6-7 6" stroke="#4cc2ff" stroke-width="4" fill="none" stroke-linecap="round"/></svg>
+    Lancer.bat
+  </div>
+  <div id="s5os" class="abs center" style="top:1160px;font-size:42px;font-weight:600;color:#c7d3e3">Windows 10 &amp; 11 · rien à installer</div>
+  <div id="s5gh" class="abs center" style="top:1280px;color:#f2f6fb">
+    <div style="font-family:'Cascadia Mono',Consolas,monospace;font-size:46px;font-weight:700">github.com/Robocnop</div>
+    <div style="font-family:'Cascadia Mono',Consolas,monospace;font-size:29px;color:#8fa3bd;margin-top:10px">Robo-s-Ultimate-Windows-configurator</div>
+  </div>
+
+  <!-- Curseur -->
+  <svg id="cursor" class="abs" width="70" height="90" viewBox="0 0 28 36" style="left:0;top:0">
+    <path d="M2 2v27l7-6.5 4.5 10.5 4.5-2-4.5-10H23z" fill="#fff" stroke="#111" stroke-width="1.8" stroke-linejoin="round"/>
+  </svg>
+</div>
+
+<script>
+const DURATION = 22.3;
+const $ = id => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const prog = (t, s, d) => clamp((t - s) / d);
+const eOut = x => 1 - Math.pow(1 - x, 3);
+const eInOut = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const back = x => { const c1 = 1.5, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const mix = (c1, c2, t) => `rgb(${c1.map((v, i) => Math.round(lerp(v, c2[i], t))).join(',')})`;
+
+// Élément qui entre à `a` (durée da) et sort à `b` (durée db). dy = glissement vertical.
+function show(el, t, a, da, b, db, dy = 40, dx = 0, sc = 0) {
+  const p = eOut(prog(t, a, da)), q = eInOut(prog(t, b, db));
+  const o = p * (1 - q);
+  el.style.opacity = o;
+  el.style.visibility = o < .002 ? 'hidden' : 'visible';
+  el.style.transform = `translate(${(1 - p) * dx}px, ${(1 - p) * dy - q * dy}px) scale(${1 - (1 - p) * sc})`;
+  return o;
+}
+
+// ---------------------------------------------------------------------------
+// Contenu
+// ---------------------------------------------------------------------------
+const CHORES = ['Installer les logiciels', 'Virer les pubs et le bloatware', 'Passer en thème sombre', 'Désinstaller Edge', 'Installer Office'];
+const choreEls = CHORES.map((txt, i) => {
+  const d = document.createElement('div');
+  d.className = 'abs chore';
+  d.style.top = (560 + i * 124) + 'px';
+  d.innerHTML = `<div class="box"></div><span>${txt}</span>`;
+  $('chores').appendChild(d);
+  return d;
+});
+
+// Sortie console réelle de Configurator.ps1 (noms de tweaks tirés de Wintweak2.ini)
+const LINES = [
+  ["Robo's Ultimate Windows Configurator", 'c-mag', .30],
+  ['Windows 11 - dossier de travail : C:\\RoboConfigurator', '', .22],
+  ['', '', .05],
+  ['=== Téléchargements ===', 'c-cyan', .22],
+  ['  [OK] Ninite.exe (0,4 Mo)', 'ok', .16],
+  ['  [OK] CrapFixer.zip (0,5 Mo)', 'ok', .16],
+  ['  [OK] OfficeSetup.exe (7,1 Mo)', 'ok', .20],
+  ['', '', .05],
+  ['=== Ninite ===', 'c-cyan', .22],
+  ['  [OK] Ninite terminé', 'ok', .20],
+  ['', '', .05],
+  ['=== CrapFixer ===', 'c-cyan', .22],
+  ['  [OK] Disable File Explorer Ads', 'ok', .12],
+  ['  [OK] Disable Lock Screen Ads', 'ok', .12],
+  ['  [OK] Disable Personalized Ads', 'ok', .12],
+  ['  [OK] Disable Tips and Suggestions', 'ok', .12],
+  ['  [OK] Disable Edge Shopping Assistant', 'ok', .12],
+  ['  [OK] Disable Game DVR', 'ok', .12],
+  ['  [OK] Disable Widgets', 'ok', .12],
+  ['  [OK] Left-align Taskbar', 'ok', .12],
+  ['  [OK] Disable Bing Search in Start Menu', 'ok', .14],
+  ['  [OK] Enable Dark Theme', 'ok dark', .55],
+  ['  [OK] Appli supprimée : Candy Crush Saga', 'ok', .14],
+  ['  [OK] Appli supprimée : Skype', 'ok', .14],
+  ["  Redémarrage de l'explorateur...", 'c-dim', .20],
+  ['  [OK] CrapFixer terminé', 'ok', .2],
+];
+const TERM_START = 7.95;
+let acc = TERM_START;
+const lineTimes = LINES.map(l => { const t0 = acc; acc += l[2]; return t0; });
+const DARK_IDX = LINES.findIndex(l => l[1].includes('dark'));
+const T_DARK = lineTimes[DARK_IDX] + .06;
+const lineEls = LINES.map(([txt, cls]) => {
+  const d = document.createElement('div');
+  d.className = 'ln';
+  if (cls.includes('ok')) {
+    const m = txt.match(/^(\s*)\[OK\](.*)$/);
+    d.innerHTML = `${m[1]}<span class="c-ok">[OK]</span>${m[2].replace(/</g, '&lt;')}`;
+  } else {
+    d.textContent = txt || ' ';
+    if (cls) d.className += ' ' + cls;
+  }
+  $('lines').appendChild(d);
+  return d;
+});
+const caret = document.createElement('span');
+caret.style.cssText = 'display:inline-block;width:17px;height:32px;background:#cccccc;vertical-align:-6px;margin-left:2px';
+
+const CHIPS = ['47 tweaks', 'thème sombre', '13 applis virées'];
+const CHIP_T = [lineTimes[12] + .15, T_DARK + .25, lineTimes[DARK_IDX + 1] + .1];
+const chipEls = CHIPS.map(txt => {
+  const d = document.createElement('div');
+  d.className = 'chip';
+  d.textContent = txt;
+  $('chips').appendChild(d);
+  return d;
+});
+
+const ICONS = {
+  edge: `<svg width="120" height="120" viewBox="0 0 100 100"><defs><linearGradient id="ge" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#35c1f1"/><stop offset="1" stop-color="#0c59a4"/></linearGradient></defs><circle cx="50" cy="50" r="44" fill="url(#ge)"/><path d="M26 58c0-18 14-30 30-30 13 0 22 8 22 18 0 6-6 9-12 9H40c2 10 12 15 24 13" stroke="#fff" stroke-width="8" fill="none" stroke-linecap="round"/></svg>`,
+  office: `<svg width="120" height="120" viewBox="0 0 100 100"><defs><linearGradient id="go" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff8f6b"/><stop offset="1" stop-color="#d83b01"/></linearGradient></defs><rect x="8" y="8" width="84" height="84" rx="20" fill="url(#go)"/><circle cx="50" cy="50" r="21" stroke="#fff" stroke-width="10" fill="none"/></svg>`,
+  win: `<svg width="120" height="120" viewBox="0 0 100 100"><rect x="10" y="10" width="38" height="38" rx="4" fill="#4cc2ff"/><rect x="52" y="10" width="38" height="38" rx="4" fill="#2aa3ef"/><rect x="10" y="52" width="38" height="38" rx="4" fill="#1a8ae0"/><rect x="52" y="52" width="38" height="38" rx="4" fill="#0078d4"/></svg>`,
+};
+const CARDS = [
+  ['edge', 'Edge', 'WebView2 conservé', 'Désinstallé'],
+  ['office', 'Office', 'OfficeSetup.exe', 'Installé'],
+  ['win', 'Windows', 'Activation', 'Vérifiée'],
+];
+const CARD_T = [13.95, 14.2, 14.45];
+const cardEls = CARDS.map(([ic, name, note, pill], i) => {
+  const d = document.createElement('div');
+  d.className = 'abs card';
+  d.style.top = (470 + i * 236) + 'px';
+  d.innerHTML = `${ICONS[ic]}<div><div class="name">${name}</div><div class="note">${note}</div></div><div class="pill">✓ ${pill}</div>`;
+  $('cards').appendChild(d);
+  return d;
+});
+
+// Chronologie partagée avec la bande-son
+window.DURATION = DURATION;
+window.TIMELINE = {
+  duration: DURATION,
+  chores: CHORES.map((_, i) => .85 + i * .17),
+  hook2: 1.95,
+  clicks: [4.92, 5.12],
+  beatStart: 5.4,
+  termLines: LINES.map((l, i) => ({ t: lineTimes[i], ok: l[1].includes('ok'), head: l[1] === 'c-cyan' })).filter(x => x.ok || x.head),
+  dark: T_DARK,
+  chips: CHIP_T,
+  cards: CARD_T,
+  resume: 15.55,
+  outro: 18.35,
+};
+
+// ---------------------------------------------------------------------------
+// Rendu : chaque image est une fonction pure du temps t
+// ---------------------------------------------------------------------------
+window.render = function (t) {
+  const D = eInOut(prog(t, T_DARK, .65));             // 0 = thème clair, 1 = thème sombre
+  const LIGHT = [236, 242, 249], DARK = [10, 14, 24];
+  $('bg').style.background = mix(LIGHT, DARK, D);
+  const txt = mix([15, 27, 45], [242, 246, 251], D);
+
+  // Bloom façon Windows 11, dérive lente
+  const bl = [
+    ['b1', 180 + 60 * Math.sin(t * .35), -120 + 40 * Math.cos(t * .3), [76, 194, 255], [0, 103, 192]],
+    ['b2', -250 + 50 * Math.cos(t * .28), 1150 + 60 * Math.sin(t * .33), [120, 170, 255], [124, 58, 237]],
+    ['b3', 520 + 70 * Math.sin(t * .22 + 1), 1500 + 40 * Math.cos(t * .4), [180, 220, 255], [217, 70, 239]],
+  ];
+  for (const [id, x, y, c1, c2] of bl) {
+    const e = $(id);
+    e.style.left = x + 'px'; e.style.top = y + 'px';
+    e.style.background = mix(c1, c2, D);
+    e.style.opacity = lerp(.55, .38, D);
+  }
+
+  // Scène 1 : la corvée
+  $('s1h1').style.color = txt;
+  show($('s1h1'), t, .12, .45, 3.75, .35, 36);
+  choreEls.forEach((el, i) => show(el, t, .85 + i * .17, .35, 3.72 + i * .04, .3, 30, -60));
+  show($('s1h2'), t, 1.95, .4, 3.85, .3, 30, 0, .08);
+
+  // Scène 2 : le double-clic
+  const moveUp = eInOut(prog(t, 5.35, .5));
+  const ico = $('icon');
+  show(ico, t, 4.05, .4, 7.35, .3, 30, 0, .25);
+  ico.style.transform += ` translateY(${-230 * moveUp}px) scale(${1 - .28 * moveUp})`;
+  $('iconlbl').style.color = txt;
+  $('iconsel').style.opacity = t >= 4.92 ? 1 : 0;
+  // Curseur : arrive, double-clic, repart
+  const cm = eInOut(prog(t, 4.2, .65));
+  const cx = lerp(930, 560, cm), cy = lerp(1560, 820, cm);
+  const press = (t > 4.92 && t < 5.0) || (t > 5.12 && t < 5.2) ? .88 : 1;
+  const cOut = prog(t, 5.3, .3);
+  const cur = $('cursor');
+  cur.style.opacity = t < 4.2 ? 0 : 1 - cOut;
+  cur.style.transform = `translate(${cx}px, ${cy + cOut * 40}px) scale(${press})`;
+  cur.style.transformOrigin = '0 0';
+  [['rip1', 4.92], ['rip2', 5.12]].forEach(([id, t0]) => {
+    const r = prog(t, t0, .55), e = $(id);
+    const size = 60 + 260 * eOut(r);
+    e.style.width = e.style.height = size + 'px';
+    e.style.left = (575 - size / 2) + 'px'; e.style.top = (835 - size / 2) + 'px';
+    e.style.opacity = t < t0 ? 0 : .7 * (1 - r);
+  });
+  show($('s2title'), t, 5.55, .5, 7.35, .3, 40, 0, .06);
+  $('s2sub').style.color = txt;
+  show($('s2sub'), t, 5.9, .45, 7.4, .3, 30);
+
+  // Scène 3 : le terminal
+  show($('term'), t, 7.55, .5, 13.4, .35, 160);
+  let rows = 0;
+  lineEls.forEach((el, i) => {
+    const p = prog(t, lineTimes[i], .1);
+    el.style.opacity = p;
+    el.style.transform = `translateX(${(1 - eOut(p)) * -14}px)`;
+    rows += eOut(p);
+    if (i === DARK_IDX) {
+      const g = t < T_DARK ? 0 : Math.max(0, 1 - prog(t, T_DARK + .5, .9));
+      el.style.background = `rgba(76,194,255,${.22 * g})`;
+      el.style.boxShadow = `0 0 ${30 * g}px rgba(76,194,255,${.35 * g})`;
+    }
+  });
+  const VISIBLE = 23;
+  $('lines').style.transform = `translateY(${-Math.max(0, rows - VISIBLE) * 43}px)`;
+  const last = lineEls[Math.max(0, Math.ceil(rows) - 1)];
+  if (t > TERM_START && Math.floor(t * 2.2) % 2 === 0) { if (caret.parentNode !== last) last.appendChild(caret); caret.style.display = 'inline-block'; }
+  else caret.style.display = 'none';
+  chipEls.forEach((el, i) => {
+    show(el, t, CHIP_T[i], .35, 13.35 + i * .03, .3, 24, 0, .15);
+    el.style.color = txt;
+    el.style.background = D < .5 ? 'rgba(0,120,212,.12)' : 'rgba(76,194,255,.14)';
+    el.style.border = `2px solid ${D < .5 ? 'rgba(0,120,212,.35)' : 'rgba(76,194,255,.4)'}`;
+  });
+
+  // Scène 4 : la suite
+  show($('s4h'), t, 13.75, .4, 18.0, .3, 30);
+  cardEls.forEach((el, i) => {
+    show(el, t, CARD_T[i], .45, 17.95 + i * .04, .3, 0, 140);
+    const pp = back(prog(t, CARD_T[i] + .3, .35));
+    el.querySelector('.pill').style.transform = `scale(${Math.max(0, pp)})`;
+  });
+  show($('s4q'), t, 15.55, .35, 18.0, .3, 30);
+  show($('s4a'), t, 15.8, .4, 18.02, .3, 30);
+
+  // Scène 5 : outro
+  show($('s5title'), t, 18.35, .6, 99, 1, 50, 0, .06);
+  show($('s5btn'), t, 18.75, .45, 99, 1, 30, 0, .2);
+  show($('s5os'), t, 19.05, .4, 99, 1, 24);
+  show($('s5gh'), t, 19.3, .4, 99, 1, 24);
+};
+window.render(0);
+</script>
+</body>
+</html>
