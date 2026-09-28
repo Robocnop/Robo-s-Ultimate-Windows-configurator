@@ -15,7 +15,7 @@ Rien d'autre à installer : le script tourne avec le PowerShell 5.1 fourni par W
 |---|---|---|
 | Ninite | Installe 7-Zip, Chrome, Firefox, Foxit Reader, Notepad++ | Oui, cliquer sur **Close** à la fin |
 | CrapFixer | Applique les tweaks recommandés + thème sombre, supprime les applis inutiles (Candy Crush, Skype, Bing News...) | Entièrement |
-| Edge | Ouvre optimizerDuck pour désinstaller Edge | Non : retirer Edge dans l'appli puis la fermer |
+| Edge | Désinstalle Edge avec son désinstalleur officiel (même méthode que WinUtil), WebView2 conservé | Entièrement |
 | Office | Lance `OfficeSetup.exe` et attend la fin de l'installation | Entièrement |
 | Activation | Vérifie que Windows est activé, sinon ouvre la page d'activation | Oui |
 

@@ -7,7 +7,7 @@
     Télécharge puis enchaîne :
       1. Ninite        : installation des logiciels de base
       2. CrapFixer     : tweaks recommandés + thème sombre + suppression des applis inutiles
-      3. optimizerDuck : suppression de Microsoft Edge
+      3. Edge          : désinstallation de Microsoft Edge (WebView2 conservé)
       4. Office        : installation d'Office
       5. Activation    : vérification de l'activation de Windows
 
@@ -49,7 +49,6 @@ $StepNames = @('Ninite', 'CrapFixer', 'Edge', 'Office', 'Activation')
 $Downloads = [ordered]@{
     Ninite    = @{ Url = 'https://nextcloud.robocnop.freeddns.org:4444/s/Cg9d7m58fWtJY8n/download'; File = 'Ninite.exe' }
     CrapFixer = @{ Url = 'https://nextcloud.robocnop.freeddns.org:4444/s/Czayj7x7AmdAsJj/download'; File = 'CrapFixer.zip' }
-    Edge      = @{ Url = 'https://nextcloud.robocnop.freeddns.org:4444/s/SWobM3BHBxay9cg/download'; File = 'optimizerDuck.exe' }
     Office    = @{ Url = 'https://nextcloud.robocnop.freeddns.org:4444/s/AabmSfHFBTR6e6J/download'; File = 'OfficeSetup.exe' }
 }
 
@@ -253,11 +252,20 @@ $Steps = [ordered]@{
     }
 
     Edge = {
-        Write-Info "optimizerDuck va s'ouvrir : utilise-le pour désinstaller Microsoft Edge."
-        Write-Warn 'Ferme optimizerDuck une fois Edge retiré pour passer à la suite.'
-        Start-Process -FilePath (Join-Path $WorkDir $Downloads.Edge.File) -Wait
-        # Au cas où l'exécutable se relancerait dans un autre processus
-        while (Get-Process optimizerDuck -ErrorAction SilentlyContinue) { Start-Sleep -Seconds 3 }
+        # Même méthode que WinUtil (Chris Titus) : un faux MicrosoftEdge.exe dans l'ancien dossier
+        # d'Edge débloque le désinstalleur officiel. WebView2 (utilisé par Office, Teams...) est conservé.
+        $edgeDir = "${env:ProgramFiles(x86)}\Microsoft\Edge\Application"
+        $setup = Get-ChildItem "$edgeDir\*\Installer\setup.exe" -ErrorAction SilentlyContinue |
+            Sort-Object FullName | Select-Object -Last 1
+        if (-not $setup) { Write-Ok "Edge n'est pas installé"; return }
+
+        Get-Process msedge -ErrorAction SilentlyContinue | Stop-Process -Force
+        New-Item -ItemType File -Force -Path "$env:SystemRoot\SystemApps\Microsoft.MicrosoftEdge_8wekyb3d8bbwe\MicrosoftEdge.exe" | Out-Null
+        Write-Info 'Désinstallation de Microsoft Edge...'
+        Start-Process -FilePath $setup.FullName -ArgumentList '--uninstall --system-level --force-uninstall --delete-profile' -Wait
+
+        if (Test-Path "$edgeDir\msedge.exe") { throw "Edge est toujours présent après la désinstallation" }
+        Write-Ok 'Edge désinstallé'
     }
 
     Office = {
