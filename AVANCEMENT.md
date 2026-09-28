@@ -1,6 +1,6 @@
 # État d'avancement
 
-Dernière mise à jour : 28/09/2026. Version publiée : [v1.1.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.1.0) (pré-version).
+Dernière mise à jour : 28/09/2026. Version publiée : [v1.1.1](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.1.1) (pré-version).
 
 ## État des étapes
 
@@ -20,6 +20,7 @@ Dernière mise à jour : 28/09/2026. Version publiée : [v1.1.0](https://github.
   - optimizerDuck 2.27.6 se lançait mais restait en arrière-plan sans afficher son interface.
   - D'après son code source, il ne désinstalle pas vraiment Edge : il le classe seulement parmi les applis « à risque » de sa liste de bloatwares.
   - Le script utilise désormais le désinstalleur officiel d'Edge (méthode WinUtil de Chris Titus : faux `MicrosoftEdge.exe` dans `SystemApps`, puis `setup.exe --uninstall --system-level --force-uninstall`). WebView2 est conservé.
+- **v1.1.1** : ajout de ce fichier d'état d'avancement et de la vidéo de présentation. Le script est identique à la v1.1.0.
 
 ## Problèmes connus
 
@@ -42,4 +43,4 @@ Ce n'est probablement pas lié au script : c'est Windows, dans la VM, qui s'est 
 1. Recréer la VM avec les réglages ci-dessus.
 2. Lancer `Lancer.bat -Reset` et valider la désinstallation d'Edge.
 3. Valider l'installation d'Office et l'étape Activation.
-4. Si tout fonctionne, passer la v1.1.0 en version principale.
+4. Si tout fonctionne, passer la v1.1.1 en version principale.
