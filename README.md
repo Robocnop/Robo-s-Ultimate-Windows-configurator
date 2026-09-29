@@ -31,7 +31,7 @@ Une fois la configuration validée, le script tourne seul jusqu'à la fin (seul 
 | CrapFixer | Applique les tweaks recommandés + thème sombre, supprime les applis inutiles (Candy Crush, Skype, Bing News...) | Entièrement |
 | Edge | Désinstalle Edge avec son désinstalleur officiel (même méthode que WinUtil), WebView2 conservé | Entièrement |
 | Office | Lance `OfficeSetup.exe` et attend la fin de l'installation | Entièrement |
-| Activation | Vérifie que Windows est activé, sinon ouvre la page d'activation | Oui |
+| Activation | Si Windows n'est pas activé : installe la clé fournie, sinon la clé OEM enregistrée dans le BIOS (PC de marque) | Oui |
 
 À la fin, le script :
 - **renomme le PC** si un nouveau nom a été choisi dans l'assistant (appliqué au redémarrage) ;

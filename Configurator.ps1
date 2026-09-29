@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     Robo's Ultimate Windows Configurator - configuration post-installation de Windows 10/11.
@@ -105,6 +105,16 @@ function Set-StepDone([string]$Name) { Add-Content -Path $StateFile -Value $Name
 # ---------------------------------------------------------------------------
 # Configuration de départ : tout est demandé ici, ensuite le script tourne seul
 # ---------------------------------------------------------------------------
+# Clé Windows enregistrée dans le BIOS par le fabricant (PC de marque), ou $null
+function Get-OemKey {
+    try {
+        $svc = Get-CimInstance SoftwareLicensingService
+        if ($svc.OA3xOriginalProductKey) {
+            [pscustomobject]@{ Key = $svc.OA3xOriginalProductKey; Description = $svc.OA3xOriginalProductKeyDescription }
+        }
+    } catch { $null }
+}
+
 function Test-PcName([string]$Name) {
     $Name -match '^[A-Za-z0-9-]{1,15}$' -and $Name -notmatch '^\d+$'
 }
@@ -125,7 +135,9 @@ function Read-Config {
 function Show-Config($Config) {
     $name  = if ($Config.NewName) { "$env:COMPUTERNAME -> $($Config.NewName)" } else { "$env:COMPUTERNAME (inchangé)" }
     $steps = ($StepNames | ForEach-Object { if ($Config.Steps -contains $_) { "[x] $_" } else { "[ ] $_" } }) -join '  '
-    $key   = if ($Config.WindowsKey) { "$($Config.WindowsKey.Substring(0, 5))-..." } else { 'aucune' }
+    $key   = if ($Config.WindowsKey) { "$($Config.WindowsKey.Substring(0, 5))-..." }
+             elseif ($script:OemKey) { "aucune (clé du BIOS détectée : $($script:OemKey.Description), utilisée automatiquement)" }
+             else { 'aucune' }
     Write-Host ''
     Write-Host "  1. Nom du PC             : $name"
     Write-Host "  2. Étapes                : $steps"
@@ -325,6 +337,7 @@ function New-Report([string]$PendingName, [string[]]$StepStatus) {
     $r.Add('WINDOWS')
     $r.Add("  Édition         : $($os.Caption) $($cv.DisplayVersion) (build $($os.BuildNumber).$($cv.UBR))")
     $r.Add("  Activé          : $activated")
+    $r.Add("  Clé OEM (BIOS)  : $(if ($script:OemKey) { "présente ($($script:OemKey.Description))" } else { 'aucune' })")
     $r.Add("  Installé le     : $(Format-Date $os.InstallDate)")
     $r.Add('')
     $r.Add('PROCESSEUR')
@@ -469,6 +482,13 @@ $Steps = [ordered]@{
             cscript.exe //nologo $slmgr /ato
         }
 
+        # Sinon, clé enregistrée dans le BIOS par le fabricant (PC de marque)
+        if ((& $getLicense).LicenseStatus -ne 1 -and -not $WindowsKey -and $script:OemKey) {
+            Write-Info "Installation de la clé Windows du BIOS ($($script:OemKey.Description))..."
+            cscript.exe //nologo $slmgr /ipk $script:OemKey.Key
+            cscript.exe //nologo $slmgr /ato
+        }
+
         if ((& $getLicense).LicenseStatus -eq 1) {
             Write-Ok 'Windows est activé'
         } else {
@@ -500,6 +520,8 @@ $Steps = [ordered]@{
 # ---------------------------------------------------------------------------
 Write-Host "Robo's Ultimate Windows Configurator" -ForegroundColor Magenta
 Write-Host "Windows $(if ($script:IsWin11) { '11' } else { '10' }) - dossier de travail : $WorkDir"
+
+$script:OemKey = Get-OemKey
 
 # Configuration : reprise de la précédente si le script a été interrompu, sinon assistant
 $config = $null

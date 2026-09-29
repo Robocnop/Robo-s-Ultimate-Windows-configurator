@@ -11,7 +11,7 @@ Dernière mise à jour : 29/09/2026. Dernière version publiée : [v1.2.0](https
 | CrapFixer | ✅ Fonctionne | Oui (v1.0.0) | 47 tweaks recommandés (46 sur Win10) + thème sombre, 13 applis supprimées |
 | Edge | ⚠️ À valider | Non | Réécrit en v1.1.0 (voir plus bas) |
 | Office | ⚠️ À valider | Interrompu | La VM a planté pendant l'installation (voir plus bas) |
-| Activation | ⚠️ À valider | Non atteint | Vérifie l'activation de Windows, `-WindowsKey` optionnel |
+| Activation | ⚠️ À valider | Non atteint | Clé fournie, sinon clé OEM du BIOS. Lecture de la clé OEM testée (absente sur un PC monté) |
 | Assistant de configuration | ⚠️ À valider | Non | Tout est demandé au début, puis le script tourne seul. Menu testé avec des réponses simulées |
 | Renommage du PC | ⚠️ À valider | Non | Choisi dans l'assistant, appliqué au redémarrage |
 | Redémarrage automatique | ⚠️ À valider | Non | 60 secondes après la fin, annulable avec `shutdown /a` |
@@ -26,7 +26,7 @@ Dernière mise à jour : 29/09/2026. Dernière version publiée : [v1.2.0](https
   - Le script utilise désormais le désinstalleur officiel d'Edge (méthode WinUtil de Chris Titus : faux `MicrosoftEdge.exe` dans `SystemApps`, puis `setup.exe --uninstall --system-level --force-uninstall`). WebView2 est conservé.
 - **v1.1.1** : ajout de ce fichier d'état d'avancement et de la vidéo de présentation. Le script est identique à la v1.1.0.
 - **v1.2.0** : à la fin, le script propose de renommer le PC avant le redémarrage et génère un rapport du poste (matériel, Windows, réseau, résultat des étapes).
-- **En cours (non publié)** : assistant de configuration au démarrage (nom du PC, étapes, tweaks, clé Windows, redémarrage). Une fois validé, le script tourne seul jusqu'au redémarrage.
+- **En cours (non publié)** : assistant de configuration au démarrage (nom du PC, étapes, tweaks, clé Windows, redémarrage). Une fois validé, le script tourne seul jusqu'au redémarrage. Lecture de la clé OEM du BIOS (affichée dans l'assistant et le rapport, installée automatiquement si aucune clé n'est fournie).
 
 ## Problèmes connus
 
