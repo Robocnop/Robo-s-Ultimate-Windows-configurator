@@ -10,21 +10,22 @@
       3. Edge          : désinstallation de Microsoft Edge (WebView2 conservé)
       4. Office        : installation d'Office
       5. Activation    : vérification de l'activation de Windows
-    Puis, à la fin : proposition de renommer le PC et rapport du poste (Bureau + dossier de travail).
+    Au démarrage, un assistant demande tout (nom du PC, étapes, tweaks, clé Windows, redémarrage) ;
+    une fois validé, le script tourne seul, renomme le PC, écrit le rapport du poste et redémarre.
 
     Les étapes terminées sont mémorisées : relancer le script reprend là où il s'était arrêté.
 
 .PARAMETER Skip
-    Étapes à ignorer : Ninite, CrapFixer, Edge, Office, Activation (séparées par des virgules).
+    Étapes à décocher par défaut dans l'assistant : Ninite, CrapFixer, Edge, Office, Activation (séparées par des virgules).
 
 .PARAMETER AllTweaks
-    Applique TOUS les tweaks de CrapFixer au lieu des seuls tweaks recommandés.
+    Pré-sélectionne TOUS les tweaks de CrapFixer au lieu des seuls tweaks recommandés.
 
 .PARAMETER WindowsKey
-    Clé produit Windows à installer si Windows n'est pas déjà activé.
+    Clé produit Windows pré-remplie dans l'assistant, installée si Windows n'est pas déjà activé.
 
 .PARAMETER Reset
-    Oublie les étapes déjà faites et recommence tout.
+    Oublie les étapes déjà faites et la configuration enregistrée, et recommence tout.
 
 .EXAMPLE
     .\Configurator.ps1
@@ -78,8 +79,9 @@ $Host.UI.RawUI.WindowTitle = "Robo's Ultimate Windows Configurator"
 New-Item -ItemType Directory -Path $WorkDir -Force | Out-Null
 Start-Transcript -Path (Join-Path $WorkDir 'journal.txt') -Append | Out-Null
 
-$StateFile = Join-Path $WorkDir 'etapes-terminees.txt'
-if ($Reset -and (Test-Path $StateFile)) { Remove-Item $StateFile -Force }
+$StateFile  = Join-Path $WorkDir 'etapes-terminees.txt'
+$ConfigFile = Join-Path $WorkDir 'configuration.json'
+if ($Reset) { Remove-Item $StateFile, $ConfigFile -Force -ErrorAction SilentlyContinue }
 
 $script:IsWin11 = [int](Get-CimInstance Win32_OperatingSystem).BuildNumber -ge 22000
 
@@ -99,6 +101,83 @@ function Test-StepDone([string]$Name) {
     (Test-Path $StateFile) -and (@(Get-Content $StateFile) -contains $Name)
 }
 function Set-StepDone([string]$Name) { Add-Content -Path $StateFile -Value $Name }
+
+# ---------------------------------------------------------------------------
+# Configuration de départ : tout est demandé ici, ensuite le script tourne seul
+# ---------------------------------------------------------------------------
+function Test-PcName([string]$Name) {
+    $Name -match '^[A-Za-z0-9-]{1,15}$' -and $Name -notmatch '^\d+$'
+}
+
+function Save-Config($Config) { $Config | ConvertTo-Json | Set-Content -Path $ConfigFile -Encoding UTF8 }
+
+function Read-Config {
+    $c = Get-Content $ConfigFile -Raw | ConvertFrom-Json
+    [ordered]@{
+        NewName     = [string]$c.NewName
+        Steps       = @($c.Steps | Where-Object { $StepNames -contains $_ })
+        AllTweaks   = [bool]$c.AllTweaks
+        WindowsKey  = [string]$c.WindowsKey
+        AutoRestart = [bool]$c.AutoRestart
+    }
+}
+
+function Show-Config($Config) {
+    $name  = if ($Config.NewName) { "$env:COMPUTERNAME -> $($Config.NewName)" } else { "$env:COMPUTERNAME (inchangé)" }
+    $steps = ($StepNames | ForEach-Object { if ($Config.Steps -contains $_) { "[x] $_" } else { "[ ] $_" } }) -join '  '
+    $key   = if ($Config.WindowsKey) { "$($Config.WindowsKey.Substring(0, 5))-..." } else { 'aucune' }
+    Write-Host ''
+    Write-Host "  1. Nom du PC             : $name"
+    Write-Host "  2. Étapes                : $steps"
+    Write-Host "  3. Tweaks CrapFixer      : $(if ($Config.AllTweaks) { 'tous' } else { 'recommandés' })"
+    Write-Host "  4. Clé Windows           : $key"
+    Write-Host "  5. Redémarrage à la fin  : $(if ($Config.AutoRestart) { 'automatique' } else { 'non' })"
+}
+
+function Edit-Config($Config) {
+    while ($true) {
+        Write-Title 'Configuration'
+        Show-Config $Config
+        Write-Host ''
+        $choice = (Read-Host 'Numéro à modifier, ou Entrée pour valider').Trim()
+        switch ($choice) {
+            '' {
+                if ((Read-Host "C'est parti ? Le script va tourner seul jusqu'à la fin (O/N)") -match '^[oOyY]') { return $Config }
+            }
+            '1' {
+                $n = (Read-Host 'Nouveau nom (1 à 15 caractères : lettres, chiffres, tirets ; vide = garder le nom actuel)').Trim()
+                if (-not $n -or $n -eq $env:COMPUTERNAME) { $Config.NewName = '' }
+                elseif (Test-PcName $n) { $Config.NewName = $n.ToUpper() }
+                else { Write-Warn 'Nom invalide, pas de changement.' }
+            }
+            '2' {
+                while ($true) {
+                    Write-Host ''
+                    for ($i = 0; $i -lt $StepNames.Count; $i++) {
+                        $mark = if ($Config.Steps -contains $StepNames[$i]) { 'x' } else { ' ' }
+                        Write-Host "    $($i + 1). [$mark] $($StepNames[$i])"
+                    }
+                    $s = (Read-Host '  Numéro à cocher/décocher, ou Entrée pour revenir').Trim()
+                    if (-not $s) { break }
+                    if ($s -match '^\d+$' -and [int]$s -ge 1 -and [int]$s -le $StepNames.Count) {
+                        $step = $StepNames[[int]$s - 1]
+                        $Config.Steps = if ($Config.Steps -contains $step) { @($Config.Steps | Where-Object { $_ -ne $step }) }
+                                        else { @($StepNames | Where-Object { $Config.Steps -contains $_ -or $_ -eq $step }) }
+                    }
+                }
+            }
+            '3' { $Config.AllTweaks = -not $Config.AllTweaks }
+            '4' {
+                $k = (Read-Host 'Clé Windows XXXXX-XXXXX-XXXXX-XXXXX-XXXXX (vide = aucune)').Trim().ToUpper()
+                if (-not $k) { $Config.WindowsKey = '' }
+                elseif ($k -match '^([A-Z0-9]{5}-){4}[A-Z0-9]{5}$') { $Config.WindowsKey = $k }
+                else { Write-Warn 'Format de clé invalide, pas de changement.' }
+            }
+            '5' { $Config.AutoRestart = -not $Config.AutoRestart }
+            default { Write-Warn 'Choix inconnu.' }
+        }
+    }
+}
 
 # ---------------------------------------------------------------------------
 # Téléchargement
@@ -404,6 +483,34 @@ $Steps = [ordered]@{
 Write-Host "Robo's Ultimate Windows Configurator" -ForegroundColor Magenta
 Write-Host "Windows $(if ($script:IsWin11) { '11' } else { '10' }) - dossier de travail : $WorkDir"
 
+# Configuration : reprise de la précédente si le script a été interrompu, sinon assistant
+$config = $null
+if (Test-Path $ConfigFile) {
+    try {
+        $config = Read-Config
+        Write-Title 'Configuration du lancement précédent'
+        Show-Config $config
+        Write-Host ''
+        if ((Read-Host 'Reprendre avec cette configuration ? (O/N)') -notmatch '^[oOyY]') { $config = Edit-Config $config }
+    } catch {
+        Write-Warn "Configuration précédente illisible : $($_.Exception.Message)"
+        $config = $null
+    }
+}
+if (-not $config) {
+    $config = Edit-Config ([ordered]@{
+        NewName     = ''
+        Steps       = @($StepNames | Where-Object { $Skip -notcontains $_ })
+        AllTweaks   = [bool]$AllTweaks
+        WindowsKey  = [string]$WindowsKey
+        AutoRestart = $true
+    })
+}
+Save-Config $config
+$Skip       = @($StepNames | Where-Object { $config.Steps -notcontains $_ })
+$AllTweaks  = $config.AllTweaks
+$WindowsKey = $config.WindowsKey
+
 $failed = New-Object System.Collections.Generic.List[string]
 $todo = @($StepNames | Where-Object { $Skip -notcontains $_ -and -not (Test-StepDone $_) })
 
@@ -415,7 +522,7 @@ foreach ($name in $todo | Where-Object { $Downloads.Contains($_) }) {
 
 foreach ($name in $StepNames) {
     Write-Title $name
-    if ($Skip -contains $name)   { Write-Info 'Ignorée (-Skip)'; continue }
+    if ($Skip -contains $name)   { Write-Info 'Non cochée dans la configuration'; continue }
     if (Test-StepDone $name)     { Write-Ok "Déjà faite lors d'un lancement précédent"; continue }
     if ($failed.Contains($name)) { Write-Warn 'Ignorée : le téléchargement a échoué'; continue }
     try {
@@ -435,21 +542,15 @@ if ($failed.Count) {
     Write-Ok 'Tout est terminé.'
 }
 Write-Info "Journal : $(Join-Path $WorkDir 'journal.txt')"
-Write-Title 'Nom du PC'
-Write-Info "Nom actuel : $env:COMPUTERNAME"
-$newName = (Read-Host 'Nouveau nom du PC (laisser vide pour garder le nom actuel)').Trim()
 $pendingName = $null
-if ($newName -and $newName -ne $env:COMPUTERNAME) {
-    if ($newName -notmatch '^[A-Za-z0-9-]{1,15}$' -or $newName -match '^\d+$') {
-        Write-Warn "Nom invalide (1 à 15 caractères, lettres, chiffres et tirets, pas uniquement des chiffres) : nom inchangé."
-    } else {
-        try {
-            Rename-Computer -NewName $newName -Force -ErrorAction Stop -WarningAction SilentlyContinue
-            Write-Ok "Le PC s'appellera '$newName' après le redémarrage"
-            $pendingName = $newName
-        } catch {
-            Write-Fail $_.Exception.Message
-        }
+if ($config.NewName -and $config.NewName -ne $env:COMPUTERNAME) {
+    Write-Title 'Nom du PC'
+    try {
+        Rename-Computer -NewName $config.NewName -Force -ErrorAction Stop -WarningAction SilentlyContinue
+        Write-Ok "Le PC s'appellera '$($config.NewName)' après le redémarrage"
+        $pendingName = $config.NewName
+    } catch {
+        Write-Fail $_.Exception.Message
     }
 }
 
@@ -471,7 +572,17 @@ try {
 } catch {
     Write-Fail "Impossible de générer le rapport : $($_.Exception.Message)"
 }
-Stop-Transcript | Out-Null
 
-$answer = Read-Host 'Un redémarrage est recommandé pour finaliser. Redémarrer maintenant ? (O/N)'
-if ($answer -match '^[oOyY]') { Restart-Computer -Force }
+# Tout est fait : la configuration n'est plus utile (elle peut contenir la clé Windows)
+if (-not $failed.Count) { Remove-Item $ConfigFile -Force -ErrorAction SilentlyContinue }
+
+if ($config.AutoRestart) {
+    Write-Title 'Redémarrage'
+    Write-Info 'Le PC redémarre dans 60 secondes. Pour annuler : shutdown /a'
+    Stop-Transcript | Out-Null
+    shutdown.exe /r /t 60 /c "Robo's Ultimate Windows Configurator : redémarrage pour finaliser la configuration."
+    Start-Sleep -Seconds 10
+} else {
+    Stop-Transcript | Out-Null
+    Read-Host 'Terminé. Pense à redémarrer le PC pour finaliser. Entrée pour fermer' | Out-Null
+}

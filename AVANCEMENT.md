@@ -1,6 +1,6 @@
 # État d'avancement
 
-Dernière mise à jour : 29/09/2026. Version publiée : [v1.2.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.2.0) (pré-version).
+Dernière mise à jour : 29/09/2026. Dernière version publiée : [v1.2.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.2.0) (pré-version).
 
 ## État des étapes
 
@@ -12,7 +12,9 @@ Dernière mise à jour : 29/09/2026. Version publiée : [v1.2.0](https://github.
 | Edge | ⚠️ À valider | Non | Réécrit en v1.1.0 (voir plus bas) |
 | Office | ⚠️ À valider | Interrompu | La VM a planté pendant l'installation (voir plus bas) |
 | Activation | ⚠️ À valider | Non atteint | Vérifie l'activation de Windows, `-WindowsKey` optionnel |
-| Renommage du PC | ⚠️ À valider | Non | Demandé à la fin, appliqué au redémarrage |
+| Assistant de configuration | ⚠️ À valider | Non | Tout est demandé au début, puis le script tourne seul. Menu testé avec des réponses simulées |
+| Renommage du PC | ⚠️ À valider | Non | Choisi dans l'assistant, appliqué au redémarrage |
+| Redémarrage automatique | ⚠️ À valider | Non | 60 secondes après la fin, annulable avec `shutdown /a` |
 | Rapport du poste | ⚠️ À valider | Non | Testé seul sur un PC réel sans droits admin : OK. Secure Boot et TPM restent à vérifier en admin |
 
 ## Historique
@@ -24,6 +26,7 @@ Dernière mise à jour : 29/09/2026. Version publiée : [v1.2.0](https://github.
   - Le script utilise désormais le désinstalleur officiel d'Edge (méthode WinUtil de Chris Titus : faux `MicrosoftEdge.exe` dans `SystemApps`, puis `setup.exe --uninstall --system-level --force-uninstall`). WebView2 est conservé.
 - **v1.1.1** : ajout de ce fichier d'état d'avancement et de la vidéo de présentation. Le script est identique à la v1.1.0.
 - **v1.2.0** : à la fin, le script propose de renommer le PC avant le redémarrage et génère un rapport du poste (matériel, Windows, réseau, résultat des étapes).
+- **En cours (non publié)** : assistant de configuration au démarrage (nom du PC, étapes, tweaks, clé Windows, redémarrage). Une fois validé, le script tourne seul jusqu'au redémarrage.
 
 ## Problèmes connus
 
@@ -46,5 +49,5 @@ Ce n'est probablement pas lié au script : c'est Windows, dans la VM, qui s'est 
 1. Recréer la VM avec les réglages ci-dessus.
 2. Lancer `Lancer.bat -Reset` et valider la désinstallation d'Edge.
 3. Valider l'installation d'Office et l'étape Activation.
-4. Valider le renommage du PC et relire le rapport généré.
+4. Valider l'assistant, le renommage, le redémarrage automatique et relire le rapport généré.
 5. Si tout fonctionne, passer la v1.2.0 en version principale.
