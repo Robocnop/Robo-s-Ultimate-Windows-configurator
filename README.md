@@ -19,6 +19,12 @@ Rien d'autre à installer : le script tourne avec le PowerShell 5.1 fourni par W
 | Office | Lance `OfficeSetup.exe` et attend la fin de l'installation | Entièrement |
 | Activation | Vérifie que Windows est activé, sinon ouvre la page d'activation | Oui |
 
+À la fin, le script :
+- propose de **renommer le PC** (laisser vide pour garder le nom actuel), le nouveau nom s'applique au redémarrage ;
+- génère un **rapport du poste** `Rapport-<nom>-<date>.txt`, copié sur le Bureau et dans `C:\RoboConfigurator` :
+  nom, modèle, n° de série, BIOS, Secure Boot, TPM, version et activation de Windows, processeur, mémoire,
+  disques et espace libre, carte graphique, cartes réseau (MAC / IP) et résultat de chaque étape.
+
 Pour CrapFixer, le script lit directement ses fichiers `Wintweak2.ini` et `Winappx.ini` et applique les
 entrées cochées par défaut dans l'appli. Mettre à jour l'archive CrapFixer sur le Nextcloud suffit donc
 pour mettre à jour les tweaks.

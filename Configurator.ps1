@@ -10,6 +10,7 @@
       3. Edge          : désinstallation de Microsoft Edge (WebView2 conservé)
       4. Office        : installation d'Office
       5. Activation    : vérification de l'activation de Windows
+    Puis, à la fin : proposition de renommer le PC et rapport du poste (Bureau + dossier de travail).
 
     Les étapes terminées sont mémorisées : relancer le script reprend là où il s'était arrêté.
 
@@ -200,6 +201,94 @@ function Restart-Explorer {
 }
 
 # ---------------------------------------------------------------------------
+# Rapport du poste
+# ---------------------------------------------------------------------------
+function Get-GB([double]$Bytes) { '{0:0} Go' -f ($Bytes / 1GB) }
+function Format-Date([datetime]$Date) { $Date.ToString('dd/MM/yyyy', [Globalization.CultureInfo]::InvariantCulture) }
+
+# Renvoie le résultat du bloc, ou $Default si l'information n'est pas disponible sur ce poste
+function Get-OrDefault([scriptblock]$Block, $Default = 'inconnu') {
+    try { $r = & $Block; if ($null -ne $r -and "$r" -ne '') { $r } else { $Default } } catch { $Default }
+}
+
+function New-Report([string]$PendingName, [string[]]$StepStatus) {
+    $os    = Get-CimInstance Win32_OperatingSystem
+    $cs    = Get-CimInstance Win32_ComputerSystem
+    $bios  = Get-CimInstance Win32_BIOS
+    $board = Get-CimInstance Win32_BaseBoard
+    $cv    = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion'
+
+    $activated = Get-OrDefault {
+        $lic = Get-CimInstance SoftwareLicensingProduct -Filter "ApplicationID='55c92734-d682-4d71-983e-d6ec3f16059f' AND PartialProductKey IS NOT NULL" |
+            Sort-Object LicenseStatus | Select-Object -First 1
+        if ($lic.LicenseStatus -eq 1) { 'oui' } else { 'non' }
+    }
+    $secureBoot = try { if (Confirm-SecureBootUEFI) { 'activé' } else { 'désactivé' } }
+                  catch [System.PlatformNotSupportedException] { 'non pris en charge (BIOS hérité)' }
+                  catch { 'inconnu' }
+    $tpm = try {
+        $t = Get-CimInstance -Namespace 'root\cimv2\Security\MicrosoftTpm' -ClassName Win32_Tpm
+        if ($t) { "présent, version $(($t.SpecVersion -split ',')[0].Trim())" } else { 'absent' }
+    } catch { 'inconnu' }
+
+    $r = New-Object System.Collections.Generic.List[string]
+    $r.Add("RAPPORT DU POSTE - $(Format-Date (Get-Date)) $(Get-Date -Format 'HH:mm')")
+    $r.Add('')
+    $r.Add('POSTE')
+    $r.Add("  Nom             : $env:COMPUTERNAME$(if ($PendingName) { " -> $PendingName (après redémarrage)" })")
+    $r.Add("  Fabricant       : $($cs.Manufacturer) $($cs.Model)")
+    $r.Add("  N° de série     : $($bios.SerialNumber)")
+    $r.Add("  Carte mère      : $($board.Manufacturer) $($board.Product)")
+    $r.Add("  BIOS            : $($bios.SMBIOSBIOSVersion) du $(Get-OrDefault { Format-Date $bios.ReleaseDate })")
+    $r.Add("  Secure Boot     : $secureBoot")
+    $r.Add("  TPM             : $tpm")
+    $r.Add('')
+    $r.Add('WINDOWS')
+    $r.Add("  Édition         : $($os.Caption) $($cv.DisplayVersion) (build $($os.BuildNumber).$($cv.UBR))")
+    $r.Add("  Activé          : $activated")
+    $r.Add("  Installé le     : $(Format-Date $os.InstallDate)")
+    $r.Add('')
+    $r.Add('PROCESSEUR')
+    foreach ($cpu in Get-CimInstance Win32_Processor) {
+        $r.Add("  $($cpu.Name.Trim()) - $($cpu.NumberOfCores) cœurs / $($cpu.NumberOfLogicalProcessors) threads")
+    }
+    $r.Add('')
+    $r.Add('MÉMOIRE')
+    $sticks = @(Get-CimInstance Win32_PhysicalMemory)
+    $slots  = Get-OrDefault { (Get-CimInstance Win32_PhysicalMemoryArray | Measure-Object MemoryDevices -Sum).Sum } '?'
+    $r.Add("  Total           : $(Get-GB $cs.TotalPhysicalMemory) ($($sticks.Count) barrette(s) sur $slots emplacement(s))")
+    foreach ($m in $sticks) {
+        $speed = if ($m.ConfiguredClockSpeed) { $m.ConfiguredClockSpeed } else { $m.Speed }
+        $r.Add("  - $($m.DeviceLocator) : $(Get-GB $m.Capacity) à $speed MHz ($("$($m.Manufacturer)".Trim()) $("$($m.PartNumber)".Trim()))")
+    }
+    $r.Add('')
+    $r.Add('STOCKAGE')
+    foreach ($d in Get-OrDefault { @(Get-PhysicalDisk | Sort-Object DeviceId) } @()) {
+        $r.Add("  - $($d.FriendlyName) : $(Get-GB $d.Size), $($d.MediaType) $($d.BusType), santé $($d.HealthStatus)")
+    }
+    foreach ($v in Get-Volume | Where-Object { $_.DriveLetter -and $_.DriveType -eq 'Fixed' } | Sort-Object DriveLetter) {
+        $bl = Get-OrDefault { if ((Get-BitLockerVolume -MountPoint "$($v.DriveLetter):").ProtectionStatus -eq 'On') { ', BitLocker activé' } else { '' } } ''
+        $r.Add("  $($v.DriveLetter): $(Get-GB $v.SizeRemaining) libres sur $(Get-GB $v.Size) ($($v.FileSystem)$bl)")
+    }
+    $r.Add('')
+    $r.Add('CARTE GRAPHIQUE')
+    foreach ($g in Get-CimInstance Win32_VideoController) {
+        $r.Add("  $($g.Name) (pilote $($g.DriverVersion))")
+    }
+    $r.Add('')
+    $r.Add('RÉSEAU')
+    foreach ($n in Get-OrDefault { @(Get-NetAdapter -Physical | Sort-Object Name) } @()) {
+        $ip = Get-OrDefault { (Get-NetIPAddress -InterfaceIndex $n.ifIndex -AddressFamily IPv4 -ErrorAction Stop).IPAddress -join ', ' } '-'
+        $state = if ($n.Status -eq 'Up') { "connecté $($n.LinkSpeed), IP $ip" } else { 'déconnecté' }
+        $r.Add("  - $($n.InterfaceDescription) : MAC $($n.MacAddress), $state")
+    }
+    $r.Add('')
+    $r.Add('CONFIGURATEUR')
+    foreach ($s in $StepStatus) { $r.Add("  $s") }
+    $r
+}
+
+# ---------------------------------------------------------------------------
 # Étapes
 # ---------------------------------------------------------------------------
 $Steps = [ordered]@{
@@ -346,6 +435,42 @@ if ($failed.Count) {
     Write-Ok 'Tout est terminé.'
 }
 Write-Info "Journal : $(Join-Path $WorkDir 'journal.txt')"
+Write-Title 'Nom du PC'
+Write-Info "Nom actuel : $env:COMPUTERNAME"
+$newName = (Read-Host 'Nouveau nom du PC (laisser vide pour garder le nom actuel)').Trim()
+$pendingName = $null
+if ($newName -and $newName -ne $env:COMPUTERNAME) {
+    if ($newName -notmatch '^[A-Za-z0-9-]{1,15}$' -or $newName -match '^\d+$') {
+        Write-Warn "Nom invalide (1 à 15 caractères, lettres, chiffres et tirets, pas uniquement des chiffres) : nom inchangé."
+    } else {
+        try {
+            Rename-Computer -NewName $newName -Force -ErrorAction Stop -WarningAction SilentlyContinue
+            Write-Ok "Le PC s'appellera '$newName' après le redémarrage"
+            $pendingName = $newName
+        } catch {
+            Write-Fail $_.Exception.Message
+        }
+    }
+}
+
+Write-Title 'Rapport du poste'
+try {
+    $stepStatus = foreach ($name in $StepNames) {
+        $state = if ($Skip -contains $name) { 'ignorée' }
+                 elseif ($failed.Contains($name)) { 'EN ÉCHEC' }
+                 elseif (Test-StepDone $name) { 'OK' }
+                 else { 'non faite' }
+        '{0,-15} : {1}' -f $name, $state
+    }
+    $report = New-Report -PendingName $pendingName -StepStatus $stepStatus
+    $fileName = "Rapport-$(if ($pendingName) { $pendingName } else { $env:COMPUTERNAME })-$(Get-Date -Format 'yyyy-MM-dd').txt"
+    $reportPath = Join-Path $WorkDir $fileName
+    $report | Set-Content -Path $reportPath -Encoding UTF8
+    Copy-Item $reportPath -Destination ([Environment]::GetFolderPath('Desktop')) -Force
+    Write-Ok "Rapport enregistré sur le Bureau et dans $reportPath"
+} catch {
+    Write-Fail "Impossible de générer le rapport : $($_.Exception.Message)"
+}
 Stop-Transcript | Out-Null
 
 $answer = Read-Host 'Un redémarrage est recommandé pour finaliser. Redémarrer maintenant ? (O/N)'
