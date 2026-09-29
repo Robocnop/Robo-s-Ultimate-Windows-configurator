@@ -1,4 +1,4 @@
-﻿#Requires -Version 5.1
+#Requires -Version 5.1
 <#
 .SYNOPSIS
     Robo's Ultimate Windows Configurator - configuration post-installation de Windows 10/11.
@@ -462,18 +462,36 @@ $Steps = [ordered]@{
         }
         $slmgr = Join-Path $env:SystemRoot 'System32\slmgr.vbs'
 
+        # 1) Si une clé Windows a été fournie, on l'installe en priorité
         if ((& $getLicense).LicenseStatus -ne 1 -and $WindowsKey) {
             Write-Info 'Installation de la clé Windows fournie...'
             cscript.exe //nologo $slmgr /ipk $WindowsKey
             cscript.exe //nologo $slmgr /ato
         }
+
         if ((& $getLicense).LicenseStatus -eq 1) {
             Write-Ok 'Windows est activé'
         } else {
-            Write-Warn "Windows n'est pas activé : ouverture des paramètres d'activation."
-            Start-Process 'ms-settings:activation'
+            # 2) Pas de clé ou échec : télécharger et exécuter le script d'activation
+            Write-Warn "Windows n'est pas activé : téléchargement du script d'activation..."
+            $scriptUrl = 'https://nextcloud.robocnop.freeddns.org:4444/s/mZQFfJ5YzBX5JeR/download'
+            $scriptPath = Join-Path $WorkDir 'MAS_AIO.cmd'
+            try {
+                Invoke-WebRequest -Uri $scriptUrl -OutFile $scriptPath -UseBasicParsing -ErrorAction Stop
+                Write-Info 'Lancement de l''activation Windows (option 1 - HWID)...'
+                Start-Process cmd.exe -ArgumentList "/c `"$scriptPath`" /HWID" -Wait
+                Write-Info 'Lancement de l''activation Office (option 2 - Ohook)...'
+                Start-Process cmd.exe -ArgumentList "/c `"$scriptPath`" /Ohook" -Wait
+                # Revérifier après activation
+                if ((& $getLicense).LicenseStatus -eq 1) {
+                    Write-Ok 'Windows est activé avec succès'
+                } else {
+                    Write-Warn 'Le script s''est exécuté mais Windows ne semble pas activé. Vérifie manuellement.'
+                }
+            } catch {
+                Write-Fail "Impossible de télécharger ou lancer le script d'activation : $($_.Exception.Message)"
+            }
         }
-        Write-Info 'Office : ouvre Word et connecte-toi avec le compte Microsoft lié à ta licence.'
     }
 }
 
