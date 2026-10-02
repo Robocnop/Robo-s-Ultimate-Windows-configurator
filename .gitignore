@@ -4,3 +4,10 @@ brag-output/work/frames/
 brag-output/work/stills/
 brag-output/work/audio.wav
 brag-output/work/timeline.json
+
+# Application
+src/RoboConfigurator/bin/
+src/RoboConfigurator/obj/
+dist/
+payloads/*
+!payloads/README.md

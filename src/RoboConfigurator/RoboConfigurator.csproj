@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- .NET Framework 4.7.2+ est fourni avec Windows 10 (1803+) et 11 : rien à installer sur le PC à configurer -->
+    <TargetFramework>net472</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <LangVersion>latest</LangVersion>
+    <!-- Processus 64 bits sur Windows 64 bits : sinon le registre HKLM\SOFTWARE serait redirigé vers WOW6432Node -->
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <AssemblyName>RoboConfigurator</AssemblyName>
+    <RootNamespace>RoboConfigurator</RootNamespace>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Version>2.0.0</Version>
+    <Product>Robo's Ultimate Windows Configurator</Product>
+    <AssemblyTitle>Robo's Ultimate Windows Configurator</AssemblyTitle>
+    <Company>Robocnop</Company>
+    <!-- Un seul fichier en sortie : symboles intégrés, pas de .config ni de dossiers de langues -->
+    <DebugType>embedded</DebugType>
+    <SatelliteResourceLanguages>fr</SatelliteResourceLanguages>
+    <GenerateBindingRedirectsOutputType>false</GenerateBindingRedirectsOutputType>
+    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+
+  <!-- En Debug, pas de demande administrateur : permet de tester l'interface avec -Simulation -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <ApplicationManifest>app.debug.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
+    <PackageReference Include="Costura.Fody" Version="6.2.0" PrivateAssets="all" />
+    <PackageReference Include="Fody" Version="6.9.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="System.Management" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Runtime.Serialization" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\app.ico" />
+    <!-- Fichiers optionnels déposés dans payloads\ : intégrés à l'exe pour fonctionner sans Internet -->
+    <EmbeddedResource Include="..\..\payloads\*.exe;..\..\payloads\*.zip;..\..\payloads\*.cmd" LogicalName="Payload.%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

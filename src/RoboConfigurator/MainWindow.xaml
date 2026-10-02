@@ -1,0 +1,399 @@
+<ui:FluentWindow
+    x:Class="RoboConfigurator.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:RoboConfigurator"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="Robo's Ultimate Windows Configurator"
+    Width="980"
+    Height="820"
+    MinWidth="700"
+    MinHeight="560"
+    ExtendsContentIntoTitleBar="True"
+    WindowBackdropType="Mica"
+    WindowCornerPreference="Round"
+    WindowStartupLocation="CenterScreen">
+
+    <ui:FluentWindow.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+        <local:SymbolToIconConverter x:Key="SymbolToIcon" />
+
+        <Style x:Key="PageTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="28" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        </Style>
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,28,0,8" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        </Style>
+        <Style x:Key="CardTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        </Style>
+        <Style x:Key="Secondary" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+        </Style>
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Padding" Value="16,14" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+        </Style>
+        <Style x:Key="Footer" TargetType="Border">
+            <Setter Property="Padding" Value="40,14" />
+            <Setter Property="BorderThickness" Value="0,1,0,0" />
+            <Setter Property="BorderBrush" Value="{DynamicResource DividerStrokeColorDefaultBrush}" />
+            <Setter Property="Background" Value="{DynamicResource LayerFillColorDefaultBrush}" />
+        </Style>
+    </ui:FluentWindow.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Title="Robo's Ultimate Windows Configurator" Grid.Row="0">
+            <ui:TitleBar.Icon>
+                <ui:ImageIcon Source="pack://application:,,,/Assets/app.ico" />
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
+
+        <!-- ============================================================ -->
+        <!-- Configuration : tout est réglé ici avant de lancer           -->
+        <!-- ============================================================ -->
+        <Grid x:Name="ConfigView" Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel MaxWidth="1000" Margin="40,4,40,28">
+                    <TextBlock Style="{StaticResource PageTitle}" Text="Configuration du poste" />
+                    <TextBlock
+                        Margin="0,4,0,0"
+                        Style="{StaticResource Secondary}"
+                        Text="Réglez tout ici puis cliquez sur Démarrer : la configuration se déroule ensuite seule jusqu'à la fin." />
+
+                    <!-- Carte du poste, comme l'en-tête des Paramètres Windows -->
+                    <Border Margin="0,20,0,0" Padding="20" Style="{StaticResource Card}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Border
+                                Width="64"
+                                Height="64"
+                                Background="{DynamicResource AccentFillColorDefaultBrush}"
+                                CornerRadius="8">
+                                <ui:SymbolIcon
+                                    FontSize="34"
+                                    Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"
+                                    Symbol="Laptop24" />
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="16,0,16,0" VerticalAlignment="Center">
+                                <TextBlock
+                                    x:Name="PcNameText"
+                                    FontSize="20"
+                                    FontWeight="SemiBold"
+                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                <TextBlock x:Name="PcModelText" Style="{StaticResource Secondary}" Text="Lecture des informations du poste..." />
+                                <TextBlock x:Name="WindowsText" Style="{StaticResource Secondary}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal">
+                                <ui:SymbolIcon x:Name="ActivationIcon" FontSize="20" Symbol="ShieldQuestion24" />
+                                <TextBlock
+                                    x:Name="ActivationText"
+                                    Margin="8,0,0,0"
+                                    VerticalAlignment="Center"
+                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <ui:InfoBar x:Name="ConfigMessage" Margin="0,12,0,0" IsClosable="True" />
+
+                    <TextBlock Style="{StaticResource SectionHeader}" Text="Poste" />
+                    <ui:CardControl Icon="{ui:SymbolIcon Rename24}">
+                        <ui:CardControl.Header>
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="Nom du PC" />
+                                <TextBlock Style="{StaticResource Secondary}" Text="Appliqué au redémarrage. 15 caractères maximum : lettres, chiffres et tirets. Vide = garder le nom actuel." />
+                            </StackPanel>
+                        </ui:CardControl.Header>
+                        <ui:TextBox
+                            x:Name="NewNameBox"
+                            Width="240"
+                            CharacterCasing="Upper"
+                            MaxLength="15" />
+                    </ui:CardControl>
+
+                    <TextBlock Style="{StaticResource SectionHeader}" Text="Étapes" />
+                    <ItemsControl x:Name="StepsList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type local:StepItem}">
+                                <ui:CardControl Margin="0,0,0,4" Icon="{Binding Icon, Converter={StaticResource SymbolToIcon}}">
+                                    <ui:CardControl.Header>
+                                        <StackPanel>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Style="{StaticResource CardTitle}" Text="{Binding Title}" />
+                                                <Border
+                                                    Margin="8,0,0,0"
+                                                    Padding="6,1"
+                                                    VerticalAlignment="Center"
+                                                    Background="{DynamicResource SystemFillColorSuccessBackgroundBrush}"
+                                                    CornerRadius="4"
+                                                    Visibility="{Binding AlreadyDone, Converter={StaticResource BoolToVisibility}}">
+                                                    <TextBlock
+                                                        FontSize="11"
+                                                        Foreground="{DynamicResource SystemFillColorSuccessBrush}"
+                                                        Text="Déjà faite" />
+                                                </Border>
+                                            </StackPanel>
+                                            <TextBlock Style="{StaticResource Secondary}" Text="{Binding Description}" />
+                                        </StackPanel>
+                                    </ui:CardControl.Header>
+                                    <ui:ToggleSwitch
+                                        IsChecked="{Binding IsSelected}"
+                                        OffContent="Désactivé"
+                                        OnContent="Activé" />
+                                </ui:CardControl>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Style="{StaticResource SectionHeader}" Text="Options" />
+                    <ui:CardControl Margin="0,0,0,4" Icon="{ui:SymbolIcon Options24}">
+                        <ui:CardControl.Header>
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="Tweaks CrapFixer" />
+                                <TextBlock Style="{StaticResource Secondary}" Text="Réglages appliqués par l'étape CrapFixer. Le thème sombre est toujours appliqué." />
+                            </StackPanel>
+                        </ui:CardControl.Header>
+                        <ComboBox x:Name="TweaksBox" Width="240" SelectedIndex="0">
+                            <ComboBoxItem Content="Recommandés" />
+                            <ComboBoxItem Content="Tous" />
+                        </ComboBox>
+                    </ui:CardControl>
+                    <ui:CardControl Margin="0,0,0,4" Icon="{ui:SymbolIcon Key24}">
+                        <ui:CardControl.Header>
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="Clé de produit Windows" />
+                                <TextBlock x:Name="KeyHint" Style="{StaticResource Secondary}" Text="Installée seulement si Windows n'est pas déjà activé." />
+                            </StackPanel>
+                        </ui:CardControl.Header>
+                        <ui:TextBox
+                            x:Name="KeyBox"
+                            Width="320"
+                            CharacterCasing="Upper"
+                            FontFamily="Cascadia Mono, Consolas"
+                            MaxLength="29"
+                            PlaceholderText="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" />
+                    </ui:CardControl>
+                    <ui:CardControl Icon="{ui:SymbolIcon ArrowClockwise24}">
+                        <ui:CardControl.Header>
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="Redémarrer à la fin" />
+                                <TextBlock Style="{StaticResource Secondary}" Text="Le PC redémarre 60 secondes après la fin. Le redémarrage peut être annulé depuis l'application." />
+                            </StackPanel>
+                        </ui:CardControl.Header>
+                        <ui:ToggleSwitch
+                            x:Name="RestartSwitch"
+                            IsChecked="True"
+                            OffContent="Désactivé"
+                            OnContent="Activé" />
+                    </ui:CardControl>
+                </StackPanel>
+            </ScrollViewer>
+
+            <Border Grid.Row="1" Style="{StaticResource Footer}">
+                <Grid>
+                    <ui:Button
+                        x:Name="ResetButton"
+                        HorizontalAlignment="Left"
+                        Click="OnResetClick"
+                        Content="Tout recommencer"
+                        Icon="{ui:SymbolIcon ArrowReset24}"
+                        ToolTip="Oublie les étapes déjà faites et la configuration enregistrée" />
+                    <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                        <TextBlock
+                            x:Name="SimulationBadge"
+                            Margin="0,0,16,0"
+                            VerticalAlignment="Center"
+                            Foreground="{DynamicResource SystemFillColorCautionBrush}"
+                            Text="Mode simulation : aucune modification ne sera faite"
+                            Visibility="Collapsed" />
+                        <ui:Button
+                            x:Name="StartButton"
+                            MinWidth="150"
+                            Appearance="Primary"
+                            Click="OnStartClick"
+                            Content="Démarrer"
+                            Icon="{ui:SymbolIcon Play24}"
+                            IsEnabled="False" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ============================================================ -->
+        <!-- Exécution : suivi des étapes puis résumé                     -->
+        <!-- ============================================================ -->
+        <Grid x:Name="RunView" Grid.Row="1" Visibility="Collapsed">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <ScrollViewer x:Name="RunScroll" VerticalScrollBarVisibility="Auto">
+                <StackPanel MaxWidth="1000" Margin="40,4,40,28">
+                    <TextBlock x:Name="RunTitle" Style="{StaticResource PageTitle}" Text="Configuration en cours" />
+                    <TextBlock
+                        x:Name="RunSubtitle"
+                        Margin="0,4,0,0"
+                        Style="{StaticResource Secondary}"
+                        Text="Le PC se configure tout seul. Seul Ninite demande de cliquer sur « Close » à la fin de son installation." />
+                    <ProgressBar x:Name="OverallProgress" Margin="0,20,0,0" />
+
+                    <ui:InfoBar x:Name="RunMessage" Margin="0,16,0,0" IsClosable="False" />
+
+                    <ItemsControl x:Name="RunList" Margin="0,16,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type local:StepItem}">
+                                <Border Margin="0,0,0,4" Style="{StaticResource Card}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <ui:SymbolIcon
+                                            Margin="0,0,16,0"
+                                            VerticalAlignment="Center"
+                                            FontSize="22"
+                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                            Symbol="{Binding Icon}" />
+                                        <Grid
+                                            Grid.Column="1"
+                                            Width="22"
+                                            Height="22"
+                                            Margin="0,0,14,0"
+                                            VerticalAlignment="Center">
+                                            <ui:SymbolIcon
+                                                x:Name="StatusIcon"
+                                                FontSize="22"
+                                                Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                Symbol="{Binding StatusSymbol}" />
+                                            <ui:ProgressRing
+                                                x:Name="Ring"
+                                                Width="22"
+                                                Height="22"
+                                                IsIndeterminate="True"
+                                                Visibility="Collapsed" />
+                                        </Grid>
+                                        <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                            <TextBlock Style="{StaticResource CardTitle}" Text="{Binding Title}" />
+                                            <TextBlock Style="{StaticResource Secondary}" Text="{Binding Detail}" />
+                                        </StackPanel>
+                                        <TextBlock
+                                            x:Name="StatusLabel"
+                                            Grid.Column="3"
+                                            Margin="16,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                            Text="{Binding StatusText}" />
+                                    </Grid>
+                                </Border>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                                        <Setter TargetName="StatusIcon" Property="Visibility" Value="Collapsed" />
+                                        <Setter TargetName="Ring" Property="Visibility" Value="Visible" />
+                                        <Setter TargetName="StatusLabel" Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Status}" Value="Done">
+                                        <Setter TargetName="StatusIcon" Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Status}" Value="AlreadyDone">
+                                        <Setter TargetName="StatusIcon" Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Status}" Value="Warning">
+                                        <Setter TargetName="StatusIcon" Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                        <Setter TargetName="StatusLabel" Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Status}" Value="Failed">
+                                        <Setter TargetName="StatusIcon" Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                        <Setter TargetName="StatusLabel" Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <ui:CardExpander
+                        Margin="0,12,0,0"
+                        Header="Journal détaillé"
+                        Icon="{ui:SymbolIcon DocumentText24}">
+                        <TextBox
+                            x:Name="LogBox"
+                            Height="280"
+                            FontFamily="Cascadia Mono, Consolas"
+                            FontSize="12"
+                            HorizontalScrollBarVisibility="Auto"
+                            IsReadOnly="True"
+                            TextWrapping="NoWrap"
+                            VerticalScrollBarVisibility="Auto" />
+                    </ui:CardExpander>
+                </StackPanel>
+            </ScrollViewer>
+
+            <Border Grid.Row="1" Style="{StaticResource Footer}">
+                <Grid>
+                    <ui:Button
+                        HorizontalAlignment="Left"
+                        Click="OnOpenFolderClick"
+                        Content="Ouvrir le dossier"
+                        Icon="{ui:SymbolIcon Folder24}" />
+                    <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                        <ui:Button
+                            x:Name="OpenReportButton"
+                            Margin="0,0,8,0"
+                            Click="OnOpenReportClick"
+                            Content="Ouvrir le rapport"
+                            Icon="{ui:SymbolIcon DocumentBulletList24}"
+                            Visibility="Collapsed" />
+                        <ui:Button
+                            x:Name="CancelRestartButton"
+                            Margin="0,0,8,0"
+                            Click="OnCancelRestartClick"
+                            Content="Annuler le redémarrage"
+                            Icon="{ui:SymbolIcon Dismiss24}"
+                            Visibility="Collapsed" />
+                        <ui:Button
+                            x:Name="CloseButton"
+                            Margin="0,0,8,0"
+                            Click="OnCloseClick"
+                            Content="Fermer"
+                            Visibility="Collapsed" />
+                        <ui:Button
+                            x:Name="RestartNowButton"
+                            Appearance="Primary"
+                            Click="OnRestartNowClick"
+                            Content="Redémarrer maintenant"
+                            Icon="{ui:SymbolIcon Power24}"
+                            Visibility="Collapsed" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</ui:FluentWindow>

@@ -1,6 +1,6 @@
 # État d'avancement
 
-Dernière mise à jour : 29/09/2026. Dernière version publiée : [v1.2.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.2.0) (pré-version).
+Dernière mise à jour : 02/10/2026. Dernière version publiée : [v2.0.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v2.0.0) (pré-version) ; dernière version du script PowerShell : [v1.3.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.3.0).
 
 ## État des étapes
 
@@ -26,7 +26,13 @@ Dernière mise à jour : 29/09/2026. Dernière version publiée : [v1.2.0](https
   - Le script utilise désormais le désinstalleur officiel d'Edge (méthode WinUtil de Chris Titus : faux `MicrosoftEdge.exe` dans `SystemApps`, puis `setup.exe --uninstall --system-level --force-uninstall`). WebView2 est conservé.
 - **v1.1.1** : ajout de ce fichier d'état d'avancement et de la vidéo de présentation. Le script est identique à la v1.1.0.
 - **v1.2.0** : à la fin, le script propose de renommer le PC avant le redémarrage et génère un rapport du poste (matériel, Windows, réseau, résultat des étapes).
-- **En cours (non publié)** : assistant de configuration au démarrage (nom du PC, étapes, tweaks, clé Windows, redémarrage). Une fois validé, le script tourne seul jusqu'au redémarrage. Lecture de la clé OEM du BIOS (affichée dans l'assistant et le rapport, installée automatiquement si aucune clé n'est fournie).
+- **v1.3.0** (dernière version en script PowerShell) : assistant de configuration au démarrage (nom du PC, étapes, tweaks, clé Windows, redémarrage). Une fois validé, le script tourne seul jusqu'au redémarrage. Lecture de la clé OEM du BIOS (affichée dans l'assistant et le rapport, installée automatiquement si aucune clé n'est fournie).
+- **v2.0.0** (pré-version) : le script devient une application portable `RoboConfigurator.exe` (C# / WPF sur .NET Framework 4.7.2, fourni avec Windows).
+  - Interface au style de Windows 11 avec WPF-UI : thème clair/sombre et couleur d'accent de Windows, Mica, cartes façon Paramètres.
+  - Un seul fichier (2,7 Mo) : les bibliothèques sont intégrées avec Costura ; manifeste administrateur (plus besoin de `Lancer.bat`).
+  - Mêmes étapes et même logique que le script, mêmes fichiers dans `C:\RoboConfigurator` (configuration, étapes faites, journal) et mêmes options (`-Skip`, `-AllTweaks`, `-WindowsKey`, `-Reset`).
+  - Nouveautés : suivi de chaque étape en direct (avancement des téléchargements, tweak en cours), journal dans l'application, compte à rebours de redémarrage annulable, mode `-Simulation`, fichiers intégrables dans l'exe pour fonctionner sans Internet (`payloads\`).
+  - Testé sur PC réel en mode simulation (interface, déroulement, rapport). Les étapes réelles restent à valider en VM.
 
 ## Problèmes connus
 
@@ -47,7 +53,7 @@ Ce n'est probablement pas lié au script : c'est Windows, dans la VM, qui s'est 
 ## Prochaines étapes
 
 1. Recréer la VM avec les réglages ci-dessus.
-2. Lancer `Lancer.bat -Reset` et valider la désinstallation d'Edge.
+2. Lancer `RoboConfigurator.exe -Reset` et valider toutes les étapes avec l'application (Ninite, CrapFixer, désinstallation d'Edge).
 3. Valider l'installation d'Office et l'étape Activation.
-4. Valider l'assistant, le renommage, le redémarrage automatique et relire le rapport généré.
-5. Si tout fonctionne, passer la v1.2.0 en version principale.
+4. Valider le renommage, le redémarrage automatique et relire le rapport généré (Secure Boot et TPM en admin).
+5. Si tout fonctionne, passer la v2.0.0 en version principale.
