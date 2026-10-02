@@ -78,6 +78,16 @@ namespace RoboConfigurator.Core
         [DllImport("kernel32.dll")]
         private static extern bool GetFirmwareType(out uint firmwareType);
 
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern bool MoveFileEx(string existingFileName, string newFileName, int flags);
+
+        /// <summary>Supprime un fichier ou un dossier vide au prochain démarrage (s'il est en cours d'utilisation).</summary>
+        public static void DeleteAtReboot(string path)
+        {
+            const int MOVEFILE_DELAY_UNTIL_REBOOT = 4;
+            MoveFileEx(path, null, MOVEFILE_DELAY_UNTIL_REBOOT);
+        }
+
         public static string SecureBoot()
         {
             if (GetFirmwareType(out uint type) && type == 1) return "non pris en charge (BIOS hérité)";

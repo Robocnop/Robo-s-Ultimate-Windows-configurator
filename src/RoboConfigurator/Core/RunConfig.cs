@@ -30,6 +30,7 @@ namespace RoboConfigurator.Core
         [DataMember] public bool AllTweaks { get; set; }
         [DataMember] public string WindowsKey { get; set; } = "";
         [DataMember] public bool AutoRestart { get; set; } = true;
+        [DataMember] public bool CleanUp { get; set; } = true;
 
         public bool Has(string step) => Steps.Contains(step);
 

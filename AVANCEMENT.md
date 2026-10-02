@@ -1,6 +1,6 @@
 # État d'avancement
 
-Dernière mise à jour : 02/10/2026. Dernière version publiée : [v2.0.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v2.0.0) ; dernière version du script PowerShell : [v1.3.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.3.0).
+Dernière mise à jour : 02/10/2026. Dernière version publiée : [v2.1.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v2.1.0) ; dernière version du script PowerShell : [v1.3.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.3.0).
 
 ## État des étapes
 
@@ -14,6 +14,7 @@ Dernière mise à jour : 02/10/2026. Dernière version publiée : [v2.0.0](https
 | Activation | ⚠️ À valider | Non atteint | Clé fournie, sinon clé OEM du BIOS. Lecture de la clé OEM testée (absente sur un PC monté) |
 | Assistant de configuration | ⚠️ À valider | Non | Tout est demandé au début, puis le script tourne seul. Menu testé avec des réponses simulées |
 | Renommage du PC | ⚠️ À valider | Non | Choisi dans l'assistant, appliqué au redémarrage |
+| Nettoyage | ⚠️ À valider | Non | Activé par défaut : supprime `C:\RoboConfigurator` avant le redémarrage, sauf si une étape a échoué |
 | Redémarrage automatique | ⚠️ À valider | Non | 60 secondes après la fin, annulable avec `shutdown /a` |
 | Rapport du poste | ⚠️ À valider | Non | Testé seul sur un PC réel sans droits admin : OK. Secure Boot et TPM restent à vérifier en admin |
 
@@ -33,6 +34,7 @@ Dernière mise à jour : 02/10/2026. Dernière version publiée : [v2.0.0](https
   - Mêmes étapes et même logique que le script, mêmes fichiers dans `C:\RoboConfigurator` (configuration, étapes faites, journal) et mêmes options (`-Skip`, `-AllTweaks`, `-WindowsKey`, `-Reset`).
   - Nouveautés : suivi de chaque étape en direct (avancement des téléchargements, tweak en cours), journal dans l'application, compte à rebours de redémarrage annulable, mode `-Simulation`, fichiers intégrables dans l'exe pour fonctionner sans Internet (`payloads\`).
   - Testé sur PC réel en mode simulation (interface, déroulement, rapport). Les étapes réelles restent à valider en VM.
+- **v2.1.0** : option « Nettoyer à la fin » (activée par défaut). Avant le redémarrage, le dossier `C:\RoboConfigurator` (téléchargements, configuration, journal) est supprimé ; ce qui est verrouillé part au redémarrage. Le dossier est conservé si une étape échoue. Le rapport reste sur le Bureau.
 
 ## Problèmes connus
 

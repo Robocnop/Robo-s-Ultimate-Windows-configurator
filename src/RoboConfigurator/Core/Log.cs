@@ -40,6 +40,12 @@ namespace RoboConfigurator.Core
             Write(LogLevel.Title, $"Lancement du {DateTime.Now:dd/MM/yyyy HH:mm:ss}");
         }
 
+        /// <summary>Arrête l'écriture dans journal.txt (avant la suppression du dossier) ; l'interface reste alimentée.</summary>
+        public static void Close()
+        {
+            lock (Sync) _file = null;
+        }
+
         public static void Title(string text) => Write(LogLevel.Title, text);
         public static void Info(string text) => Write(LogLevel.Info, text);
         public static void Ok(string text) => Write(LogLevel.Ok, text);

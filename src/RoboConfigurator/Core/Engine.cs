@@ -21,6 +21,7 @@ namespace RoboConfigurator.Core
     {
         public const string RenameKey = "Rename";
         public const string ReportKey = "Report";
+        public const string CleanUpKey = "CleanUp";
 
         private readonly RunConfig _config;
         private readonly string _workDir;
@@ -97,6 +98,7 @@ namespace RoboConfigurator.Core
 
             // Tout est fait : la configuration n'est plus utile (elle peut contenir la clé Windows)
             if (!_result.Failed.Any()) File.Delete(_configFile);
+            CleanUp();
             return _result;
         }
 
@@ -283,7 +285,7 @@ namespace RoboConfigurator.Core
         }
 
         // -------------------------------------------------------------------
-        // Fin : renommage et rapport
+        // Fin : renommage, rapport et nettoyage
         // -------------------------------------------------------------------
         private void RenamePc()
         {
@@ -327,8 +329,10 @@ namespace RoboConfigurator.Core
                 string file = $"Rapport-{_result.PendingName ?? Environment.MachineName}-{DateTime.Now:yyyy-MM-dd}.txt";
                 string path = Path.Combine(_workDir, file);
                 File.WriteAllLines(path, lines, new UTF8Encoding(true));
-                if (!_simulation) File.Copy(path, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), file), true);
-                _result.ReportPath = path;
+                string desktopCopy = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), file);
+                if (!_simulation) File.Copy(path, desktopCopy, true);
+                // La copie du Bureau survit au nettoyage du dossier de travail
+                _result.ReportPath = _simulation ? path : desktopCopy;
                 Log.Ok($"Rapport enregistré{(_simulation ? "" : " sur le Bureau et")} dans {path}");
                 Set(ReportKey, StepStatus.Done, _simulation ? path : $"Copié sur le Bureau : {file}");
             }
@@ -337,6 +341,62 @@ namespace RoboConfigurator.Core
                 Log.Error($"Impossible de générer le rapport : {ex.Message}");
                 Set(ReportKey, StepStatus.Failed, ex.Message);
             }
+        }
+
+        private void CleanUp()
+        {
+            if (!_config.CleanUp)
+            {
+                Set(CleanUpKey, StepStatus.Skipped, $"Fichiers conservés dans {_workDir}");
+                return;
+            }
+            if (_result.Failed.Any())
+            {
+                Set(CleanUpKey, StepStatus.Skipped, "Fichiers conservés pour pouvoir reprendre les étapes en échec");
+                return;
+            }
+            Log.Title("Nettoyage");
+            Set(CleanUpKey, StepStatus.Running, $"Suppression de {_workDir}...");
+            if (_simulation)
+            {
+                Log.Ok($"Le dossier {_workDir} serait supprimé (simulation)");
+                Set(CleanUpKey, StepStatus.Done, "Dossier de travail supprimé (simulation)");
+                return;
+            }
+            Log.Info($"Suppression du dossier de travail {_workDir} (téléchargements, configuration, journal)");
+            Log.Close();
+            try
+            {
+                int pending = DeleteFolder(_workDir);
+                string detail = pending == 0 ? $"Dossier {_workDir} supprimé"
+                              : $"Dossier {_workDir} supprimé ({pending} fichier(s) en cours d'utilisation supprimé(s) au redémarrage)";
+                Log.Ok(detail);
+                Set(CleanUpKey, StepStatus.Done, detail);
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Nettoyage incomplet : {ex.Message}");
+                Set(CleanUpKey, StepStatus.Warning, ex.Message);
+            }
+        }
+
+        /// <summary>Supprime le dossier ; ce qui est verrouillé (exe lancé depuis ce dossier...) part au redémarrage.</summary>
+        private static int DeleteFolder(string dir)
+        {
+            int pending = 0;
+            foreach (string file in Directory.GetFiles(dir, "*", SearchOption.AllDirectories))
+            {
+                try { File.SetAttributes(file, FileAttributes.Normal); File.Delete(file); }
+                catch (Exception) { SystemInfo.DeleteAtReboot(file); pending++; }
+            }
+            // Dossiers du plus profond au dossier de travail lui-même, après leurs fichiers
+            var dirs = Directory.GetDirectories(dir, "*", SearchOption.AllDirectories).OrderByDescending(d => d.Length).Concat(new[] { dir });
+            foreach (string d in dirs)
+            {
+                try { Directory.Delete(d); }
+                catch (Exception) { SystemInfo.DeleteAtReboot(d); }
+            }
+            return pending;
         }
 
         // -------------------------------------------------------------------

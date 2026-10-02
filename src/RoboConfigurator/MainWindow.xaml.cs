@@ -59,6 +59,7 @@ namespace RoboConfigurator
             {
                 new StepItem(Engine.RenameKey, "Nom du PC", "", SymbolRegular.Rename24),
                 new StepItem(Engine.ReportKey, "Rapport du poste", "", SymbolRegular.DocumentBulletList24),
+                new StepItem(Engine.CleanUpKey, "Nettoyage", "", SymbolRegular.Delete24),
             }).ToList();
             _items = _runItems.ToDictionary(s => s.Key);
             foreach (var item in _runItems) item.PropertyChanged += OnStepChanged;
@@ -108,6 +109,7 @@ namespace RoboConfigurator
             TweaksBox.SelectedIndex = config.AllTweaks ? 1 : 0;
             KeyBox.Text = config.WindowsKey;
             RestartSwitch.IsChecked = config.AutoRestart;
+            CleanUpSwitch.IsChecked = config.CleanUp;
         }
 
         private async Task LoadSystemInfoAsync()
@@ -162,6 +164,7 @@ namespace RoboConfigurator
             KeyBox.Text = "";
             TweaksBox.SelectedIndex = 0;
             RestartSwitch.IsChecked = true;
+            CleanUpSwitch.IsChecked = true;
             ShowMessage(ConfigMessage, InfoBarSeverity.Success, "Tout sera refait",
                 "Les étapes déjà faites et la configuration enregistrée ont été oubliées.");
         }
@@ -193,6 +196,7 @@ namespace RoboConfigurator
                 AllTweaks = TweaksBox.SelectedIndex == 1,
                 WindowsKey = key,
                 AutoRestart = RestartSwitch.IsChecked == true,
+                CleanUp = CleanUpSwitch.IsChecked == true,
             };
 
             var confirm = new Wpf.Ui.Controls.MessageBox
@@ -266,7 +270,9 @@ namespace RoboConfigurator
                 RunTitle.Text = "Configuration terminée";
                 ShowMessage(RunMessage, InfoBarSeverity.Success, "Tout est terminé", "Le PC est prêt.");
             }
-            RunSubtitle.Text = $"Journal : {Path.Combine(_workDir, "journal.txt")}";
+            string journal = Path.Combine(_workDir, "journal.txt");
+            RunSubtitle.Text = File.Exists(journal) ? $"Journal : {journal}" : "Le dossier de travail a été supprimé.";
+            OpenFolderButton.Visibility = Directory.Exists(_workDir) ? Visibility.Visible : Visibility.Collapsed;
             OpenReportButton.Visibility = _result.ReportPath != null ? Visibility.Visible : Visibility.Collapsed;
             RestartNowButton.Visibility = Visibility.Visible;
             Activate();

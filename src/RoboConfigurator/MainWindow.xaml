@@ -212,6 +212,19 @@
                             OffContent="Désactivé"
                             OnContent="Activé" />
                     </ui:CardControl>
+                    <ui:CardControl Icon="{ui:SymbolIcon Delete24}">
+                        <ui:CardControl.Header>
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="Nettoyer à la fin" />
+                                <TextBlock Style="{StaticResource Secondary}" Text="Supprime le dossier de travail (téléchargements, configuration, journal) avant le redémarrage. Il est conservé si une étape échoue. Le rapport reste sur le Bureau." />
+                            </StackPanel>
+                        </ui:CardControl.Header>
+                        <ui:ToggleSwitch
+                            x:Name="CleanUpSwitch"
+                            IsChecked="True"
+                            OffContent="Désactivé"
+                            OnContent="Activé" />
+                    </ui:CardControl>
                 </StackPanel>
             </ScrollViewer>
 
@@ -359,6 +372,7 @@
             <Border Grid.Row="1" Style="{StaticResource Footer}">
                 <Grid>
                     <ui:Button
+                        x:Name="OpenFolderButton"
                         HorizontalAlignment="Left"
                         Click="OnOpenFolderClick"
                         Content="Ouvrir le dossier"
