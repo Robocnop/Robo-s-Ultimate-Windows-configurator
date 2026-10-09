@@ -1,6 +1,6 @@
 # État d'avancement
 
-Dernière mise à jour : 02/10/2026. Dernière version publiée : [v2.1.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v2.1.0) ; dernière version du script PowerShell : [v1.3.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.3.0).
+Dernière mise à jour : 09/10/2026. Dernière version publiée : [v2.2.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v2.2.0) ; dernière version du script PowerShell : [v1.3.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.3.0).
 
 ## État des étapes
 
@@ -10,6 +10,7 @@ Dernière mise à jour : 02/10/2026. Dernière version publiée : [v2.1.0](https
 | Ninite | ✅ Fonctionne | Oui (v1.0.0) | Cliquer sur **Close** à la fin |
 | CrapFixer | ✅ Fonctionne | Oui (v1.0.0) | 47 tweaks recommandés (46 sur Win10) + thème sombre, 13 applis supprimées |
 | Edge | ⚠️ À valider | Non | Réécrit en v1.1.0 (voir plus bas) |
+| Barre des tâches | ⚠️ À valider | Non | Stratégie « Disposition de l'écran de démarrage » (`C:\ProgramData\RoboConfigurator\BarreDesTaches.xml`) : Explorateur, Firefox, Terminal, PowerShell, appliqué à l'ouverture de session suivante |
 | Office | ⚠️ À valider | Interrompu | La VM a planté pendant l'installation (voir plus bas) |
 | Activation | ⚠️ À valider | Non atteint | Clé fournie, sinon clé OEM du BIOS. Lecture de la clé OEM testée (absente sur un PC monté) |
 | Assistant de configuration | ⚠️ À valider | Non | Tout est demandé au début, puis le script tourne seul. Menu testé avec des réponses simulées |
@@ -35,6 +36,7 @@ Dernière mise à jour : 02/10/2026. Dernière version publiée : [v2.1.0](https
   - Nouveautés : suivi de chaque étape en direct (avancement des téléchargements, tweak en cours), journal dans l'application, compte à rebours de redémarrage annulable, mode `-Simulation`, fichiers intégrables dans l'exe pour fonctionner sans Internet (`payloads\`).
   - Testé sur PC réel en mode simulation (interface, déroulement, rapport). Les étapes réelles restent à valider en VM.
 - **v2.1.0** : option « Nettoyer à la fin » (activée par défaut). Avant le redémarrage, le dossier `C:\RoboConfigurator` (téléchargements, configuration, journal) est supprimé ; ce qui est verrouillé part au redémarrage. Le dossier est conservé si une étape échoue. Le rapport reste sur le Bureau.
+- **v2.2.0** : nouvelle étape « Barre des tâches » (cochée par défaut) : épingle Explorateur, Firefox, Terminal et PowerShell dans cet ordre, à la place des épingles de Windows, via la stratégie « Disposition de l'écran de démarrage » (appliquée à l'ouverture de session suivante). Journal détaillé de la désinstallation d'Edge : région Windows, entrée des programmes installés, processus `msedge`, code de retour du désinstalleur, et copie de `msedge_installer.log` dans `C:\RoboConfigurator\edge-desinstallation.log`.
 
 ## Problèmes connus
 

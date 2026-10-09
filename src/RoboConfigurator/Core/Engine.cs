@@ -6,6 +6,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using Microsoft.Win32;
 
 namespace RoboConfigurator.Core
 {
@@ -119,6 +120,7 @@ namespace RoboConfigurator.Core
                 case StepNames.Ninite: return Ninite();
                 case StepNames.CrapFixer: return CrapFixerStep();
                 case StepNames.Edge: return Edge();
+                case StepNames.Taskbar: return Taskbar();
                 case StepNames.Office: return Office();
                 case StepNames.Activation: return Activation();
                 default: throw new ArgumentException(step);
@@ -188,25 +190,176 @@ namespace RoboConfigurator.Core
             // Même méthode que WinUtil (Chris Titus) : un faux MicrosoftEdge.exe dans l'ancien dossier
             // d'Edge débloque le désinstalleur officiel. WebView2 (utilisé par Office, Teams...) est conservé.
             string edgeDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Microsoft\Edge\Application");
-            string setup = !Directory.Exists(edgeDir) ? null : Directory.GetDirectories(edgeDir)
+            Log.Info($"Dossier d'Edge : {edgeDir} ({(Directory.Exists(edgeDir) ? "présent" : "absent")})");
+            var setups = !Directory.Exists(edgeDir) ? new List<string>() : Directory.GetDirectories(edgeDir)
                 .Select(d => Path.Combine(d, @"Installer\setup.exe"))
                 .Where(File.Exists)
                 .OrderBy(f => Version.TryParse(Path.GetFileName(Path.GetDirectoryName(Path.GetDirectoryName(f))), out var v) ? v : new Version())
-                .LastOrDefault();
-            if (setup == null) { Log.Ok("Edge n'est pas installé"); return null; }
+                .ToList();
+            foreach (string s in setups) Log.Info($"Désinstalleur trouvé : {s}");
+            string setup = setups.LastOrDefault();
+            if (setup == null)
+            {
+                if (File.Exists(Path.Combine(edgeDir, "msedge.exe")))
+                    throw new Exception($"msedge.exe est présent mais aucun Installer\\setup.exe n'a été trouvé dans {edgeDir}");
+                Log.Ok("Edge n'est pas installé");
+                return null;
+            }
+            LogEdgeContext();
 
-            foreach (var p in Process.GetProcessesByName("msedge")) { try { p.Kill(); } catch (Exception) { } }
+            var running = Process.GetProcessesByName("msedge");
+            if (running.Length > 0) Log.Info($"Fermeture de {running.Length} processus msedge...");
+            foreach (var p in running)
+            {
+                try { p.Kill(); p.WaitForExit(5000); }
+                catch (Exception ex) { Log.Warn($"Impossible de fermer msedge (PID {p.Id}) : {ex.Message}"); }
+            }
+            int left = Process.GetProcessesByName("msedge").Length;
+            if (left > 0) Log.Warn($"{left} processus msedge toujours actif(s) avant la désinstallation");
+
             string fake = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), @"SystemApps\Microsoft.MicrosoftEdge_8wekyb3d8bbwe\MicrosoftEdge.exe");
             Directory.CreateDirectory(Path.GetDirectoryName(fake));
             File.WriteAllBytes(fake, new byte[0]);
+            Log.Info($"Faux MicrosoftEdge.exe créé : {fake}");
 
             Detail(StepNames.Edge, "Désinstallation de Microsoft Edge...");
-            Log.Info("Désinstallation de Microsoft Edge...");
-            SystemInfo.Run(setup, "--uninstall --system-level --force-uninstall --delete-profile");
+            const string args = "--uninstall --system-level --force-uninstall --delete-profile";
+            Log.Info($"Commande : \"{setup}\" {args}");
+            var start = DateTime.Now;
+            int code = SystemInfo.Run(setup, args);
+            Log.Info($"Le désinstalleur a rendu la main en {(DateTime.Now - start).TotalSeconds:0} s avec le code {code}{EdgeExitCode(code)}");
+            CopyEdgeInstallerLog(start);
 
-            if (File.Exists(Path.Combine(edgeDir, "msedge.exe"))) throw new Exception("Edge est toujours présent après la désinstallation");
+            string exe = Path.Combine(edgeDir, "msedge.exe");
+            if (File.Exists(exe))
+            {
+                Log.Error($"{exe} est toujours présent (version {FileVersionInfo.GetVersionInfo(exe).FileVersion})");
+                left = Process.GetProcessesByName("msedge").Length;
+                if (left > 0) Log.Error($"{left} processus msedge actif(s) après la désinstallation (Edge a pu être relancé)");
+                LogEdgeUninstallEntry();
+                throw new Exception($"Edge est toujours présent après la désinstallation (code {code}{EdgeExitCode(code)}, voir le journal)");
+            }
             Log.Ok("Edge désinstallé");
             return null;
+        }
+
+        /// <summary>Codes de retour du désinstalleur Chromium/Edge les plus courants (util_constants.h).</summary>
+        private static string EdgeExitCode(int code)
+        {
+            switch (code)
+            {
+                case 14: return " : droits insuffisants";
+                case 15: return " : Edge n'est pas installé à ce niveau (système)";
+                case 16: return " : Edge est en cours d'exécution";
+                case 19: return " : désinstallation réussie";
+                case 20: return " : désinstallation en échec";
+                case 21: return " : désinstallation annulée";
+                case 93: return " : désinstallation refusée par Edge (hors Espace économique européen ?)";
+                default: return "";
+            }
+        }
+
+        private static void LogEdgeContext()
+        {
+            Log.Info($"Windows : {SystemInfo.WindowsCaption()} (build {SystemInfo.BuildNumber})");
+            // Edge n'autorise officiellement sa désinstallation que dans l'Espace économique européen
+            object geo = Registry.GetValue(@"HKEY_CURRENT_USER\Control Panel\International\Geo", "Name", null);
+            Log.Info($"Région Windows : {geo ?? "inconnue"}");
+            LogEdgeUninstallEntry();
+            object policy = Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\EdgeUpdateDev", "AllowUninstall", null);
+            Log.Info($"EdgeUpdateDev\\AllowUninstall : {policy ?? "absent"}");
+        }
+
+        private static void LogEdgeUninstallEntry()
+        {
+            const string path = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft Edge";
+            object version = Registry.GetValue(path, "DisplayVersion", null);
+            if (version == null) { Log.Info("Entrée « Microsoft Edge » absente des programmes installés"); return; }
+            Log.Info($"Programmes installés : Edge {version}, NoRemove={Registry.GetValue(path, "NoRemove", "absent")}");
+            Log.Info($"UninstallString : {Registry.GetValue(path, "UninstallString", "")}");
+        }
+
+        /// <summary>Recopie la fin de msedge_installer.log (journal interne du désinstalleur) dans le journal.</summary>
+        private void CopyEdgeInstallerLog(DateTime since)
+        {
+            string windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+            var candidates = new[]
+            {
+                Path.GetTempPath(),
+                Path.Combine(windows, "SystemTemp"),
+                Path.Combine(windows, "Temp"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Microsoft\EdgeUpdate\Log"),
+            };
+            var file = candidates
+                .Select(d => Path.Combine(d, "msedge_installer.log"))
+                .Where(f => { try { return File.Exists(f) && File.GetLastWriteTime(f) >= since.AddMinutes(-1); } catch (Exception) { return false; } })
+                .OrderByDescending(File.GetLastWriteTime)
+                .FirstOrDefault();
+            if (file == null) { Log.Warn("Journal du désinstalleur (msedge_installer.log) introuvable"); return; }
+
+            try
+            {
+                string copy = Path.Combine(_workDir, "edge-desinstallation.log");
+                File.Copy(file, copy, true);
+                Log.Info($"Journal du désinstalleur : {file} (copié dans {copy})");
+                var lines = File.ReadAllLines(copy);
+                var interesting = lines.Where(l => l.IndexOf("ERROR", StringComparison.OrdinalIgnoreCase) >= 0
+                                                || l.IndexOf("WARNING", StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+                foreach (string l in interesting.Skip(Math.Max(0, interesting.Count - 15))) Log.Warn($"[msedge_installer] {l.Trim()}");
+                foreach (string l in lines.Skip(Math.Max(0, lines.Length - 10))) Log.Info($"[msedge_installer] {l.Trim()}");
+            }
+            catch (Exception ex) { Log.Warn($"Lecture de {file} impossible : {ex.Message}"); }
+        }
+
+        private string Taskbar()
+        {
+            // Disposition de la barre des tâches (format LayoutModification de Microsoft), dans l'ordre d'affichage.
+            // « Replace » retire les épingles par défaut de Windows (Edge, Store...).
+            const string layout =
+@"<?xml version=""1.0"" encoding=""utf-8""?>
+<LayoutModificationTemplate
+    xmlns=""http://schemas.microsoft.com/Start/2014/LayoutModification""
+    xmlns:defaultlayout=""http://schemas.microsoft.com/Start/2014/FullDefaultLayout""
+    xmlns:start=""http://schemas.microsoft.com/Start/2014/StartLayout""
+    xmlns:taskbar=""http://schemas.microsoft.com/Start/2014/TaskbarLayout""
+    Version=""1"">
+  <CustomTaskbarLayoutCollection PinListPlacement=""Replace"">
+    <defaultlayout:TaskbarLayout>
+      <taskbar:TaskbarPinList>
+        <taskbar:DesktopApp DesktopApplicationID=""Microsoft.Windows.Explorer"" />
+        <taskbar:DesktopApp DesktopApplicationLinkPath=""%ALLUSERSPROFILE%\Microsoft\Windows\Start Menu\Programs\Firefox.lnk"" />
+        <taskbar:UWA AppUserModelID=""Microsoft.WindowsTerminal_8wekyb3d8bbwe!App"" />
+        <taskbar:DesktopApp DesktopApplicationLinkPath=""%APPDATA%\Microsoft\Windows\Start Menu\Programs\Windows PowerShell\Windows PowerShell.lnk"" />
+      </taskbar:TaskbarPinList>
+    </defaultlayout:TaskbarLayout>
+  </CustomTaskbarLayoutCollection>
+</LayoutModificationTemplate>
+";
+            // Hors de C:\RoboConfigurator : le fichier doit survivre au nettoyage
+            string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "RoboConfigurator");
+            string file = Path.Combine(dir, "BarreDesTaches.xml");
+            Directory.CreateDirectory(dir);
+            File.WriteAllText(file, layout, new UTF8Encoding(false));
+            Log.Info($"Disposition de la barre des tâches écrite dans {file}");
+
+            // Stratégie « Disposition de l'écran de démarrage » : appliquée à l'ouverture de session de chaque utilisateur
+            using (var key = Registry.LocalMachine.CreateSubKey(@"SOFTWARE\Policies\Microsoft\Windows\Explorer"))
+            {
+                key.SetValue("StartLayoutFile", file, RegistryValueKind.ExpandString);
+                key.SetValue("LockedStartLayout", 1, RegistryValueKind.DWord);
+            }
+
+            // Même disposition pour les comptes créés plus tard
+            string defaultShell = Path.Combine(Path.GetDirectoryName(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)),
+                                               @"Default\AppData\Local\Microsoft\Windows\Shell");
+            try { Directory.CreateDirectory(defaultShell); File.Copy(file, Path.Combine(defaultShell, "LayoutModification.xml"), true); }
+            catch (Exception ex) { Log.Warn($"Profil par défaut non modifié : {ex.Message}"); }
+            Log.Ok("Explorateur, Firefox, Terminal et PowerShell seront épinglés à la prochaine ouverture de session");
+
+            string firefox = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu), @"Programs\Firefox.lnk");
+            if (File.Exists(firefox)) return null;
+            Log.Warn("Raccourci de Firefox introuvable : Firefox ne sera pas épinglé");
+            return "Firefox introuvable : il ne sera pas épinglé (étape Ninite non faite ?)";
         }
 
         private string Office()

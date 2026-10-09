@@ -15,10 +15,11 @@ namespace RoboConfigurator.Core
         public const string Ninite = "Ninite";
         public const string CrapFixer = "CrapFixer";
         public const string Edge = "Edge";
+        public const string Taskbar = "Taskbar";
         public const string Office = "Office";
         public const string Activation = "Activation";
 
-        public static readonly string[] All = { Ninite, CrapFixer, Edge, Office, Activation };
+        public static readonly string[] All = { Ninite, CrapFixer, Edge, Taskbar, Office, Activation };
     }
 
     /// <summary>Choix faits dans l'assistant, enregistrés pour reprendre après une interruption.</summary>

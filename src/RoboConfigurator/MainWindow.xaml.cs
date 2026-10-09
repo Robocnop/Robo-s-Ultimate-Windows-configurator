@@ -52,6 +52,7 @@ namespace RoboConfigurator
                 new StepItem(StepNames.Ninite, "Ninite", "Installe 7-Zip, Chrome, Firefox, Foxit Reader et Notepad++. Cliquer sur « Close » à la fin.", SymbolRegular.AppsAddIn24),
                 new StepItem(StepNames.CrapFixer, "CrapFixer", "Applique les tweaks recommandés et le thème sombre, supprime les applis inutiles (Candy Crush, Bing News...).", SymbolRegular.Broom24),
                 new StepItem(StepNames.Edge, "Désinstaller Microsoft Edge", "Désinstalleur officiel d'Edge (méthode WinUtil). WebView2 est conservé.", SymbolRegular.Globe24),
+                new StepItem(StepNames.Taskbar, "Barre des tâches", "Épingle dans cet ordre : Explorateur, Firefox, Terminal, PowerShell (remplace les épingles de Windows). Appliqué à la prochaine ouverture de session.", SymbolRegular.Pin24),
                 new StepItem(StepNames.Office, "Microsoft Office", "Installe Office et attend la fin de l'installation.", SymbolRegular.Document24),
                 new StepItem(StepNames.Activation, "Activation de Windows", "Si Windows n'est pas activé : clé saisie, sinon clé OEM du BIOS, sinon script d'activation.", SymbolRegular.ShieldCheckmark24),
             };
