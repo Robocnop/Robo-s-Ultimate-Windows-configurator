@@ -1,74 +1,116 @@
-# Robo-s-Ultimate-Windows-configurator
+<div align="center">
 
-Configuration automatique d'un PC juste après l'installation de Windows 10 ou 11.
+<img src="docs/icon.png" width="96" alt="">
 
-Une seule application portable, `RoboConfigurator.exe`, avec une interface au style de Windows 11 :
-thème clair ou sombre et couleur d'accent repris de Windows, effet Mica, cartes et interrupteurs comme dans
-les Paramètres.
+# Robo's Ultimate Windows Configurator
 
-https://github.com/user-attachments/assets/a08e429f-2a9b-45dc-a5cb-49f3b654e568
+**Un double-clic après l'installation de Windows 10 ou 11 : le PC se configure tout seul.**
 
-![Configuration](docs/capture-configuration.png)
+[![Version](https://img.shields.io/badge/version-2.2.0-0078D4)](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/latest)
+![Windows 10 | 11](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?logo=windows11&logoColor=white)
+![.NET Framework 4.7.2](https://img.shields.io/badge/.NET%20Framework-4.7.2-512BD4)
+![Portable](https://img.shields.io/badge/portable-un%20seul%20exe-2ea043)
+
+[Télécharger](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/latest) ·
+[Utilisation](#utilisation) ·
+[Ce que fait l'application](#ce-que-fait-lapplication) ·
+[Options](#options-en-ligne-de-commande) ·
+[Compiler](#compiler)
+
+</div>
+
+<table>
+<tr>
+<td width="40%">
+<video src="https://github.com/user-attachments/assets/a08e429f-2a9b-45dc-a5cb-49f3b654e568" controls muted></video>
+</td>
+<td>
+
+### En bref
+
+- **Logiciels** : 7-Zip, Chrome, Firefox, Foxit Reader et Notepad++ via Ninite.
+- **Nettoyage** : tweaks recommandés de CrapFixer, thème sombre, applis inutiles supprimées.
+- **Edge** désinstallé proprement, WebView2 conservé.
+- **Barre des tâches** rangée : Explorateur, Firefox, Terminal, PowerShell.
+- **Office** installé et **Windows activé** (clé fournie ou clé OEM du BIOS).
+- **Rapport du poste** sur le Bureau, renommage du PC, nettoyage et redémarrage.
+
+Une seule application portable, sans rien à installer, avec une interface au style de Windows 11 :
+thème clair ou sombre et couleur d'accent repris de Windows, effet Mica.
+
+Interrompue ? Au lancement suivant, elle reprend là où elle s'était arrêtée.
+
+</td>
+</tr>
+</table>
 
 ## Utilisation
 
-1. Copier `RoboConfigurator.exe` sur le PC (clé USB, etc.).
+1. [Télécharger `RoboConfigurator.exe`](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/latest)
+   et le copier sur le PC (clé USB, etc.).
 2. Double-cliquer dessus et accepter la demande administrateur.
 3. Régler la configuration, puis cliquer sur **Démarrer**.
 
-Rien d'autre à installer : l'application utilise le .NET Framework 4.7.2+ fourni avec Windows 10 (1803 et
-plus récents) et Windows 11. Toutes les bibliothèques sont intégrées dans l'exe.
-
 Au démarrage, l'application affiche le poste (nom, modèle, version de Windows, activation) et permet de tout
-régler : nouveau nom du PC, étapes à faire, tweaks CrapFixer (recommandés ou tous), clé Windows et
-redémarrage à la fin. Si une clé Windows est enregistrée dans le BIOS, elle est signalée.
+régler : nouveau nom du PC, étapes à faire, tweaks CrapFixer (recommandés ou tous), clé Windows, redémarrage
+et nettoyage à la fin. Si une clé Windows est enregistrée dans le BIOS, elle est signalée.
 
-Une fois lancée, la configuration se déroule seule jusqu'à la fin (seul Ninite demande de cliquer sur
-**Close**). Chaque étape affiche son avancement, et un journal détaillé est consultable dans l'application.
+<table>
+<tr>
+<td width="50%"><img src="docs/capture-configuration.png" alt="Écran de configuration"></td>
+<td width="50%"><img src="docs/capture-execution.png" alt="Configuration en cours"></td>
+</tr>
+<tr>
+<td align="center"><sub>Configuration du poste</sub></td>
+<td align="center"><sub>Configuration en cours</sub></td>
+</tr>
+</table>
 
-![Exécution](docs/capture-execution.png)
+Une fois lancée, la configuration se déroule seule jusqu'à la fin : seul Ninite demande de cliquer sur
+**Close**. Chaque étape affiche son avancement, et un journal détaillé est consultable dans l'application.
 
-Si l'application est interrompue, elle recharge la configuration au lancement suivant et passe les étapes
-déjà faites (marquées « Déjà faite »). Le bouton **Tout recommencer** oublie ce qui a été fait.
+> [!TIP]
+> Si l'application est interrompue, elle recharge la configuration au lancement suivant et passe les étapes
+> déjà faites (marquées « Déjà faite »). Le bouton **Tout recommencer** oublie ce qui a été fait.
 
 ## Ce que fait l'application
 
-| Étape | Outil | Automatique ? |
+| Étape | Ce qu'elle fait | Automatique ? |
 |---|---|---|
-| Ninite | Installe 7-Zip, Chrome, Firefox, Foxit Reader, Notepad++ | Oui, cliquer sur **Close** à la fin |
-| CrapFixer | Applique les tweaks recommandés + thème sombre, supprime les applis inutiles (Candy Crush, Skype, Bing News...) | Entièrement |
-| Edge | Désinstalle Edge avec son désinstalleur officiel (même méthode que WinUtil), WebView2 conservé | Entièrement |
-| Barre des tâches | Épingle, dans cet ordre : Explorateur, Firefox, Terminal, PowerShell (les épingles de Windows sont retirées). Appliqué à la prochaine ouverture de session | Entièrement |
-| Office | Lance `OfficeSetup.exe` et attend la fin de l'installation | Entièrement |
-| Activation | Si Windows n'est pas activé : installe la clé fournie, sinon la clé OEM enregistrée dans le BIOS (PC de marque) | Oui |
-
-À la fin, l'application :
-- **renomme le PC** si un nouveau nom a été choisi (appliqué au redémarrage) ;
-- génère un **rapport du poste** `Rapport-<nom>-<date>.txt`, copié sur le Bureau et dans `C:\RoboConfigurator` :
-  nom, modèle, n° de série, BIOS, Secure Boot, TPM, version et activation de Windows, processeur, mémoire,
-  disques et espace libre, carte graphique, cartes réseau (MAC / IP) et résultat de chaque étape ;
-- **redémarre** au bout de 60 secondes si c'est activé. Le redémarrage peut être annulé ou avancé depuis
-  l'application.
+| **Ninite** | Installe 7-Zip, Chrome, Firefox, Foxit Reader et Notepad++ | Oui, cliquer sur **Close** à la fin |
+| **CrapFixer** | Applique les tweaks recommandés et le thème sombre, supprime les applis inutiles (Candy Crush, Skype, Bing News...) | Entièrement |
+| **Edge** | Désinstalle Edge avec son désinstalleur officiel (même méthode que WinUtil), WebView2 conservé | Entièrement |
+| **Barre des tâches** | Épingle, dans cet ordre : Explorateur, Firefox, Terminal, PowerShell (les épingles de Windows sont retirées). Appliqué à la prochaine ouverture de session | Entièrement |
+| **Office** | Lance `OfficeSetup.exe` et attend la fin de l'installation | Entièrement |
+| **Activation** | Si Windows n'est pas activé : installe la clé fournie, sinon la clé OEM enregistrée dans le BIOS (PC de marque) | Oui |
 
 Pour CrapFixer, l'application lit directement ses fichiers `Wintweak2.ini` et `Winappx.ini` et applique les
-entrées cochées par défaut dans l'appli. Mettre à jour l'archive CrapFixer sur le Nextcloud suffit donc
-pour mettre à jour les tweaks.
+entrées cochées par défaut dans l'appli. Mettre à jour l'archive CrapFixer sur le Nextcloud suffit donc pour
+mettre à jour les tweaks.
 
-Tout est téléchargé dans `C:\RoboConfigurator`, avec un journal dans `journal.txt`.
+### À la fin
 
-## Options
+- **Renommage du PC** si un nouveau nom a été choisi (appliqué au redémarrage).
+- **Rapport du poste** `Rapport-<nom>-<date>.txt`, copié sur le Bureau : nom, modèle, n° de série, BIOS,
+  Secure Boot, TPM, version et activation de Windows, processeur, mémoire, disques et espace libre, carte
+  graphique, cartes réseau (MAC / IP) et résultat de chaque étape.
+- **Nettoyage** (activé par défaut) : le dossier de travail `C:\RoboConfigurator` est supprimé. Il est conservé
+  si une étape a échoué, pour pouvoir la reprendre.
+- **Redémarrage** au bout de 60 secondes (activé par défaut), annulable ou avançable depuis l'application.
 
-Les options pré-remplissent la configuration (à passer depuis une invite de commandes ou un raccourci) :
+## Options en ligne de commande
+
+Les options pré-remplissent la configuration (depuis une invite de commandes ou un raccourci) :
 
 ```bat
-RoboConfigurator.exe -Skip Office,Activation   :: désactiver des étapes (Ninite, CrapFixer, Edge, Office, Activation)
+RoboConfigurator.exe -Skip Office,Activation   :: désactiver des étapes (Ninite, CrapFixer, Edge, Taskbar, Office, Activation)
 RoboConfigurator.exe -AllTweaks                :: sélectionner TOUS les tweaks CrapFixer, pas seulement les recommandés
 RoboConfigurator.exe -WindowsKey XXXXX-XXXXX-XXXXX-XXXXX-XXXXX   :: clé Windows à installer si non activé
 RoboConfigurator.exe -Reset                    :: oublier la configuration et les étapes faites, tout refaire
 RoboConfigurator.exe -Simulation               :: parcourir l'application sans rien modifier sur le PC
 ```
 
-## Compiler l'application
+## Compiler
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File build.ps1
@@ -85,11 +127,13 @@ locale dans `%USERPROFILE%\.dotnet` (sans droits administrateur) s'il n'y en a p
 - La version Debug ne demande pas les droits administrateur : pratique pour tester l'interface avec
   `-Simulation`.
 
-## Remarques
+## Bon à savoir
 
-- Les réglages utilisateur (thème sombre, barre des tâches...) s'appliquent au compte qui lance
-  l'application : la lancer depuis la session qui sera utilisée.
-- La configuration est enregistrée dans `C:\RoboConfigurator\configuration.json` (clé Windows comprise) et
-  supprimée automatiquement quand toutes les étapes ont réussi.
-- L'ancienne version en script PowerShell (`Configurator.ps1` + `Lancer.bat`) reste disponible dans la
+- **Prérequis** : rien à installer. L'application utilise le .NET Framework 4.7.2+ fourni avec Windows 10
+  (1803 et plus récents) et Windows 11 ; toutes les bibliothèques sont intégrées dans l'exe.
+- **Session** : les réglages utilisateur (thème sombre, barre des tâches...) s'appliquent au compte qui lance
+  l'application. La lancer depuis la session qui sera utilisée.
+- **Fichiers** : tout est téléchargé dans `C:\RoboConfigurator`, avec un journal dans `journal.txt`. La
+  configuration y est enregistrée dans `configuration.json` (clé Windows comprise) pour pouvoir reprendre.
+- **Ancienne version** : le script PowerShell (`Configurator.ps1` + `Lancer.bat`) reste disponible dans la
   [v1.3.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.3.0).
