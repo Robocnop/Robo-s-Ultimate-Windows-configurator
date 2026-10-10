@@ -1,0 +1,84 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release à laquelle joindre l'exe compilé (ex. v2.3.0) ; vide = compiler seulement"
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compiler
+        shell: pwsh
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File build.ps1
+
+      - name: Vérifier la version de l'exe
+        shell: pwsh
+        run: |
+          [xml]$proj = Get-Content src/RoboConfigurator/RoboConfigurator.csproj
+          $expected = ($proj.Project.PropertyGroup | Where-Object Version | Select-Object -First 1).Version
+          $actual = (Get-Item dist/RoboConfigurator.exe).VersionInfo.ProductVersion
+          Write-Host "Projet : $expected / exe : $actual"
+          if (-not $actual.StartsWith($expected)) { throw "Version de l'exe ($actual) différente du projet ($expected)" }
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$expected") {
+            throw "Le tag $env:GITHUB_REF_NAME ne correspond pas à la version du projet ($expected)"
+          }
+
+      # Charge l'exe sans ouvrir de fenêtre : options de lancement et traductions
+      - name: Test de fumée
+        shell: powershell
+        run: |
+          $asm = [Reflection.Assembly]::LoadFile((Resolve-Path dist/RoboConfigurator.exe).Path)
+          $lang = $asm.GetType('RoboConfigurator.Core.Lang')
+          $options = $asm.GetType('RoboConfigurator.Core.Options')
+          $fr = 'Termin' + [char]0xE9 + 'e'   # « Terminée » sans caractère accentué dans le script
+          $o = $options::Parse([string[]]@('-Lang', 'fr', '-Skip', 'Office,Taskbar', '-Simulation'))
+          if ($o.Errors.Count) { throw "Options refusées : $($o.Errors -join '; ')" }
+          if (-not $lang::French) { throw '-Lang fr ignoré' }
+          if (($o.Skip -join ',') -ne 'Office,Taskbar') { throw "Skip inattendu : $($o.Skip -join ',')" }
+          if ($lang::T('Done', $fr) -ne $fr) { throw 'Traduction française incorrecte' }
+          $o = $options::Parse([string[]]@('-Lang', 'en'))
+          if ($lang::T('Done', $fr) -ne 'Done') { throw 'Traduction anglaise incorrecte' }
+          $o = $options::Parse([string[]]@('-Inconnue'))
+          if ($o.Errors.Count -ne 1) { throw 'Une option inconnue doit être signalée' }
+          Write-Host 'Test de fumée OK'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RoboConfigurator
+          path: dist/RoboConfigurator.exe
+
+  release:
+    needs: build
+    if: github.ref_type == 'tag' || inputs.release_tag != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: RoboConfigurator
+
+      - name: Joindre l'exe à la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.release_tag || github.ref_name }}
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload "$TAG" RoboConfigurator.exe --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$TAG" RoboConfigurator.exe --title "$TAG" --generate-notes --repo "$GITHUB_REPOSITORY"
+          fi
