@@ -19,7 +19,7 @@ namespace RoboConfigurator
 
         private static void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
-            Log.Error($"Erreur inattendue : {e.Exception}");
+            Log.Error(Lang.T($"Unexpected error: {e.Exception}", $"Erreur inattendue : {e.Exception}"));
             System.Windows.MessageBox.Show(e.Exception.Message, "Robo's Ultimate Windows Configurator",
                 MessageBoxButton.OK, MessageBoxImage.Error);
             e.Handled = true;

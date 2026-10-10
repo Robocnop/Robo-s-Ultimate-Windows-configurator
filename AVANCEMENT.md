@@ -1,6 +1,6 @@
 # État d'avancement
 
-Dernière mise à jour : 09/10/2026. Dernière version publiée : [v2.2.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v2.2.0) ; dernière version du script PowerShell : [v1.3.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.3.0).
+Dernière mise à jour : 10/10/2026. Dernière version publiée : [v2.3.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v2.3.0) ; dernière version du script PowerShell : [v1.3.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.3.0).
 
 ## État des étapes
 
@@ -37,6 +37,7 @@ Dernière mise à jour : 09/10/2026. Dernière version publiée : [v2.2.0](https
   - Testé sur PC réel en mode simulation (interface, déroulement, rapport). Les étapes réelles restent à valider en VM.
 - **v2.1.0** : option « Nettoyer à la fin » (activée par défaut). Avant le redémarrage, le dossier `C:\RoboConfigurator` (téléchargements, configuration, journal) est supprimé ; ce qui est verrouillé part au redémarrage. Le dossier est conservé si une étape échoue. Le rapport reste sur le Bureau.
 - **v2.2.0** : nouvelle étape « Barre des tâches » (cochée par défaut) : épingle Explorateur, Firefox, Terminal et PowerShell dans cet ordre, à la place des épingles de Windows, via la stratégie « Disposition de l'écran de démarrage » (appliquée à l'ouverture de session suivante). Journal détaillé de la désinstallation d'Edge : région Windows, entrée des programmes installés, processus `msedge`, code de retour du désinstalleur, et copie de `msedge_installer.log` dans `C:\RoboConfigurator\edge-desinstallation.log`.
+- **v2.3.0** : application en anglais et en français. Elle s'affiche en français si Windows est en français, en anglais sinon (option `-Lang en|fr` pour forcer). L'interface, le journal (`log.txt` / `journal.txt`) et le rapport du poste (`Report-...` / `Rapport-...`) suivent la langue. README anglais (`README.md`) et français (`README.fr.md`), vidéo de présentation dans les deux langues. Testé sur PC réel en mode simulation dans les deux langues (interface, déroulement, rapport).
 
 ## Problèmes connus
 

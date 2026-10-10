@@ -80,7 +80,7 @@ namespace RoboConfigurator.Core
                 case "HKEY_LOCAL_MACHINE": case "HKLM": root = Registry.LocalMachine; break;
                 case "HKEY_CLASSES_ROOT": case "HKCR": root = Registry.ClassesRoot; break;
                 case "HKEY_USERS": case "HKU": root = Registry.Users; break;
-                default: throw new Exception($"Ruche de registre inconnue : {hive}");
+                default: throw new Exception(Lang.T($"Unknown registry hive: {hive}", $"Ruche de registre inconnue : {hive}"));
             }
             if (name == "(Default)") name = "";
 
@@ -103,7 +103,7 @@ namespace RoboConfigurator.Core
                                          .Select(b => Convert.ToByte(b, 16)).ToArray();
                         key.SetValue(name, bytes, RegistryValueKind.Binary);
                         break;
-                    default: throw new Exception($"Type de valeur inconnu : {type}");
+                    default: throw new Exception(Lang.T($"Unknown value type: {type}", $"Type de valeur inconnu : {type}"));
                 }
             }
         }
@@ -121,7 +121,7 @@ namespace RoboConfigurator.Core
         {
             var names = new List<string>();
             int code = SystemInfo.PowerShell("Get-AppxPackage | ForEach-Object { $_.Name }", line => names.Add(line));
-            if (code != 0) throw new Exception("Impossible de lister les applications installées");
+            if (code != 0) throw new Exception(Lang.T("Could not list the installed apps", "Impossible de lister les applications installées"));
             return names;
         }
 

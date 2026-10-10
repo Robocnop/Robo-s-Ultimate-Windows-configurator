@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <style>
@@ -61,9 +61,9 @@
   <div id="b3" class="bloom" style="width:700px;height:700px"></div>
 
   <!-- Scène 1 -->
-  <div id="s1h1" class="abs center h1" style="top:330px">Windows vient<br>de s'installer.</div>
+  <div id="s1h1" class="abs center h1" style="top:330px" data-t="hook1"></div>
   <div id="chores"></div>
-  <div id="s1h2" class="abs center h2" style="top:1235px;color:#0067c0">…et tu fais tout<br>à la main ?</div>
+  <div id="s1h2" class="abs center h2" style="top:1235px;color:#0067c0" data-t="hook2"></div>
 
   <!-- Scène 2 -->
   <div id="icon" class="abs" style="left:430px;top:640px;width:220px;height:290px">
@@ -74,7 +74,7 @@
   <div id="rip1" class="abs" style="border-radius:50%;border:5px solid #0078d4"></div>
   <div id="rip2" class="abs" style="border-radius:50%;border:5px solid #0078d4"></div>
   <div id="s2title" class="abs center h2" style="top:980px"><span class="grad">Robo's Ultimate<br>Windows Configurator</span></div>
-  <div id="s2sub" class="abs center" style="top:1215px;font-size:54px;font-weight:600">Un double-clic.<br>Il fait le reste.</div>
+  <div id="s2sub" class="abs center" style="top:1215px;font-size:54px;font-weight:600" data-t="sub"></div>
 
   <!-- Scène 3 : l'application -->
   <div id="win" class="abs">
@@ -84,8 +84,8 @@
       <div class="ctl">—☐✕</div>
     </div>
     <div id="winhead">
-      <div class="t">Configuration en cours</div>
-      <div class="s">Le PC se configure tout seul. Seul Ninite demande de cliquer sur « Close ».</div>
+      <div class="t" data-t="winTitle"></div>
+      <div class="s" data-t="winSub"></div>
     </div>
     <div id="track"><div id="bar"></div></div>
     <div id="rows"></div>
@@ -93,13 +93,13 @@
   <div id="chips" class="abs" style="left:30px;width:1020px;top:1440px;display:flex;flex-wrap:wrap;justify-content:center;gap:18px"></div>
 
   <!-- Scène 4 : la barre des tâches (v2.2) -->
-  <div id="s4new" class="abs" style="left:340px;width:400px;top:330px;text-align:center">
-    <span style="display:inline-block;font-size:38px;font-weight:800;padding:14px 34px;border-radius:999px;background:rgba(76,194,255,.16);color:#4cc2ff;border:2px solid rgba(76,194,255,.5)">Nouveau · v2.2</span>
+  <div id="s4new" class="abs" style="left:240px;width:600px;top:330px;text-align:center">
+    <span style="display:inline-block;font-size:38px;font-weight:800;padding:14px 34px;border-radius:999px;background:rgba(76,194,255,.16);color:#4cc2ff;border:2px solid rgba(76,194,255,.5)" data-t="newPill"></span>
   </div>
-  <div id="s4h" class="abs center h1" style="top:470px;color:#f2f6fb">La barre des tâches,<br><span class="grad">rangée pour toi.</span></div>
+  <div id="s4h" class="abs center h1" style="top:470px;color:#f2f6fb" data-t="tbTitle"></div>
   <div id="tb" class="abs"></div>
   <div id="plbls"></div>
-  <div id="s4c" class="abs center" style="top:1400px;font-size:40px;font-weight:600;color:#c7d3e3;line-height:1.3">Les épingles de Windows dégagent.<br>Prêt dès la prochaine session.</div>
+  <div id="s4c" class="abs center" style="top:1400px;font-size:40px;font-weight:600;color:#c7d3e3;line-height:1.3" data-t="tbCaption"></div>
 
   <!-- Scène 5 -->
   <div id="s5title" class="abs center" style="top:470px;font-size:110px;font-weight:800;letter-spacing:-3px;line-height:1"><span class="grad">Robo's<br>Ultimate<br>Windows<br>Configurator</span></div>
@@ -107,8 +107,9 @@
     <img width="64" height="64" src="logos/roboconfig.png" alt="" style="border-radius:14px;box-shadow:0 0 0 3px rgba(255,255,255,.85)">
     RoboConfigurator.exe
   </div>
-  <div id="s5os" class="abs center" style="top:1160px;font-size:42px;font-weight:600;color:#c7d3e3">Windows 10 &amp; 11 · un seul exe, rien à installer</div>
-  <div id="s5gh" class="abs center" style="top:1280px;color:#f2f6fb">
+  <div id="s5os" class="abs center" style="top:1150px;font-size:42px;font-weight:600;color:#c7d3e3" data-t="outroOs"></div>
+  <div id="s5lang" class="abs center" style="top:1218px;font-size:34px;font-weight:600;color:#4cc2ff">English · Français</div>
+  <div id="s5gh" class="abs center" style="top:1320px;color:#f2f6fb">
     <div style="font-family:'Cascadia Mono',Consolas,monospace;font-size:46px;font-weight:700">github.com/Robocnop</div>
     <div style="font-family:'Cascadia Mono',Consolas,monospace;font-size:29px;color:#8fa3bd;margin-top:10px">Robo-s-Ultimate-Windows-configurator</div>
   </div>
@@ -121,6 +122,56 @@
 
 <script>
 const DURATION = 24.3;
+// Langue : video.html?lang=fr pour la version française (anglais par défaut)
+const LANG = new URLSearchParams(location.search).get('lang') === 'fr' ? 'fr' : 'en';
+document.documentElement.lang = LANG;
+const S = {
+  en: {
+    hook1: 'Windows just<br>finished installing.', hook2: '…and you do it<br>all by hand?', sub: 'One double-click.<br>It does the rest.',
+    chores: ['Install your software', 'Strip the ads and bloatware', 'Uninstall Edge', 'Sort out the taskbar', 'Install Office'],
+    winTitle: 'Setting up', winSub: 'The PC is setting itself up. Only Ninite asks you to click “Close”.',
+    status: ['Waiting', 'In progress', 'Done'], tag: 'NEW',
+    steps: [
+      ['Ninite', 'Installing your software...', 'Done'],
+      ['CrapFixer', null, 'Done'],
+      ['Uninstall Microsoft Edge', 'Official uninstaller...', 'Uninstalled, WebView2 kept'],
+      ['Taskbar', 'File Explorer, Firefox, Terminal, PowerShell', 'Pinned at next sign-in'],
+      ['Microsoft Office', 'Installing Office...', 'Installed'],
+      ['Windows activation', 'Checking...', 'Windows is activated'],
+      ['PC name', '...', 'Will be named “LIVING-PC”'],
+      ['PC report', '...', 'Copied to the desktop'],
+    ],
+    tweak: 'Tweak', removed: 'App removed: ',
+    chips: ['47 tweaks', 'dark theme', 'Edge gone', 'Office installed'],
+    newPill: 'New', tbTitle: 'Your taskbar,<br><span class="grad">sorted for you.</span>',
+    pins: ['File Explorer', 'Firefox', 'Terminal', 'PowerShell'],
+    tbCaption: 'The Windows default pins are gone.<br>Ready at your next sign-in.',
+    outroOs: 'Windows 10 &amp; 11 · one exe, nothing to install',
+  },
+  fr: {
+    hook1: 'Windows vient<br>de s\'installer.', hook2: '…et tu fais tout<br>à la main ?', sub: 'Un double-clic.<br>Il fait le reste.',
+    chores: ['Installer les logiciels', 'Virer les pubs et le bloatware', 'Désinstaller Edge', 'Ranger la barre des tâches', 'Installer Office'],
+    winTitle: 'Configuration en cours', winSub: 'Le PC se configure tout seul. Seul Ninite demande de cliquer sur « Close ».',
+    status: ['En attente', 'En cours', 'Terminée'], tag: 'NOUVEAU',
+    steps: [
+      ['Ninite', 'Installation des logiciels...', 'Terminée'],
+      ['CrapFixer', null, 'Terminée'],
+      ['Désinstaller Microsoft Edge', 'Désinstalleur officiel...', 'Désinstallé, WebView2 conservé'],
+      ['Barre des tâches', 'Explorateur, Firefox, Terminal, PowerShell', 'Épinglé à la prochaine session'],
+      ['Microsoft Office', 'Installation d\'Office...', 'Installé'],
+      ['Activation de Windows', 'Vérification...', 'Windows est activé'],
+      ['Nom du PC', '...', 'S\'appellera « PC-SALON »'],
+      ['Rapport du poste', '...', 'Copié sur le Bureau'],
+    ],
+    tweak: 'Réglage', removed: 'Appli supprimée : ',
+    chips: ['47 tweaks', 'thème sombre', 'Edge viré', 'Office installé'],
+    newPill: 'Nouveau', tbTitle: 'La barre des tâches,<br><span class="grad">rangée pour toi.</span>',
+    pins: ['Explorateur', 'Firefox', 'Terminal', 'PowerShell'],
+    tbCaption: 'Les épingles de Windows dégagent.<br>Prêt dès la prochaine session.',
+    outroOs: 'Windows 10 &amp; 11 · un seul exe, rien à installer',
+  },
+}[LANG];
+document.querySelectorAll('[data-t]').forEach(e => { e.innerHTML = S[e.dataset.t]; });
 const $ = id => document.getElementById(id);
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -143,7 +194,7 @@ function show(el, t, a, da, b, db, dy = 40, dx = 0, sc = 0) {
 // ---------------------------------------------------------------------------
 // Scène 1
 // ---------------------------------------------------------------------------
-const CHORES = ['Installer les logiciels', 'Virer les pubs et le bloatware', 'Désinstaller Edge', 'Ranger la barre des tâches', 'Installer Office'];
+const CHORES = S.chores;
 const choreEls = CHORES.map((txt, i) => {
   const d = document.createElement('div');
   d.className = 'abs chore';
@@ -168,29 +219,23 @@ const GLYPH = {
   report: `<svg viewBox="0 0 32 32" ${G}><path d="M8 4h11l6 6v18H8z"/><path d="M12 15h9M12 19h9M12 23h6"/></svg>`,
 };
 // [glyphe, nom, début, fin, détails en cours [t, texte] (null = CrapFixer), détail final, nouveau ?]
-const STEPS = [
-  ['apps', 'Ninite', 7.95, 8.6, [[7.95, 'Installation des logiciels...']], 'Terminée'],
-  ['broom', 'CrapFixer', 8.6, 11.4, null, 'Terminée'],
-  ['globe', 'Désinstaller Microsoft Edge', 11.4, 12.0, [[11.4, 'Désinstalleur officiel...']], 'Désinstallé, WebView2 conservé'],
-  ['pin', 'Barre des tâches', 12.0, 12.55, [[12.0, 'Explorateur, Firefox, Terminal, PowerShell']], 'Épinglé à la prochaine session', true],
-  ['doc', 'Microsoft Office', 12.55, 13.05, [[12.55, 'Installation d\'Office...']], 'Installé'],
-  ['shield', 'Activation de Windows', 13.05, 13.35, [[13.05, 'Vérification...']], 'Windows est activé'],
-  ['rename', 'Nom du PC', 13.35, 13.55, [[13.35, '...']], 'S\'appellera « PC-SALON »'],
-  ['report', 'Rapport du poste', 13.55, 13.8, [[13.55, '...']], 'Copié sur le Bureau'],
-];
+const TIMES = [[7.95, 8.6], [8.6, 11.4], [11.4, 12.0], [12.0, 12.55], [12.55, 13.05], [13.05, 13.35], [13.35, 13.55], [13.55, 13.8]];
+const GLYPHS = ['apps', 'broom', 'globe', 'pin', 'doc', 'shield', 'rename', 'report'];
+const STEPS = S.steps.map(([name, running, final], i) =>
+  [GLYPHS[i], name, TIMES[i][0], TIMES[i][1], running === null ? null : [[TIMES[i][0], running]], final, i === 3]);
 const TWEAKS = 47, CF_START = 8.6, CF_END = 10.95;
 const DARK_TWEAK = 23;
 const tweakTime = n => lerp(CF_START + .1, CF_END, (n - 1) / (TWEAKS - 1));
 const T_DARK = tweakTime(DARK_TWEAK);
 const TWEAK_NAMES = { 3: 'Disable Lock Screen Ads', 9: 'Disable Widgets', 15: 'Left-align Taskbar', 18: 'Disable Bing Search', 23: 'Enable Dark Theme' };
 function cfDetail(t) {
-  if (t >= CF_END + .2) return 'Appli supprimée : Candy Crush Saga';
-  if (t >= CF_END) return 'Appli supprimée : Skype';
+  if (t >= CF_END + .2) return S.removed + 'Candy Crush Saga';
+  if (t >= CF_END) return S.removed + 'Skype';
   let n = 0;
   for (let k = 1; k <= TWEAKS; k++) if (t >= tweakTime(k)) n = k;
   let name = '';
   for (const k in TWEAK_NAMES) if (n >= +k) name = TWEAK_NAMES[k];
-  return `Réglage ${Math.max(1, n)}/${TWEAKS}` + (name ? ` · ${name}` : '');
+  return `${S.tweak} ${Math.max(1, n)}/${TWEAKS}` + (name ? ` · ${name}` : '');
 }
 
 const rowEls = STEPS.map(([gl, name, , , , , isNew]) => {
@@ -200,13 +245,13 @@ const rowEls = STEPS.map(([gl, name, , , , , isNew]) => {
     <svg class="st" viewBox="0 0 38 38"><circle class="ring" cx="19" cy="19" r="15" fill="none" stroke-width="2.6"/>
       <circle class="spin" cx="19" cy="19" r="15" fill="none" stroke-width="3.4" stroke-linecap="round" stroke-dasharray="30 200"/>
       <path class="chk" d="M12 19.5l5 5 9-10" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <div><div class="nm">${name}${isNew ? '<span class="tag">NOUVEAU</span>' : ''}</div><div class="dt"></div></div>
+    <div><div class="nm">${name}${isNew ? `<span class="tag">${S.tag}</span>` : ''}</div><div class="dt"></div></div>
     <div class="rs"></div>`;
   $('rows').appendChild(d);
   return d;
 });
 
-const CHIPS = [['47 tweaks', tweakTime(30)], ['thème sombre', T_DARK + .3], ['Edge viré', 12.0], ['Office installé', 13.05]];
+const CHIPS = [[S.chips[0], tweakTime(30)], [S.chips[1], T_DARK + .3], [S.chips[2], 12.0], [S.chips[3], 13.05]];
 const chipEls = CHIPS.map(([txt]) => {
   const d = document.createElement('div');
   d.className = 'chip';
@@ -239,7 +284,7 @@ function mkPin(ic, slot, dot) {
 mkPin('start', 0, false);
 const OLD = ['edge', 'store', 'explorer'].map((ic, i) => mkPin(ic, i + 1, false));
 const T_DROP = 16.0;
-const NEW = [['explorer', 'Explorateur'], ['firefox', 'Firefox'], ['terminal', 'Terminal'], ['powershell', 'PowerShell']];
+const NEW = ['explorer', 'firefox', 'terminal', 'powershell'].map((ic, i) => [ic, S.pins[i]]);
 const PIN_T = NEW.map((_, i) => 16.55 + i * .38);
 const newEls = NEW.map(([ic], i) => mkPin(ic, i + 1, true));
 const lblEls = NEW.map(([, name], i) => {
@@ -356,13 +401,13 @@ window.render = function (t) {
     chk.style.stroke = W.ok;
     chk.style.opacity = state === 2 ? 1 : 0;
     chk.setAttribute('transform', `translate(19 19) scale(${Math.max(0, pc)}) translate(-19 -19)`);
-    let dt = 'En attente';
+    let dt = S.status[0];
     if (state === 1) dt = details ? details.filter(d => t >= d[0]).pop()[1] : cfDetail(t);
     if (state === 2) dt = final;
     el.querySelector('.dt').textContent = dt;
     el.querySelector('.dt').style.color = W.tx2;
     const rs = el.querySelector('.rs');
-    rs.textContent = ['En attente', 'En cours', 'Terminée'][state];
+    rs.textContent = S.status[state];
     rs.style.color = state === 1 ? W.acc : W.tx;
     if (isNew) {
       const tag = el.querySelector('.tag');
@@ -400,6 +445,7 @@ window.render = function (t) {
   show($('s5title'), t, 20.35, .6, 99, 1, 50, 0, .06);
   show($('s5btn'), t, 20.75, .45, 99, 1, 30, 0, .2);
   show($('s5os'), t, 21.05, .4, 99, 1, 24);
+  show($('s5lang'), t, 21.2, .4, 99, 1, 24);
   show($('s5gh'), t, 21.3, .4, 99, 1, 24);
 };
 window.render(0);

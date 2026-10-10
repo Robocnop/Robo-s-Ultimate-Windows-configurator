@@ -1,6 +1,6 @@
-# Brag plan — Robo's Ultimate Windows Configurator (v2.2)
+# Brag plan — Robo's Ultimate Windows Configurator (v2.3)
 
-**Format :** vertical 1080×1920, 30 fps, 24,3 s. **Langue :** français. **Ton :** `default` (punchy, propre, un brin moqueur envers la corvée post-install).
+**Format :** vertical 1080×1920, 30 fps, 24,3 s. **Langues :** anglais (`brag.mp4`) et français (`brag.fr.mp4`), mêmes timings et même bande-son. **Ton :** `default` (punchy, propre, un brin moqueur envers la corvée post-install).
 
 ## Réponses
 - **C'est quoi ?** Une appli portable, `RoboConfigurator.exe`, qui configure un PC juste après l'installation de Windows 10/11 : logiciels, nettoyage, thème sombre, Edge retiré, barre des tâches rangée, Office, activation.
@@ -24,5 +24,5 @@
 | 5 | 20,35–24,3 s | **Outro.** Titre, `RoboConfigurator.exe`, lien GitHub. | « Windows 10 & 11 · un seul exe, rien à installer » | Accord final, fade |
 
 ## Régénérer
-Dans `brag-output/work` : `node capture.mjs frames`, `python synth.py`, puis ffmpeg (images + `audio.wav` → `brag.mp4`).
-Le README affiche `brag.mp4` envoyé sur GitHub (adresse user-attachments) : après une nouvelle version, glisser le nouveau mp4 dans un ticket et remplacer l'adresse.
+Dans `brag-output/work` : `VIDEO_LANG=en node capture.mjs frames` (ou `fr`), `python synth.py`, puis ffmpeg (images + `audio.wav` → `brag.mp4` / `brag.fr.mp4`). Les textes des deux langues sont dans l'objet `S` de `video.html`.
+`README.md` affiche `brag.mp4` et `README.fr.md` affiche `brag.fr.mp4`, envoyés sur GitHub (adresses user-attachments) : après une nouvelle version, glisser les nouveaux mp4 dans un ticket et remplacer les adresses.

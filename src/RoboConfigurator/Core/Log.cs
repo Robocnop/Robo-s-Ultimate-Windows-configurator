@@ -20,7 +20,7 @@ namespace RoboConfigurator.Core
                 case LogLevel.Title: return $"{Time:HH:mm:ss} === {Text} ===";
                 case LogLevel.Ok:    return $"{Time:HH:mm:ss}   [OK] {Text}";
                 case LogLevel.Warn:  return $"{Time:HH:mm:ss}   [!] {Text}";
-                case LogLevel.Error: return $"{Time:HH:mm:ss}   [ERREUR] {Text}";
+                case LogLevel.Error: return $"{Time:HH:mm:ss}   [{Lang.T("ERROR", "ERREUR")}] {Text}";
                 default:             return $"{Time:HH:mm:ss}   {Text}";
             }
         }
@@ -37,7 +37,7 @@ namespace RoboConfigurator.Core
         public static void Open(string path)
         {
             _file = path;
-            Write(LogLevel.Title, $"Lancement du {DateTime.Now:dd/MM/yyyy HH:mm:ss}");
+            Write(LogLevel.Title, Lang.T("Started on ", "Lancement du ") + Lang.Date(DateTime.Now) + $" {DateTime.Now:HH:mm:ss}");
         }
 
         /// <summary>Arrête l'écriture dans journal.txt (avant la suppression du dossier) ; l'interface reste alimentée.</summary>

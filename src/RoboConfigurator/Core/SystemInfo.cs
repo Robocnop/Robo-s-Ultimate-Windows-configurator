@@ -71,7 +71,7 @@ namespace RoboConfigurator.Core
                 var input = cs.GetMethodParameters("Rename");
                 input["Name"] = newName;
                 uint code = Convert.ToUInt32(cs.InvokeMethod("Rename", input, null)["ReturnValue"]);
-                if (code != 0) throw new Exception($"Windows a refusé le renommage (code {code})");
+                if (code != 0) throw new Exception(Lang.T($"Windows refused the rename (code {code})", $"Windows a refusé le renommage (code {code})"));
             }
         }
 
@@ -90,10 +90,10 @@ namespace RoboConfigurator.Core
 
         public static string SecureBoot()
         {
-            if (GetFirmwareType(out uint type) && type == 1) return "non pris en charge (BIOS hérité)";
+            if (GetFirmwareType(out uint type) && type == 1) return Lang.T("not supported (legacy BIOS)", "non pris en charge (BIOS hérité)");
             object value = Registry.GetValue(@"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecureBoot\State", "UEFISecureBootEnabled", null);
-            if (value == null) return "inconnu";
-            return Convert.ToInt32(value) == 1 ? "activé" : "désactivé";
+            if (value == null) return Lang.T("unknown", "inconnu");
+            return Convert.ToInt32(value) == 1 ? Lang.T("enabled", "activé") : Lang.T("disabled", "désactivé");
         }
 
         /// <summary>Lance un programme sans fenêtre et transmet chaque ligne de sortie au journal.</summary>

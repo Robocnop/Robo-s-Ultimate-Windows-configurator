@@ -54,7 +54,7 @@ namespace RoboConfigurator.Core
             string path = Path.Combine(dir, payload.File);
             if (System.IO.File.Exists(path) && new FileInfo(path).Length > 0)
             {
-                Log.Ok($"{payload.File} déjà présent");
+                Log.Ok(Lang.T($"{payload.File} already present", $"{payload.File} déjà présent"));
                 return path;
             }
 
@@ -63,7 +63,7 @@ namespace RoboConfigurator.Core
                 if (embedded != null)
                 {
                     using (var file = System.IO.File.Create(path)) embedded.CopyTo(file);
-                    Log.Ok($"{payload.File} extrait de l'application");
+                    Log.Ok(Lang.T($"{payload.File} extracted from the app", $"{payload.File} extrait de l'application"));
                     return path;
                 }
             }
@@ -73,21 +73,22 @@ namespace RoboConfigurator.Core
             {
                 try
                 {
-                    Log.Info($"Téléchargement de {payload.File} (essai {attempt}/3)...");
+                    Log.Info(Lang.T($"Downloading {payload.File} (attempt {attempt}/3)...", $"Téléchargement de {payload.File} (essai {attempt}/3)..."));
                     Download(payload.Url, path + ".part", progress);
                     if (System.IO.File.Exists(path)) System.IO.File.Delete(path);
                     System.IO.File.Move(path + ".part", path);
-                    Log.Ok($"{payload.File} ({new FileInfo(path).Length / 1048576.0:0.0} Mo)");
+                    Log.Ok($"{payload.File} ({new FileInfo(path).Length / 1048576.0:0.0} {Lang.T("MB", "Mo")})");
                     return path;
                 }
                 catch (Exception ex)
                 {
                     last = ex;
-                    Log.Warn($"Échec : {ex.GetBaseException().Message}");
+                    Log.Warn(Lang.T("Failed: ", "Échec : ") + ex.GetBaseException().Message);
                     Thread.Sleep(5000);
                 }
             }
-            throw new Exception($"Impossible de télécharger {payload.File} : {last?.GetBaseException().Message}");
+            throw new Exception(Lang.T($"Could not download {payload.File}: {last?.GetBaseException().Message}",
+                                       $"Impossible de télécharger {payload.File} : {last?.GetBaseException().Message}"));
         }
 
         private static void Download(string url, string path, Action<int> progress)

@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using RoboConfigurator.Core;
 using Wpf.Ui.Controls;
 
 namespace RoboConfigurator
@@ -49,14 +50,14 @@ namespace RoboConfigurator
             {
                 switch (Status)
                 {
-                    case StepStatus.Skipped: return "Ignorée";
-                    case StepStatus.AlreadyDone: return "Déjà faite";
-                    case StepStatus.Downloading: return "Téléchargement";
-                    case StepStatus.Running: return "En cours";
-                    case StepStatus.Done: return "Terminée";
-                    case StepStatus.Warning: return "À vérifier";
-                    case StepStatus.Failed: return "Échec";
-                    default: return "En attente";
+                    case StepStatus.Skipped: return Lang.T("Skipped", "Ignorée");
+                    case StepStatus.AlreadyDone: return Lang.T("Already done", "Déjà faite");
+                    case StepStatus.Downloading: return Lang.T("Downloading", "Téléchargement");
+                    case StepStatus.Running: return Lang.T("In progress", "En cours");
+                    case StepStatus.Done: return Lang.T("Done", "Terminée");
+                    case StepStatus.Warning: return Lang.T("Check", "À vérifier");
+                    case StepStatus.Failed: return Lang.T("Failed", "Échec");
+                    default: return Lang.T("Waiting", "En attente");
                 }
             }
         }

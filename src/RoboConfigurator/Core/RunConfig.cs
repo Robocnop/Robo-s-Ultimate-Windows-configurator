@@ -96,14 +96,20 @@ namespace RoboConfigurator.Core
                         {
                             var step = StepNames.All.FirstOrDefault(n => n.Equals(s, StringComparison.OrdinalIgnoreCase));
                             if (step != null) o.Skip.Add(step);
-                            else o.Errors.Add($"Étape inconnue pour -Skip : « {s} ». Valeurs possibles : {string.Join(", ", StepNames.All)}");
+                            else o.Errors.Add(Lang.T($"Unknown step for -Skip: “{s}”. Possible values: {string.Join(", ", StepNames.All)}",
+                                                     $"Étape inconnue pour -Skip : « {s} ». Valeurs possibles : {string.Join(", ", StepNames.All)}"));
                         }
                         break;
                     case "alltweaks": o.AllTweaks = true; break;
                     case "windowskey": o.WindowsKey = Next().Trim().ToUpperInvariant(); break;
                     case "reset": o.Reset = true; break;
                     case "simulation": o.Simulation = true; break;
-                    default: o.Errors.Add($"Option inconnue : « {args[i]} »"); break;
+                    case "lang":
+                        string code = Next();
+                        if (!Lang.Set(code)) o.Errors.Add(Lang.T($"Unknown language for -Lang: “{code}”. Possible values: en, fr",
+                                                                 $"Langue inconnue pour -Lang : « {code} ». Valeurs possibles : en, fr"));
+                        break;
+                    default: o.Errors.Add(Lang.T($"Unknown option: “{args[i]}”", $"Option inconnue : « {args[i]} »")); break;
                 }
             }
             return o;

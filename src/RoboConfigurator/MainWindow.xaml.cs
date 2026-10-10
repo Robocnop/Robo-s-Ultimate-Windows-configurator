@@ -24,6 +24,8 @@ namespace RoboConfigurator
         private readonly List<StepItem> _runItems;
         private readonly Dictionary<string, StepItem> _items;
 
+        private string LogFile => Path.Combine(_workDir, Lang.T("log.txt", "journal.txt"));
+
         private OemKey _oemKey;
         private bool _running;
         private bool _restartPending;
@@ -44,23 +46,23 @@ namespace RoboConfigurator
             _stateFile = Path.Combine(_workDir, "etapes-terminees.txt");
             if (options.Reset) ForgetPreviousRun();
             _state = new StepState(_stateFile);
-            Log.Open(Path.Combine(_workDir, "journal.txt"));
+            Log.Open(LogFile);
             Log.Written += OnLog;
 
             _steps = new List<StepItem>
             {
-                new StepItem(StepNames.Ninite, "Ninite", "Installe 7-Zip, Chrome, Firefox, Foxit Reader et Notepad++. Cliquer sur « Close » à la fin.", SymbolRegular.AppsAddIn24),
-                new StepItem(StepNames.CrapFixer, "CrapFixer", "Applique les tweaks recommandés et le thème sombre, supprime les applis inutiles (Candy Crush, Bing News...).", SymbolRegular.Broom24),
-                new StepItem(StepNames.Edge, "Désinstaller Microsoft Edge", "Désinstalleur officiel d'Edge (méthode WinUtil). WebView2 est conservé.", SymbolRegular.Globe24),
-                new StepItem(StepNames.Taskbar, "Barre des tâches", "Épingle dans cet ordre : Explorateur, Firefox, Terminal, PowerShell (remplace les épingles de Windows). Appliqué à la prochaine ouverture de session.", SymbolRegular.Pin24),
-                new StepItem(StepNames.Office, "Microsoft Office", "Installe Office et attend la fin de l'installation.", SymbolRegular.Document24),
-                new StepItem(StepNames.Activation, "Activation de Windows", "Si Windows n'est pas activé : clé saisie, sinon clé OEM du BIOS, sinon script d'activation.", SymbolRegular.ShieldCheckmark24),
+                new StepItem(StepNames.Ninite, "Ninite", Lang.T("Installs 7-Zip, Chrome, Firefox, Foxit Reader and Notepad++. Click “Close” at the end.", "Installe 7-Zip, Chrome, Firefox, Foxit Reader et Notepad++. Cliquer sur « Close » à la fin."), SymbolRegular.AppsAddIn24),
+                new StepItem(StepNames.CrapFixer, "CrapFixer", Lang.T("Applies the recommended tweaks and dark theme, removes bloatware (Candy Crush, Bing News...).", "Applique les tweaks recommandés et le thème sombre, supprime les applis inutiles (Candy Crush, Bing News...)."), SymbolRegular.Broom24),
+                new StepItem(StepNames.Edge, Lang.T("Uninstall Microsoft Edge", "Désinstaller Microsoft Edge"), Lang.T("Edge's official uninstaller (WinUtil method). WebView2 is kept.", "Désinstalleur officiel d'Edge (méthode WinUtil). WebView2 est conservé."), SymbolRegular.Globe24),
+                new StepItem(StepNames.Taskbar, Lang.T("Taskbar", "Barre des tâches"), Lang.T("Pins, in this order: File Explorer, Firefox, Terminal, PowerShell (replaces the Windows pins). Applied at next sign-in.", "Épingle dans cet ordre : Explorateur, Firefox, Terminal, PowerShell (remplace les épingles de Windows). Appliqué à la prochaine ouverture de session."), SymbolRegular.Pin24),
+                new StepItem(StepNames.Office, "Microsoft Office", Lang.T("Installs Office and waits for the installation to finish.", "Installe Office et attend la fin de l'installation."), SymbolRegular.Document24),
+                new StepItem(StepNames.Activation, Lang.T("Windows activation", "Activation de Windows"), Lang.T("If Windows is not activated: the key entered, otherwise the BIOS OEM key, otherwise the activation script.", "Si Windows n'est pas activé : clé saisie, sinon clé OEM du BIOS, sinon script d'activation."), SymbolRegular.ShieldCheckmark24),
             };
             _runItems = _steps.Concat(new[]
             {
-                new StepItem(Engine.RenameKey, "Nom du PC", "", SymbolRegular.Rename24),
-                new StepItem(Engine.ReportKey, "Rapport du poste", "", SymbolRegular.DocumentBulletList24),
-                new StepItem(Engine.CleanUpKey, "Nettoyage", "", SymbolRegular.Delete24),
+                new StepItem(Engine.RenameKey, Lang.T("PC name", "Nom du PC"), "", SymbolRegular.Rename24),
+                new StepItem(Engine.ReportKey, Lang.T("PC report", "Rapport du poste"), "", SymbolRegular.DocumentBulletList24),
+                new StepItem(Engine.CleanUpKey, Lang.T("Clean-up", "Nettoyage"), "", SymbolRegular.Delete24),
             }).ToList();
             _items = _runItems.ToDictionary(s => s.Key);
             foreach (var item in _runItems) item.PropertyChanged += OnStepChanged;
@@ -88,12 +90,12 @@ namespace RoboConfigurator
                 try
                 {
                     config = RunConfig.Load(_configFile);
-                    ShowMessage(ConfigMessage, InfoBarSeverity.Informational, "Reprise du lancement précédent",
-                        "La configuration du lancement interrompu a été rechargée. Les étapes déjà faites seront passées.");
+                    ShowMessage(ConfigMessage, InfoBarSeverity.Informational, Lang.T("Resuming the previous run", "Reprise du lancement précédent"),
+                        Lang.T("The settings of the interrupted run were reloaded. Completed steps will be skipped.", "La configuration du lancement interrompu a été rechargée. Les étapes déjà faites seront passées."));
                 }
                 catch (Exception ex)
                 {
-                    ShowMessage(ConfigMessage, InfoBarSeverity.Warning, "Configuration précédente illisible", ex.Message);
+                    ShowMessage(ConfigMessage, InfoBarSeverity.Warning, Lang.T("Previous settings could not be read", "Configuration précédente illisible"), ex.Message);
                 }
             }
             config = config ?? new RunConfig
@@ -103,7 +105,7 @@ namespace RoboConfigurator
                 WindowsKey = _options.WindowsKey,
             };
             if (_options.Errors.Any())
-                ShowMessage(ConfigMessage, InfoBarSeverity.Error, "Options de lancement ignorées", string.Join("\n", _options.Errors));
+                ShowMessage(ConfigMessage, InfoBarSeverity.Error, Lang.T("Command-line options ignored", "Options de lancement ignorées"), string.Join("\n", _options.Errors));
 
             NewNameBox.Text = config.NewName;
             foreach (var step in _steps) step.IsSelected = config.Has(step.Key);
@@ -126,13 +128,14 @@ namespace RoboConfigurator
 
             PcModelText.Text = info.Model;
             WindowsText.Text = info.Windows;
-            if (info.Activated == "oui") SetActivation(SymbolRegular.ShieldCheckmark24, "SystemFillColorSuccessBrush", "Windows est activé");
-            else if (info.Activated == "non") SetActivation(SymbolRegular.ShieldError24, "SystemFillColorCautionBrush", "Windows n'est pas activé");
-            else SetActivation(SymbolRegular.ShieldQuestion24, "TextFillColorSecondaryBrush", "Activation inconnue");
+            if (info.Activated == "oui") SetActivation(SymbolRegular.ShieldCheckmark24, "SystemFillColorSuccessBrush", Lang.T("Windows is activated", "Windows est activé"));
+            else if (info.Activated == "non") SetActivation(SymbolRegular.ShieldError24, "SystemFillColorCautionBrush", Lang.T("Windows is not activated", "Windows n'est pas activé"));
+            else SetActivation(SymbolRegular.ShieldQuestion24, "TextFillColorSecondaryBrush", Lang.T("Activation unknown", "Activation inconnue"));
 
             _oemKey = info.Oem;
             if (_oemKey != null)
-                KeyHint.Text = $"Clé du BIOS détectée ({_oemKey.Description}) : utilisée automatiquement si aucune clé n'est saisie.";
+                KeyHint.Text = Lang.T($"BIOS key detected ({_oemKey.Description}): used automatically if no key is entered.",
+                                      $"Clé du BIOS détectée ({_oemKey.Description}) : utilisée automatiquement si aucune clé n'est saisie.");
             StartButton.IsEnabled = true;
         }
 
@@ -166,8 +169,8 @@ namespace RoboConfigurator
             TweaksBox.SelectedIndex = 0;
             RestartSwitch.IsChecked = true;
             CleanUpSwitch.IsChecked = true;
-            ShowMessage(ConfigMessage, InfoBarSeverity.Success, "Tout sera refait",
-                "Les étapes déjà faites et la configuration enregistrée ont été oubliées.");
+            ShowMessage(ConfigMessage, InfoBarSeverity.Success, Lang.T("Everything will be redone", "Tout sera refait"),
+                Lang.T("Completed steps and the saved settings have been forgotten.", "Les étapes déjà faites et la configuration enregistrée ont été oubliées."));
         }
 
         // -------------------------------------------------------------------
@@ -179,14 +182,14 @@ namespace RoboConfigurator
             if (name.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase)) name = "";
             if (name.Length > 0 && !RunConfig.IsValidPcName(name))
             {
-                ShowMessage(ConfigMessage, InfoBarSeverity.Error, "Nom du PC invalide",
-                    "1 à 15 caractères : lettres, chiffres et tirets, pas uniquement des chiffres.");
+                ShowMessage(ConfigMessage, InfoBarSeverity.Error, Lang.T("Invalid PC name", "Nom du PC invalide"),
+                    Lang.T("1 to 15 characters: letters, digits and hyphens, not digits only.", "1 à 15 caractères : lettres, chiffres et tirets, pas uniquement des chiffres."));
                 return;
             }
             string key = KeyBox.Text.Trim().ToUpperInvariant();
             if (key.Length > 0 && !RunConfig.IsValidKey(key))
             {
-                ShowMessage(ConfigMessage, InfoBarSeverity.Error, "Clé Windows invalide", "Format attendu : XXXXX-XXXXX-XXXXX-XXXXX-XXXXX.");
+                ShowMessage(ConfigMessage, InfoBarSeverity.Error, Lang.T("Invalid Windows key", "Clé Windows invalide"), Lang.T("Expected format: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX.", "Format attendu : XXXXX-XXXXX-XXXXX-XXXXX-XXXXX."));
                 return;
             }
 
@@ -202,12 +205,12 @@ namespace RoboConfigurator
 
             var confirm = new Wpf.Ui.Controls.MessageBox
             {
-                Title = "Démarrer la configuration ?",
+                Title = Lang.T("Start the setup?", "Démarrer la configuration ?"),
                 Content = config.AutoRestart
-                    ? "Le PC va être configuré automatiquement, puis redémarrera à la fin."
-                    : "Le PC va être configuré automatiquement jusqu'à la fin.",
-                PrimaryButtonText = "Démarrer",
-                CloseButtonText = "Annuler",
+                    ? Lang.T("The PC will be set up automatically, then restart at the end.", "Le PC va être configuré automatiquement, puis redémarrera à la fin.")
+                    : Lang.T("The PC will be set up automatically until the end.", "Le PC va être configuré automatiquement jusqu'à la fin."),
+                PrimaryButtonText = Lang.T("Start", "Démarrer"),
+                CloseButtonText = Lang.T("Cancel", "Annuler"),
             };
             // Bouton désactivé pendant la question : un double-clic lancerait deux configurations
             StartButton.IsEnabled = false;
@@ -236,8 +239,8 @@ namespace RoboConfigurator
                 OverallProgress.Value = _runItems.Count(i => i.Status != StepStatus.Pending && !i.IsBusy);
                 if (item.Key != StepNames.Ninite) return;
                 if (item.Status == StepStatus.Running)
-                    ShowMessage(RunMessage, InfoBarSeverity.Informational, "Action requise",
-                        "Quand Ninite affiche « Done », cliquez sur « Close » pour passer à la suite.");
+                    ShowMessage(RunMessage, InfoBarSeverity.Informational, Lang.T("Action required", "Action requise"),
+                        Lang.T("When Ninite shows “Done”, click “Close” to continue.", "Quand Ninite affiche « Done », cliquez sur « Close » pour passer à la suite."));
                 else RunMessage.IsOpen = false;
             }));
         }
@@ -257,22 +260,21 @@ namespace RoboConfigurator
             var warnings = _runItems.Where(s => s.Status == StepStatus.Warning).ToList();
             if (_result.Failed.Any())
             {
-                RunTitle.Text = "Configuration terminée avec des erreurs";
-                ShowMessage(RunMessage, InfoBarSeverity.Error, $"Étapes en échec : {string.Join(", ", _result.Failed)}",
-                    "Relancez l'application pour les réessayer : la configuration est conservée et les étapes réussies ne seront pas refaites.");
+                RunTitle.Text = Lang.T("Setup finished with errors", "Configuration terminée avec des erreurs");
+                ShowMessage(RunMessage, InfoBarSeverity.Error, Lang.T("Failed steps: ", "Étapes en échec : ") + string.Join(", ", _result.Failed),
+                    Lang.T("Run the app again to retry them: the settings are kept and successful steps will not be redone.", "Relancez l'application pour les réessayer : la configuration est conservée et les étapes réussies ne seront pas refaites."));
             }
             else if (warnings.Any())
             {
-                RunTitle.Text = "Configuration terminée";
-                ShowMessage(RunMessage, InfoBarSeverity.Warning, "À vérifier", string.Join("\n", warnings.Select(w => $"{w.Title} : {w.Detail}")));
+                RunTitle.Text = Lang.T("Setup finished", "Configuration terminée");
+                ShowMessage(RunMessage, InfoBarSeverity.Warning, Lang.T("Please check", "À vérifier"), string.Join("\n", warnings.Select(w => w.Title + Lang.T(": ", " : ") + w.Detail)));
             }
             else
             {
-                RunTitle.Text = "Configuration terminée";
-                ShowMessage(RunMessage, InfoBarSeverity.Success, "Tout est terminé", "Le PC est prêt.");
+                RunTitle.Text = Lang.T("Setup finished", "Configuration terminée");
+                ShowMessage(RunMessage, InfoBarSeverity.Success, Lang.T("All done", "Tout est terminé"), Lang.T("The PC is ready.", "Le PC est prêt."));
             }
-            string journal = Path.Combine(_workDir, "journal.txt");
-            RunSubtitle.Text = File.Exists(journal) ? $"Journal : {journal}" : "Le dossier de travail a été supprimé.";
+            RunSubtitle.Text = File.Exists(LogFile) ? Lang.T("Log: ", "Journal : ") + LogFile : Lang.T("The working folder has been deleted.", "Le dossier de travail a été supprimé.");
             OpenFolderButton.Visibility = Directory.Exists(_workDir) ? Visibility.Visible : Visibility.Collapsed;
             OpenReportButton.Visibility = _result.ReportPath != null ? Visibility.Visible : Visibility.Collapsed;
             RestartNowButton.Visibility = Visibility.Visible;
@@ -285,7 +287,8 @@ namespace RoboConfigurator
         // -------------------------------------------------------------------
         // Redémarrage
         // -------------------------------------------------------------------
-        private const string ShutdownComment = "Robo's Ultimate Windows Configurator : redémarrage pour finaliser la configuration.";
+        private static string ShutdownComment => Lang.T("Robo's Ultimate Windows Configurator: restarting to finish the setup.",
+                                                       "Robo's Ultimate Windows Configurator : redémarrage pour finaliser la configuration.");
 
         private void StartRestartCountdown()
         {
@@ -295,24 +298,27 @@ namespace RoboConfigurator
             CancelRestartButton.Visibility = Visibility.Visible;
 
             int secondsLeft = 60;
-            RunSubtitle.Text = $"Le PC redémarre dans {secondsLeft} secondes.";
+            RunSubtitle.Text = RestartText(secondsLeft);
             _restartTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _restartTimer.Tick += (s, e) =>
             {
                 secondsLeft = Math.Max(0, secondsLeft - 1);
-                RunSubtitle.Text = $"Le PC redémarre dans {secondsLeft} secondes.";
+                RunSubtitle.Text = RestartText(secondsLeft);
                 if (secondsLeft == 0) _restartTimer.Stop();
             };
             _restartTimer.Start();
         }
+
+        private static string RestartText(int seconds) =>
+            Lang.T($"The PC restarts in {seconds} seconds.", $"Le PC redémarre dans {seconds} secondes.");
 
         private void OnCancelRestartClick(object sender, RoutedEventArgs e)
         {
             if (!_options.Simulation) SystemInfo.Run("shutdown.exe", "/a");
             _restartPending = false;
             _restartTimer?.Stop();
-            Log.Info("Redémarrage annulé");
-            RunSubtitle.Text = "Redémarrage annulé. Pensez à redémarrer le PC pour finaliser la configuration.";
+            Log.Info(Lang.T("Restart cancelled", "Redémarrage annulé"));
+            RunSubtitle.Text = Lang.T("Restart cancelled. Remember to restart the PC to finish the setup.", "Redémarrage annulé. Pensez à redémarrer le PC pour finaliser la configuration.");
             CancelRestartButton.Visibility = Visibility.Collapsed;
             CloseButton.Visibility = Visibility.Visible;
         }
@@ -321,7 +327,7 @@ namespace RoboConfigurator
         {
             if (_options.Simulation)
             {
-                RunSubtitle.Text = "Mode simulation : le PC n'est pas redémarré.";
+                RunSubtitle.Text = Lang.T("Simulation mode: the PC is not restarted.", "Mode simulation : le PC n'est pas redémarré.");
                 return;
             }
             if (_restartPending) SystemInfo.Run("shutdown.exe", "/a");
@@ -344,14 +350,14 @@ namespace RoboConfigurator
             e.Cancel = true;
             var confirm = new Wpf.Ui.Controls.MessageBox
             {
-                Title = "Configuration en cours",
-                Content = "Quitter maintenant interrompt la configuration. Au prochain lancement, l'application proposera de reprendre là où elle s'est arrêtée.",
-                PrimaryButtonText = "Quitter",
-                CloseButtonText = "Continuer",
+                Title = Lang.T("Setup in progress", "Configuration en cours"),
+                Content = Lang.T("Quitting now interrupts the setup. Next time, the app will offer to resume where it stopped.", "Quitter maintenant interrompt la configuration. Au prochain lancement, l'application proposera de reprendre là où elle s'est arrêtée."),
+                PrimaryButtonText = Lang.T("Quit", "Quitter"),
+                CloseButtonText = Lang.T("Keep going", "Continuer"),
             };
             if (await confirm.ShowDialogAsync() == Wpf.Ui.Controls.MessageBoxResult.Primary)
             {
-                Log.Warn("Configuration interrompue par l'utilisateur");
+                Log.Warn(Lang.T("Setup interrupted by the user", "Configuration interrompue par l'utilisateur"));
                 Application.Current.Shutdown();
             }
         }

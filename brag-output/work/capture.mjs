@@ -1,15 +1,17 @@
 // Capture de video.html image par image avec le Chrome installé.
-//   node capture.mjs stills 1.5 3.2 ...   -> stills/<t>.png
+//   node capture.mjs stills 1.5 3.2 ...   -> stills/<langue>-<t>.png
 //   node capture.mjs frames               -> frames/00000.jpg ... (30 i/s) + timeline.json
+// Langue de la vidéo : VIDEO_LANG=fr (anglais par défaut)
 import { chromium } from 'playwright-core';
 import fs from 'node:fs';
 import path from 'node:path';
 
 const FPS = 30;
+const LANG = process.env.VIDEO_LANG === 'fr' ? 'fr' : 'en';
 const [mode = 'frames', ...times] = process.argv.slice(2);
 const browser = await chromium.launch({ executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe' });
 const page = await browser.newPage({ viewport: { width: 1080, height: 1920 }, deviceScaleFactor: 1 });
-await page.goto('file:///' + path.resolve('video.html').replace(/\\/g, '/'));
+await page.goto('file:///' + path.resolve('video.html').replace(/\\/g, '/') + '?lang=' + LANG);
 await page.evaluate(() => document.fonts.ready);
 const fonts = await page.evaluate(() => ['Segoe UI Variable Display', 'Cascadia Mono'].map(f => `${f}: ${document.fonts.check(`40px "${f}"`)}`));
 console.log(fonts.join(' | '));
@@ -24,7 +26,7 @@ async function shot(t, file, type) {
 
 if (mode === 'stills') {
   fs.mkdirSync('stills', { recursive: true });
-  for (const t of times) await shot(Number(t), `stills/${t}.png`, 'png');
+  for (const t of times) await shot(Number(t), `stills/${LANG}-${t}.png`, 'png');
 } else {
   fs.rmSync('frames', { recursive: true, force: true });
   fs.mkdirSync('frames');

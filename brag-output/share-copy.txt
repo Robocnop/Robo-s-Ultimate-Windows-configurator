@@ -1,5 +1,7 @@
-Windows fraîchement installé → un double-clic sur RoboConfigurator.exe → logiciels installés, 47 tweaks appliqués, thème sombre, bloatware et Edge virés, Office installé, Windows activé.
+EN
+Fresh Windows install → one double-click on RoboConfigurator.exe → software installed, 47 tweaks applied, dark theme, bloatware and Edge gone, taskbar sorted, Office installed, Windows activated. Now in English and French.
 
-Nouveau dans la v2.2 : la barre des tâches est rangée toute seule (Explorateur, Firefox, Terminal, PowerShell), les épingles de Windows dégagent.
+FR
+Windows fraîchement installé → un double-clic sur RoboConfigurator.exe → logiciels installés, 47 tweaks appliqués, thème sombre, bloatware et Edge virés, barre des tâches rangée, Office installé, Windows activé. Maintenant en anglais et en français.
 
 github.com/Robocnop/Robo-s-Ultimate-Windows-configurator
