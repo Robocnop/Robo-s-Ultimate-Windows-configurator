@@ -6,10 +6,7 @@ Une seule application portable, `RoboConfigurator.exe`, avec une interface au st
 thème clair ou sombre et couleur d'accent repris de Windows, effet Mica, cartes et interrupteurs comme dans
 les Paramètres.
 
-<p align="center">
-  <a href="brag-output/brag.mp4"><img src="docs/demo.gif" width="340" alt="Démo : l'application enchaîne les étapes puis range la barre des tâches"></a><br>
-  <sub><a href="brag-output/brag.mp4">Voir la vidéo complète (24 s, avec le son)</a></sub>
-</p>
+https://github.com/user-attachments/assets/a08e429f-2a9b-45dc-a5cb-49f3b654e568
 
 ![Configuration](docs/capture-configuration.png)
 

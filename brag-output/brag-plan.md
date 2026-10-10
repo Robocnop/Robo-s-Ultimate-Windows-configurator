@@ -25,4 +25,4 @@
 
 ## Régénérer
 Dans `brag-output/work` : `node capture.mjs frames`, `python synth.py`, puis ffmpeg (images + `audio.wav` → `brag.mp4`).
-La GIF du README (`docs/demo.gif`) est l'extrait 7,6–20 s en 340 px, 10 i/s.
+Le README affiche `brag.mp4` envoyé sur GitHub (adresse user-attachments) : après une nouvelle version, glisser le nouveau mp4 dans un ticket et remplacer l'adresse.
