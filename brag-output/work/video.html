@@ -68,17 +68,7 @@
   <!-- Scène 2 -->
   <div id="icon" class="abs" style="left:430px;top:640px;width:220px;height:290px">
     <div id="iconsel" class="abs" style="inset:-18px -60px;border-radius:14px;background:rgba(0,120,212,.16);border:2px solid rgba(0,120,212,.55)"></div>
-    <svg class="abs" style="left:10px;top:0" width="200" height="200" viewBox="0 0 100 100">
-      <defs><linearGradient id="gi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4cc2ff"/><stop offset="1" stop-color="#0058b0"/></linearGradient></defs>
-      <rect x="8" y="8" width="84" height="84" rx="20" fill="url(#gi)"/>
-      <g transform="translate(50 50)" fill="#fff">
-        <circle r="17"/>
-        <g id="teeth"><rect x="-6" y="-29" width="12" height="13" rx="3"/></g>
-        <use href="#teeth" transform="rotate(45)"/><use href="#teeth" transform="rotate(90)"/><use href="#teeth" transform="rotate(135)"/>
-        <use href="#teeth" transform="rotate(180)"/><use href="#teeth" transform="rotate(225)"/><use href="#teeth" transform="rotate(270)"/><use href="#teeth" transform="rotate(315)"/>
-        <circle r="8" fill="#0a6cc4"/>
-      </g>
-    </svg>
+    <img class="abs" style="left:10px;top:0" width="200" height="200" src="logos/roboconfig.png" alt="">
     <div id="iconlbl" class="abs" style="left:-90px;width:400px;top:212px;text-align:center;font-size:38px;font-weight:600;color:#0f1b2d">RoboConfigurator.exe</div>
   </div>
   <div id="rip1" class="abs" style="border-radius:50%;border:5px solid #0078d4"></div>
@@ -89,7 +79,7 @@
   <!-- Scène 3 : l'application -->
   <div id="win" class="abs">
     <div id="winbar">
-      <svg width="30" height="30" viewBox="0 0 100 100"><rect x="4" y="4" width="92" height="92" rx="22" fill="#0a6cc4"/><circle cx="50" cy="50" r="22" fill="none" stroke="#fff" stroke-width="12" stroke-dasharray="10 7"/><circle cx="50" cy="50" r="9" fill="#fff"/></svg>
+      <img width="30" height="30" src="logos/roboconfig.png" alt="">
       <div class="ttl">Robo's Ultimate Windows Configurator</div>
       <div class="ctl">—☐✕</div>
     </div>
@@ -114,7 +104,7 @@
   <!-- Scène 5 -->
   <div id="s5title" class="abs center" style="top:470px;font-size:110px;font-weight:800;letter-spacing:-3px;line-height:1"><span class="grad">Robo's<br>Ultimate<br>Windows<br>Configurator</span></div>
   <div id="s5btn" class="abs" style="left:150px;width:780px;top:990px;height:118px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:22px;background:#0078d4;color:#fff;font-size:50px;font-weight:700;box-shadow:0 20px 60px rgba(0,120,212,.45)">
-    <svg width="60" height="60" viewBox="0 0 100 100"><rect x="6" y="6" width="88" height="88" rx="22" fill="#fff"/><circle cx="50" cy="50" r="22" fill="none" stroke="#0078d4" stroke-width="12" stroke-dasharray="10 7"/><circle cx="50" cy="50" r="9" fill="#0078d4"/></svg>
+    <img width="64" height="64" src="logos/roboconfig.png" alt="" style="border-radius:14px;box-shadow:0 0 0 3px rgba(255,255,255,.85)">
     RoboConfigurator.exe
   </div>
   <div id="s5os" class="abs center" style="top:1160px;font-size:42px;font-weight:600;color:#c7d3e3">Windows 10 &amp; 11 · un seul exe, rien à installer</div>
@@ -228,14 +218,13 @@ const chipEls = CHIPS.map(([txt]) => {
 // ---------------------------------------------------------------------------
 // Scène 4 : la barre des tâches
 // ---------------------------------------------------------------------------
+// Vraies icônes, extraites de Windows (logos/*.png, 256 px) ; logo Windows 11 officiel (logos/windows.svg)
+const img = (f, px) => `<img src="logos/${f}" width="${px}" height="${px}" alt="">`;
 const ICON = {
-  start: `<svg width="76" height="76" viewBox="0 0 100 100"><rect x="8" y="8" width="40" height="40" rx="5" fill="#4cc2ff"/><rect x="52" y="8" width="40" height="40" rx="5" fill="#2aa3ef"/><rect x="8" y="52" width="40" height="40" rx="5" fill="#1a8ae0"/><rect x="52" y="52" width="40" height="40" rx="5" fill="#0078d4"/></svg>`,
-  edge: `<svg width="80" height="80" viewBox="0 0 100 100"><defs><linearGradient id="ge" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#35c1f1"/><stop offset="1" stop-color="#0c59a4"/></linearGradient></defs><circle cx="50" cy="50" r="44" fill="url(#ge)"/><path d="M26 58c0-18 14-30 30-30 13 0 22 8 22 18 0 6-6 9-12 9H40c2 10 12 15 24 13" stroke="#fff" stroke-width="8" fill="none" stroke-linecap="round"/></svg>`,
-  store: `<svg width="80" height="80" viewBox="0 0 100 100"><path d="M34 30a16 16 0 0 1 32 0" stroke="#9aa4b5" stroke-width="7" fill="none"/><rect x="12" y="30" width="76" height="60" rx="10" fill="#3a4152"/><rect x="34" y="44" width="15" height="15" fill="#f25022"/><rect x="51" y="44" width="15" height="15" fill="#7fba00"/><rect x="34" y="61" width="15" height="15" fill="#00a4ef"/><rect x="51" y="61" width="15" height="15" fill="#ffb900"/></svg>`,
-  explorer: `<svg width="84" height="84" viewBox="0 0 100 100"><path d="M8 26a8 8 0 0 1 8-8h22l9 10h37a8 8 0 0 1 8 8v42a8 8 0 0 1-8 8H16a8 8 0 0 1-8-8z" fill="#e8a317"/><path d="M8 40a6 6 0 0 1 6-6h72a6 6 0 0 1 6 6v38a8 8 0 0 1-8 8H16a8 8 0 0 1-8-8z" fill="#ffc83d"/></svg>`,
-  firefox: `<svg width="84" height="84" viewBox="0 0 100 100"><defs><radialGradient id="gf" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#ffde3b"/><stop offset=".45" stop-color="#ff7139"/><stop offset="1" stop-color="#c2205b"/></radialGradient></defs><circle cx="50" cy="52" r="42" fill="url(#gf)"/><circle cx="52" cy="54" r="24" fill="#5b2ab5"/><path d="M18 40c4-16 18-28 34-28-6 6-6 12-2 16 10 0 20 8 20 22" fill="#ff9640" opacity=".9"/></svg>`,
-  terminal: `<svg width="84" height="84" viewBox="0 0 100 100"><rect x="8" y="14" width="84" height="72" rx="12" fill="#2b2b2b" stroke="#5a5a5a" stroke-width="3"/><path d="M24 40l14 12-14 12" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M46 66h26" stroke="#fff" stroke-width="7" stroke-linecap="round"/></svg>`,
-  powershell: `<svg width="84" height="84" viewBox="0 0 100 100"><path d="M22 14h70L78 86H8z" fill="#2671be"/><path d="M28 34l22 16-30 18" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M50 70h22" stroke="#fff" stroke-width="7" stroke-linecap="round"/></svg>`,
+  start: img('windows.svg', 72),
+  edge: img('edge.png', 92), store: img('store.png', 92),
+  explorer: img('explorer.png', 92), firefox: img('firefox.png', 92),
+  terminal: img('terminal.png', 92), powershell: img('powershell.png', 92),
 };
 const PIN_W = 170, TB_X0 = 100;          // position (dans #tb) de chaque emplacement
 const slotX = i => TB_X0 + i * PIN_W;
