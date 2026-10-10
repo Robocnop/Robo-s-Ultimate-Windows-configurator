@@ -108,10 +108,10 @@ mettre à jour les tweaks.
 Robo's Ultimate Windows Configurator fait ce dont toute installation neuve a besoin. Pour aller plus loin, ces
 deux outils gratuits et open source valent le coup d'être lancés ensuite :
 
-| Outil | Pourquoi |
-|---|---|
-| [**CrapFixer**](https://github.com/builtbybel/CrapFixer) | L'application n'applique que les tweaks *recommandés* de CrapFixer. Ouvrir CrapFixer lui-même permet de passer en revue tous les autres tweaks et applis, et de choisir ce qui convient à ce PC. |
-| [**optimizerDuck**](https://github.com/itsfatduck/optimizerDuck) | Va plus loin sur les performances et la confidentialité : services, applis au démarrage, alimentation, télémétrie... |
+| Outil | Auteur | Pourquoi |
+|---|---|---|
+| [**CrapFixer**](https://github.com/builtbybel/CrapFixer) | [@Belim](https://github.com/Belim) ([builtbybel](https://github.com/builtbybel)) | L'application n'applique que les tweaks *recommandés* de CrapFixer. Ouvrir CrapFixer lui-même permet de passer en revue tous les autres tweaks et applis, et de choisir ce qui convient à ce PC. |
+| [**optimizerDuck**](https://github.com/itsfatduck/optimizerDuck) | [@itsfatduck](https://github.com/itsfatduck) | Va plus loin sur les performances et la confidentialité : services, applis au démarrage, alimentation, télémétrie... |
 
 > [!WARNING]
 > Ne les télécharger que depuis leurs pages GitHub officielles ci-dessus, et créer un point de restauration
@@ -155,7 +155,7 @@ locale dans `%USERPROFILE%\.dotnet` (sans droits administrateur) s'il n'y en a p
 ## Contribuer
 
 Signalements de bugs, idées et pull requests sont les bienvenus, en français ou en anglais. Voir
-[CONTRIBUTING.md](CONTRIBUTING.md) (en anglais), qui contient aussi le code de conduite.
+[CONTRIBUTING.md](CONTRIBUTING.md) et le [code de conduite](CODE_OF_CONDUCT.md) (en anglais).
 
 ## Bon à savoir
 

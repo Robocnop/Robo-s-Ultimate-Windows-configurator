@@ -107,10 +107,10 @@ enough to update the tweaks.
 Robo's Ultimate Windows Configurator covers what every fresh install needs. To go further, these two free,
 open-source tools are worth running afterwards:
 
-| Tool | Why |
-|---|---|
-| [**CrapFixer**](https://github.com/builtbybel/CrapFixer) | The app applies CrapFixer's *recommended* tweaks only. Open CrapFixer itself to review every other tweak and app, and pick what suits this PC. |
-| [**optimizerDuck**](https://github.com/itsfatduck/optimizerDuck) | Goes further on performance and privacy: services, startup apps, power settings, telemetry... |
+| Tool | Author | Why |
+|---|---|---|
+| [**CrapFixer**](https://github.com/builtbybel/CrapFixer) | [@Belim](https://github.com/Belim) ([builtbybel](https://github.com/builtbybel)) | The app applies CrapFixer's *recommended* tweaks only. Open CrapFixer itself to review every other tweak and app, and pick what suits this PC. |
+| [**optimizerDuck**](https://github.com/itsfatduck/optimizerDuck) | [@itsfatduck](https://github.com/itsfatduck) | Goes further on performance and privacy: services, startup apps, power settings, telemetry... |
 
 > [!WARNING]
 > Download them only from their official GitHub pages above, and create a restore point before applying
@@ -152,8 +152,8 @@ The script produces `dist\RoboConfigurator.exe`. It uses the installed .NET SDK,
 
 ## Contributing
 
-Bug reports, ideas and pull requests are welcome, in English or French. See [CONTRIBUTING.md](CONTRIBUTING.md),
-which also contains the code of conduct.
+Bug reports, ideas and pull requests are welcome, in English or French. See [CONTRIBUTING.md](CONTRIBUTING.md)
+and the [code of conduct](CODE_OF_CONDUCT.md).
 
 ## Good to know
 
