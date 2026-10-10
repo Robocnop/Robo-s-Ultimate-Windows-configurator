@@ -17,7 +17,7 @@ rng = np.random.default_rng(7)
 BEAT = 0.5
 BAR = 4 * BEAT
 OUTRO = TL['outro']
-BAR0 = OUTRO - 7 * BAR              # 4.35 s
+BAR0 = OUTRO - 8 * BAR              # 4.35 s
 DRUMS_IN = BAR0 + 2 * BEAT          # 5.35 s : le beat part juste après le double-clic
 
 
@@ -109,12 +109,12 @@ def reverb(x, seconds=1.9, damp=4500):
 
 
 # ---------------------------------------------------------------------------
-# Harmonie : Am (intro) | Am F C G F G | Am (outro)
+# Harmonie : Am (intro) | Am F C G Am F G | Am (outro)
 # ---------------------------------------------------------------------------
 CHORDS = {'Am': [57, 60, 64, 69], 'F': [53, 57, 60, 65], 'C': [55, 60, 64, 67], 'G': [55, 59, 62, 67]}
 ROOT = {'Am': 45, 'F': 41, 'C': 48, 'G': 43}
 ARP = {'Am': [69, 72, 76, 81], 'F': [65, 69, 72, 77], 'C': [67, 72, 76, 79], 'G': [67, 71, 74, 79]}
-bars = [(0.0, 'Am')] + [(BAR0 + BAR + i * BAR, c) for i, c in enumerate(['Am', 'F', 'C', 'G', 'F', 'G'])] + [(OUTRO, 'Am')]
+bars = [(0.0, 'Am')] + [(BAR0 + BAR + i * BAR, c) for i, c in enumerate(['Am', 'F', 'C', 'G', 'Am', 'F', 'G'])] + [(OUTRO, 'Am')]
 segments = [(t0, bars[i + 1][0] if i + 1 < len(bars) else DUR, name) for i, (t0, name) in enumerate(bars)]
 
 pad, bass, drums, lead, sfx = buf(), buf(), buf(), buf(), buf()
@@ -148,7 +148,7 @@ while t < OUTRO - 1e-6:
 place(drums, k, OUTRO, 0.6)
 place(drums, noise_burst(2.2, 1.6, lo=3000, hi=12000), OUTRO, 0.05)   # cymbale douce
 
-# Arpège discret pendant le terminal et les cartes
+# Arpège discret pendant l'application et la barre des tâches
 for t0, t1, name in segments:
     if t0 < BAR0 + BAR or t0 >= OUTRO:
         continue
@@ -172,7 +172,7 @@ place(sfx, fft_filter(rng.standard_normal(rn), lo=800, hi=6000) * np.linspace(0,
 for tc in TL['clicks']:
     place(sfx, noise_burst(0.03, 260, lo=1500, hi=6000) + 0.4 * pluck(1320, 0.03, 0), tc, 0.22)
 
-for ln in TL['termLines']:                                   # ticks du terminal, en fond
+for ln in TL['termLines']:                                   # ticks des étapes, en fond
     place(sfx, pluck(hz(88 if ln['head'] else 93), 0.12, 0.1), ln['t'], 0.04 if ln['head'] else 0.025, 0.15)
 
 sn = int(0.9 * SR)                                           # passage en thème sombre
@@ -182,11 +182,13 @@ for j, m in enumerate([76, 81, 84]):
 for tc in TL['chips']:
     place(sfx, pluck(hz(88), 0.25, 0.2), tc, 0.035, 0.3)
 
-for i, tc in enumerate(TL['cards']):                         # cartes : souffle + pastille
-    wn = int(0.4 * SR)
-    place(sfx, fft_filter(rng.standard_normal(wn), lo=600, hi=3500) * np.sin(np.linspace(0, np.pi, wn)) ** 2, tc - 0.05, 0.05, 0.5)
-    place(sfx, pluck(hz([81, 84, 88][i]), 0.35, 0.25), tc + 0.33, 0.06)
-place(sfx, bell(hz(64), 1.2), TL['resume'], 0.035)
+wn = int(0.5 * SR)                                           # anciennes épingles qui tombent
+place(sfx, fft_filter(rng.standard_normal(wn), lo=300, hi=2500) * np.sin(np.linspace(0, np.pi, wn)) ** 2, TL['drop'], 0.06, -0.3)
+place(sfx, bell(hz(64), 1.2), TL['drop'] + 0.1, 0.03)
+for i, tc in enumerate(TL['pins']):                          # nouvelles épingles : souffle + note qui monte
+    wn = int(0.3 * SR)
+    place(sfx, fft_filter(rng.standard_normal(wn), lo=600, hi=3500) * np.sin(np.linspace(0, np.pi, wn)) ** 2, tc - 0.05, 0.04, -0.45 + 0.3 * i)
+    place(sfx, pluck(hz([81, 84, 86, 88][i]), 0.35, 0.25), tc + 0.2, 0.06, -0.45 + 0.3 * i)
 
 # ---------------------------------------------------------------------------
 # Mixage

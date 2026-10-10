@@ -1,3 +1,5 @@
-Windows fraîchement installé → un double-clic sur Lancer.bat → logiciels installés, 47 tweaks appliqués, thème sombre, bloatware et Edge virés, Office installé. Et si ça plante, il reprend là où il s'était arrêté.
+Windows fraîchement installé → un double-clic sur RoboConfigurator.exe → logiciels installés, 47 tweaks appliqués, thème sombre, bloatware et Edge virés, Office installé, Windows activé.
+
+Nouveau dans la v2.2 : la barre des tâches est rangée toute seule (Explorateur, Firefox, Terminal, PowerShell), les épingles de Windows dégagent.
 
 github.com/Robocnop/Robo-s-Ultimate-Windows-configurator

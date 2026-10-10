@@ -19,27 +19,38 @@
            background: rgba(255,255,255,.82); border: 2px solid rgba(15,27,45,.08);
            box-shadow: 0 10px 30px rgba(15,40,80,.10); color: #0f1b2d; }
   .box { width: 46px; height: 46px; border-radius: 10px; border: 4px solid #9aa9bd; flex: none; }
-  /* Terminal */
-  #term { left: 50px; top: 250px; width: 980px; height: 1110px; border-radius: 18px; overflow: hidden;
-          background: #0c0c0c; box-shadow: 0 40px 120px rgba(0,0,0,.45), 0 0 0 1.5px rgba(255,255,255,.10); }
-  #termbar { height: 64px; background: #1f1f1f; display: flex; align-items: center; gap: 16px; padding: 0 22px;
-             color: #d4d4d4; font-size: 24px; }
-  #termbar .ttl { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #termbar .ctl { letter-spacing: 26px; color: #bdbdbd; font-size: 22px; }
-  #termbody { position: absolute; top: 64px; left: 0; right: 0; bottom: 0; padding: 26px 30px; overflow: hidden; }
-  #lines { position: absolute; left: 30px; right: 30px; top: 26px; font-family: "Cascadia Mono", Consolas, monospace;
-           font-size: 29px; line-height: 43px; color: #cccccc; white-space: pre; }
-  .ln { height: 43px; border-radius: 6px; }
-  .c-mag { color: #e040fb; } .c-cyan { color: #22d3ee; } .c-ok { color: #4ade80; } .c-dim { color: #a3a3a3; }
-  .chip { font-size: 42px; font-weight: 700; padding: 18px 30px; border-radius: 999px; white-space: nowrap; }
-  /* Cartes */
-  .card { left: 60px; width: 960px; height: 200px; border-radius: 30px; display: flex; align-items: center; gap: 34px;
-          padding: 0 40px; background: rgba(255,255,255,.06); border: 2px solid rgba(255,255,255,.12);
-          box-shadow: 0 20px 60px rgba(0,0,0,.35); color: #f2f6fb; }
-  .card .name { font-size: 56px; font-weight: 800; letter-spacing: -1px; }
-  .card .note { font-size: 30px; color: #9fb0c6; margin-top: 2px; font-weight: 500; }
-  .card .pill { margin-left: auto; font-size: 34px; font-weight: 800; padding: 14px 26px; border-radius: 999px;
-                background: rgba(74,222,128,.16); color: #4ade80; border: 2px solid rgba(74,222,128,.45); white-space: nowrap; }
+  /* Fenêtre de l'application (style Windows 11 / WPF-UI) */
+  #win { left: 50px; top: 190px; width: 980px; height: 1190px; border-radius: 16px; overflow: hidden;
+         box-shadow: 0 40px 120px rgba(0,0,0,.40), 0 0 0 1.5px rgba(128,128,128,.25); }
+  #winbar { height: 60px; display: flex; align-items: center; gap: 16px; padding: 0 22px; font-size: 23px; }
+  #winbar .ttl { flex: 1; }
+  #winbar .ctl { letter-spacing: 30px; font-size: 22px; }
+  #winhead { padding: 18px 40px 0; }
+  #winhead .t { font-size: 54px; font-weight: 600; letter-spacing: -.5px; }
+  #winhead .s { font-size: 24px; margin-top: 4px; }
+  #track { position: absolute; left: 40px; right: 40px; top: 200px; height: 5px; border-radius: 3px; }
+  #bar { height: 5px; border-radius: 3px; width: 0; }
+  #rows { position: absolute; left: 40px; right: 40px; top: 232px; }
+  .row { position: relative; height: 104px; margin-bottom: 12px; border-radius: 10px; display: flex; align-items: center;
+         padding: 0 26px; gap: 22px; }
+  .row .gl { width: 40px; height: 40px; flex: none; }
+  .row .st { width: 38px; height: 38px; flex: none; }
+  .row .nm { font-size: 31px; font-weight: 500; display: flex; align-items: center; gap: 14px; }
+  .row .dt { font-size: 22px; margin-top: 2px; white-space: nowrap; }
+  .row .rs { margin-left: auto; font-size: 25px; white-space: nowrap; }
+  .tag { font-size: 18px; font-weight: 700; padding: 3px 12px; border-radius: 999px; letter-spacing: .5px; }
+  .chip { font-size: 40px; font-weight: 700; padding: 16px 28px; border-radius: 999px; white-space: nowrap; }
+  /* Barre des tâches */
+  #tb { left: 40px; width: 1000px; top: 1000px; height: 168px; border-radius: 30px;
+        background: rgba(32,36,48,.78); border: 2px solid rgba(255,255,255,.12);
+        box-shadow: 0 30px 90px rgba(0,0,0,.45); }
+  .pin { position: absolute; top: 24px; width: 120px; height: 120px; border-radius: 22px; display: flex;
+         align-items: center; justify-content: center; }
+  .pin .dot { position: absolute; bottom: 4px; left: 50%; width: 22px; height: 6px; margin-left: -11px;
+              border-radius: 3px; background: #9aa4b5; }
+  .plbl { position: absolute; top: 1200px; width: 170px; text-align: center; color: #f2f6fb; }
+  .plbl .n { font-size: 30px; font-weight: 800; color: #4cc2ff; }
+  .plbl .l { font-size: 30px; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -56,46 +67,57 @@
 
   <!-- Scène 2 -->
   <div id="icon" class="abs" style="left:430px;top:640px;width:220px;height:290px">
-    <div id="iconsel" class="abs" style="inset:-18px -30px;border-radius:14px;background:rgba(0,120,212,.16);border:2px solid rgba(0,120,212,.55)"></div>
+    <div id="iconsel" class="abs" style="inset:-18px -60px;border-radius:14px;background:rgba(0,120,212,.16);border:2px solid rgba(0,120,212,.55)"></div>
     <svg class="abs" style="left:10px;top:0" width="200" height="200" viewBox="0 0 100 100">
-      <path d="M18 5h44l20 20v70H18z" fill="#f7f9fc" stroke="#8d9ab0" stroke-width="2.2" stroke-linejoin="round"/>
-      <path d="M62 5v20h20" fill="#dfe5ee" stroke="#8d9ab0" stroke-width="2.2" stroke-linejoin="round"/>
-      <rect x="27" y="40" width="46" height="38" rx="4" fill="#1b2433"/>
-      <rect x="27" y="40" width="46" height="8" rx="3" fill="#0078d4"/>
-      <path d="M34 56l7 6-7 6" stroke="#4cc2ff" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M45 70h13" stroke="#e5e7eb" stroke-width="3.4" stroke-linecap="round"/>
+      <defs><linearGradient id="gi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4cc2ff"/><stop offset="1" stop-color="#0058b0"/></linearGradient></defs>
+      <rect x="8" y="8" width="84" height="84" rx="20" fill="url(#gi)"/>
+      <g transform="translate(50 50)" fill="#fff">
+        <circle r="17"/>
+        <g id="teeth"><rect x="-6" y="-29" width="12" height="13" rx="3"/></g>
+        <use href="#teeth" transform="rotate(45)"/><use href="#teeth" transform="rotate(90)"/><use href="#teeth" transform="rotate(135)"/>
+        <use href="#teeth" transform="rotate(180)"/><use href="#teeth" transform="rotate(225)"/><use href="#teeth" transform="rotate(270)"/><use href="#teeth" transform="rotate(315)"/>
+        <circle r="8" fill="#0a6cc4"/>
+      </g>
     </svg>
-    <div id="iconlbl" class="abs" style="left:-40px;width:300px;top:212px;text-align:center;font-size:40px;font-weight:600;color:#0f1b2d">Lancer.bat</div>
+    <div id="iconlbl" class="abs" style="left:-90px;width:400px;top:212px;text-align:center;font-size:38px;font-weight:600;color:#0f1b2d">RoboConfigurator.exe</div>
   </div>
   <div id="rip1" class="abs" style="border-radius:50%;border:5px solid #0078d4"></div>
   <div id="rip2" class="abs" style="border-radius:50%;border:5px solid #0078d4"></div>
   <div id="s2title" class="abs center h2" style="top:980px"><span class="grad">Robo's Ultimate<br>Windows Configurator</span></div>
   <div id="s2sub" class="abs center" style="top:1215px;font-size:54px;font-weight:600">Un double-clic.<br>Il fait le reste.</div>
 
-  <!-- Scène 3 -->
-  <div id="term" class="abs">
-    <div id="termbar">
-      <svg width="34" height="34" viewBox="0 0 34 34"><rect width="34" height="34" rx="7" fill="#0f5ea8"/><path d="M9 11l7 6-7 6" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 24h8" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
-      <div class="ttl">Administrateur : Robo's Ultimate Windows Configurator</div>
+  <!-- Scène 3 : l'application -->
+  <div id="win" class="abs">
+    <div id="winbar">
+      <svg width="30" height="30" viewBox="0 0 100 100"><rect x="4" y="4" width="92" height="92" rx="22" fill="#0a6cc4"/><circle cx="50" cy="50" r="22" fill="none" stroke="#fff" stroke-width="12" stroke-dasharray="10 7"/><circle cx="50" cy="50" r="9" fill="#fff"/></svg>
+      <div class="ttl">Robo's Ultimate Windows Configurator</div>
       <div class="ctl">—☐✕</div>
     </div>
-    <div id="termbody"><div id="lines"></div></div>
+    <div id="winhead">
+      <div class="t">Configuration en cours</div>
+      <div class="s">Le PC se configure tout seul. Seul Ninite demande de cliquer sur « Close ».</div>
+    </div>
+    <div id="track"><div id="bar"></div></div>
+    <div id="rows"></div>
   </div>
-  <div id="chips" class="abs" style="left:40px;width:1000px;top:1420px;display:flex;flex-wrap:wrap;justify-content:center;gap:20px"></div>
+  <div id="chips" class="abs" style="left:30px;width:1020px;top:1440px;display:flex;flex-wrap:wrap;justify-content:center;gap:18px"></div>
 
-  <!-- Scène 4 -->
-  <div id="s4h" class="abs center h1" style="top:300px;color:#f2f6fb">Puis il enchaîne.</div>
-  <div id="cards"></div>
-  <div id="s4q" class="abs center" style="top:1230px;font-size:66px;font-weight:800;color:#f2f6fb;letter-spacing:-1px">Ça plante ?</div>
-  <div id="s4a" class="abs center" style="top:1325px;font-size:48px;font-weight:600;color:#c7d3e3;line-height:1.2">Relance : il reprend là<br>où il s'était arrêté.</div>
+  <!-- Scène 4 : la barre des tâches (v2.2) -->
+  <div id="s4new" class="abs" style="left:340px;width:400px;top:330px;text-align:center">
+    <span style="display:inline-block;font-size:38px;font-weight:800;padding:14px 34px;border-radius:999px;background:rgba(76,194,255,.16);color:#4cc2ff;border:2px solid rgba(76,194,255,.5)">Nouveau · v2.2</span>
+  </div>
+  <div id="s4h" class="abs center h1" style="top:470px;color:#f2f6fb">La barre des tâches,<br><span class="grad">rangée pour toi.</span></div>
+  <div id="tb" class="abs"></div>
+  <div id="plbls"></div>
+  <div id="s4c" class="abs center" style="top:1400px;font-size:40px;font-weight:600;color:#c7d3e3;line-height:1.3">Les épingles de Windows dégagent.<br>Prêt dès la prochaine session.</div>
 
   <!-- Scène 5 -->
   <div id="s5title" class="abs center" style="top:470px;font-size:110px;font-weight:800;letter-spacing:-3px;line-height:1"><span class="grad">Robo's<br>Ultimate<br>Windows<br>Configurator</span></div>
-  <div id="s5btn" class="abs" style="left:290px;width:500px;top:990px;height:118px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:22px;background:#0078d4;color:#fff;font-size:52px;font-weight:700;box-shadow:0 20px 60px rgba(0,120,212,.45)">
-    <svg width="58" height="58" viewBox="0 0 100 100"><path d="M18 5h44l20 20v70H18z" fill="#fff"/><path d="M62 5v20h20" fill="#cfe4f7"/><rect x="27" y="40" width="46" height="38" rx="4" fill="#0b3d6b"/><path d="M34 56l7 6-7 6" stroke="#4cc2ff" stroke-width="4" fill="none" stroke-linecap="round"/></svg>
-    Lancer.bat
+  <div id="s5btn" class="abs" style="left:150px;width:780px;top:990px;height:118px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:22px;background:#0078d4;color:#fff;font-size:50px;font-weight:700;box-shadow:0 20px 60px rgba(0,120,212,.45)">
+    <svg width="60" height="60" viewBox="0 0 100 100"><rect x="6" y="6" width="88" height="88" rx="22" fill="#fff"/><circle cx="50" cy="50" r="22" fill="none" stroke="#0078d4" stroke-width="12" stroke-dasharray="10 7"/><circle cx="50" cy="50" r="9" fill="#0078d4"/></svg>
+    RoboConfigurator.exe
   </div>
-  <div id="s5os" class="abs center" style="top:1160px;font-size:42px;font-weight:600;color:#c7d3e3">Windows 10 &amp; 11 · rien à installer</div>
+  <div id="s5os" class="abs center" style="top:1160px;font-size:42px;font-weight:600;color:#c7d3e3">Windows 10 &amp; 11 · un seul exe, rien à installer</div>
   <div id="s5gh" class="abs center" style="top:1280px;color:#f2f6fb">
     <div style="font-family:'Cascadia Mono',Consolas,monospace;font-size:46px;font-weight:700">github.com/Robocnop</div>
     <div style="font-family:'Cascadia Mono',Consolas,monospace;font-size:29px;color:#8fa3bd;margin-top:10px">Robo-s-Ultimate-Windows-configurator</div>
@@ -108,7 +130,7 @@
 </div>
 
 <script>
-const DURATION = 22.3;
+const DURATION = 24.3;
 const $ = id => document.getElementById(id);
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -129,9 +151,9 @@ function show(el, t, a, da, b, db, dy = 40, dx = 0, sc = 0) {
 }
 
 // ---------------------------------------------------------------------------
-// Contenu
+// Scène 1
 // ---------------------------------------------------------------------------
-const CHORES = ['Installer les logiciels', 'Virer les pubs et le bloatware', 'Passer en thème sombre', 'Désinstaller Edge', 'Installer Office'];
+const CHORES = ['Installer les logiciels', 'Virer les pubs et le bloatware', 'Désinstaller Edge', 'Ranger la barre des tâches', 'Installer Office'];
 const choreEls = CHORES.map((txt, i) => {
   const d = document.createElement('div');
   d.className = 'abs chore';
@@ -141,59 +163,61 @@ const choreEls = CHORES.map((txt, i) => {
   return d;
 });
 
-// Sortie console réelle de Configurator.ps1 (noms de tweaks tirés de Wintweak2.ini)
-const LINES = [
-  ["Robo's Ultimate Windows Configurator", 'c-mag', .30],
-  ['Windows 11 - dossier de travail : C:\\RoboConfigurator', '', .22],
-  ['', '', .05],
-  ['=== Téléchargements ===', 'c-cyan', .22],
-  ['  [OK] Ninite.exe (0,4 Mo)', 'ok', .16],
-  ['  [OK] CrapFixer.zip (0,5 Mo)', 'ok', .16],
-  ['  [OK] OfficeSetup.exe (7,1 Mo)', 'ok', .20],
-  ['', '', .05],
-  ['=== Ninite ===', 'c-cyan', .22],
-  ['  [OK] Ninite terminé', 'ok', .20],
-  ['', '', .05],
-  ['=== CrapFixer ===', 'c-cyan', .22],
-  ['  [OK] Disable File Explorer Ads', 'ok', .12],
-  ['  [OK] Disable Lock Screen Ads', 'ok', .12],
-  ['  [OK] Disable Personalized Ads', 'ok', .12],
-  ['  [OK] Disable Tips and Suggestions', 'ok', .12],
-  ['  [OK] Disable Edge Shopping Assistant', 'ok', .12],
-  ['  [OK] Disable Game DVR', 'ok', .12],
-  ['  [OK] Disable Widgets', 'ok', .12],
-  ['  [OK] Left-align Taskbar', 'ok', .12],
-  ['  [OK] Disable Bing Search in Start Menu', 'ok', .14],
-  ['  [OK] Enable Dark Theme', 'ok dark', .55],
-  ['  [OK] Appli supprimée : Candy Crush Saga', 'ok', .14],
-  ['  [OK] Appli supprimée : Skype', 'ok', .14],
-  ["  Redémarrage de l'explorateur...", 'c-dim', .20],
-  ['  [OK] CrapFixer terminé', 'ok', .2],
+// ---------------------------------------------------------------------------
+// Scène 3 : étapes réelles de l'application (MainWindow.xaml.cs / Engine.cs)
+// ---------------------------------------------------------------------------
+const G = 'fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"';
+const GLYPH = {
+  apps: `<svg viewBox="0 0 32 32" ${G}><rect x="5" y="5" width="9" height="9" rx="1.5"/><rect x="5" y="18" width="9" height="9" rx="1.5"/><rect x="18" y="18" width="9" height="9" rx="1.5"/><path d="M22.5 5v9M18 9.5h9"/></svg>`,
+  broom: `<svg viewBox="0 0 32 32" ${G}><path d="M26 5L15 16"/><path d="M15 16l-4-1-6 6 6 6 6-6-1-4z"/><path d="M9 23l3-3M12 25l2-2"/></svg>`,
+  globe: `<svg viewBox="0 0 32 32" ${G}><circle cx="16" cy="16" r="11"/><path d="M5 16h22M16 5c-4 4-4 18 0 22M16 5c4 4 4 18 0 22"/></svg>`,
+  pin: `<svg viewBox="0 0 32 32" ${G}><path d="M19 4l9 9-4 1-5 5 1 5-2 2-5-5-7 7M19 4l-1 4-5 5-5-1-2 2 5 5"/></svg>`,
+  doc: `<svg viewBox="0 0 32 32" ${G}><path d="M8 4h11l6 6v18H8z"/><path d="M19 4v6h6"/></svg>`,
+  shield: `<svg viewBox="0 0 32 32" ${G}><path d="M16 4l10 4v7c0 7-5 11-10 13C11 26 6 22 6 15V8z"/><path d="M12 16l3 3 5-6"/></svg>`,
+  rename: `<svg viewBox="0 0 32 32" ${G}><rect x="4" y="9" width="24" height="14" rx="2"/><path d="M16 5v22M13 5h6M13 27h6"/></svg>`,
+  report: `<svg viewBox="0 0 32 32" ${G}><path d="M8 4h11l6 6v18H8z"/><path d="M12 15h9M12 19h9M12 23h6"/></svg>`,
+};
+// [glyphe, nom, début, fin, détails en cours [t, texte] (null = CrapFixer), détail final, nouveau ?]
+const STEPS = [
+  ['apps', 'Ninite', 7.95, 8.6, [[7.95, 'Installation des logiciels...']], 'Terminée'],
+  ['broom', 'CrapFixer', 8.6, 11.4, null, 'Terminée'],
+  ['globe', 'Désinstaller Microsoft Edge', 11.4, 12.0, [[11.4, 'Désinstalleur officiel...']], 'Désinstallé, WebView2 conservé'],
+  ['pin', 'Barre des tâches', 12.0, 12.55, [[12.0, 'Explorateur, Firefox, Terminal, PowerShell']], 'Épinglé à la prochaine session', true],
+  ['doc', 'Microsoft Office', 12.55, 13.05, [[12.55, 'Installation d\'Office...']], 'Installé'],
+  ['shield', 'Activation de Windows', 13.05, 13.35, [[13.05, 'Vérification...']], 'Windows est activé'],
+  ['rename', 'Nom du PC', 13.35, 13.55, [[13.35, '...']], 'S\'appellera « PC-SALON »'],
+  ['report', 'Rapport du poste', 13.55, 13.8, [[13.55, '...']], 'Copié sur le Bureau'],
 ];
-const TERM_START = 7.95;
-let acc = TERM_START;
-const lineTimes = LINES.map(l => { const t0 = acc; acc += l[2]; return t0; });
-const DARK_IDX = LINES.findIndex(l => l[1].includes('dark'));
-const T_DARK = lineTimes[DARK_IDX] + .06;
-const lineEls = LINES.map(([txt, cls]) => {
+const TWEAKS = 47, CF_START = 8.6, CF_END = 10.95;
+const DARK_TWEAK = 23;
+const tweakTime = n => lerp(CF_START + .1, CF_END, (n - 1) / (TWEAKS - 1));
+const T_DARK = tweakTime(DARK_TWEAK);
+const TWEAK_NAMES = { 3: 'Disable Lock Screen Ads', 9: 'Disable Widgets', 15: 'Left-align Taskbar', 18: 'Disable Bing Search', 23: 'Enable Dark Theme' };
+function cfDetail(t) {
+  if (t >= CF_END + .2) return 'Appli supprimée : Candy Crush Saga';
+  if (t >= CF_END) return 'Appli supprimée : Skype';
+  let n = 0;
+  for (let k = 1; k <= TWEAKS; k++) if (t >= tweakTime(k)) n = k;
+  let name = '';
+  for (const k in TWEAK_NAMES) if (n >= +k) name = TWEAK_NAMES[k];
+  return `Réglage ${Math.max(1, n)}/${TWEAKS}` + (name ? ` · ${name}` : '');
+}
+
+const rowEls = STEPS.map(([gl, name, , , , , isNew]) => {
   const d = document.createElement('div');
-  d.className = 'ln';
-  if (cls.includes('ok')) {
-    const m = txt.match(/^(\s*)\[OK\](.*)$/);
-    d.innerHTML = `${m[1]}<span class="c-ok">[OK]</span>${m[2].replace(/</g, '&lt;')}`;
-  } else {
-    d.textContent = txt || ' ';
-    if (cls) d.className += ' ' + cls;
-  }
-  $('lines').appendChild(d);
+  d.className = 'row';
+  d.innerHTML = `<div class="gl">${GLYPH[gl]}</div>
+    <svg class="st" viewBox="0 0 38 38"><circle class="ring" cx="19" cy="19" r="15" fill="none" stroke-width="2.6"/>
+      <circle class="spin" cx="19" cy="19" r="15" fill="none" stroke-width="3.4" stroke-linecap="round" stroke-dasharray="30 200"/>
+      <path class="chk" d="M12 19.5l5 5 9-10" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div><div class="nm">${name}${isNew ? '<span class="tag">NOUVEAU</span>' : ''}</div><div class="dt"></div></div>
+    <div class="rs"></div>`;
+  $('rows').appendChild(d);
   return d;
 });
-const caret = document.createElement('span');
-caret.style.cssText = 'display:inline-block;width:17px;height:32px;background:#cccccc;vertical-align:-6px;margin-left:2px';
 
-const CHIPS = ['47 tweaks', 'thème sombre', '13 applis virées'];
-const CHIP_T = [lineTimes[12] + .15, T_DARK + .25, lineTimes[DARK_IDX + 1] + .1];
-const chipEls = CHIPS.map(txt => {
+const CHIPS = [['47 tweaks', tweakTime(30)], ['thème sombre', T_DARK + .3], ['Edge viré', 12.0], ['Office installé', 13.05]];
+const chipEls = CHIPS.map(([txt]) => {
   const d = document.createElement('div');
   d.className = 'chip';
   d.textContent = txt;
@@ -201,23 +225,40 @@ const chipEls = CHIPS.map(txt => {
   return d;
 });
 
-const ICONS = {
-  edge: `<svg width="120" height="120" viewBox="0 0 100 100"><defs><linearGradient id="ge" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#35c1f1"/><stop offset="1" stop-color="#0c59a4"/></linearGradient></defs><circle cx="50" cy="50" r="44" fill="url(#ge)"/><path d="M26 58c0-18 14-30 30-30 13 0 22 8 22 18 0 6-6 9-12 9H40c2 10 12 15 24 13" stroke="#fff" stroke-width="8" fill="none" stroke-linecap="round"/></svg>`,
-  office: `<svg width="120" height="120" viewBox="0 0 100 100"><defs><linearGradient id="go" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff8f6b"/><stop offset="1" stop-color="#d83b01"/></linearGradient></defs><rect x="8" y="8" width="84" height="84" rx="20" fill="url(#go)"/><circle cx="50" cy="50" r="21" stroke="#fff" stroke-width="10" fill="none"/></svg>`,
-  win: `<svg width="120" height="120" viewBox="0 0 100 100"><rect x="10" y="10" width="38" height="38" rx="4" fill="#4cc2ff"/><rect x="52" y="10" width="38" height="38" rx="4" fill="#2aa3ef"/><rect x="10" y="52" width="38" height="38" rx="4" fill="#1a8ae0"/><rect x="52" y="52" width="38" height="38" rx="4" fill="#0078d4"/></svg>`,
+// ---------------------------------------------------------------------------
+// Scène 4 : la barre des tâches
+// ---------------------------------------------------------------------------
+const ICON = {
+  start: `<svg width="76" height="76" viewBox="0 0 100 100"><rect x="8" y="8" width="40" height="40" rx="5" fill="#4cc2ff"/><rect x="52" y="8" width="40" height="40" rx="5" fill="#2aa3ef"/><rect x="8" y="52" width="40" height="40" rx="5" fill="#1a8ae0"/><rect x="52" y="52" width="40" height="40" rx="5" fill="#0078d4"/></svg>`,
+  edge: `<svg width="80" height="80" viewBox="0 0 100 100"><defs><linearGradient id="ge" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#35c1f1"/><stop offset="1" stop-color="#0c59a4"/></linearGradient></defs><circle cx="50" cy="50" r="44" fill="url(#ge)"/><path d="M26 58c0-18 14-30 30-30 13 0 22 8 22 18 0 6-6 9-12 9H40c2 10 12 15 24 13" stroke="#fff" stroke-width="8" fill="none" stroke-linecap="round"/></svg>`,
+  store: `<svg width="80" height="80" viewBox="0 0 100 100"><path d="M34 30a16 16 0 0 1 32 0" stroke="#9aa4b5" stroke-width="7" fill="none"/><rect x="12" y="30" width="76" height="60" rx="10" fill="#3a4152"/><rect x="34" y="44" width="15" height="15" fill="#f25022"/><rect x="51" y="44" width="15" height="15" fill="#7fba00"/><rect x="34" y="61" width="15" height="15" fill="#00a4ef"/><rect x="51" y="61" width="15" height="15" fill="#ffb900"/></svg>`,
+  explorer: `<svg width="84" height="84" viewBox="0 0 100 100"><path d="M8 26a8 8 0 0 1 8-8h22l9 10h37a8 8 0 0 1 8 8v42a8 8 0 0 1-8 8H16a8 8 0 0 1-8-8z" fill="#e8a317"/><path d="M8 40a6 6 0 0 1 6-6h72a6 6 0 0 1 6 6v38a8 8 0 0 1-8 8H16a8 8 0 0 1-8-8z" fill="#ffc83d"/></svg>`,
+  firefox: `<svg width="84" height="84" viewBox="0 0 100 100"><defs><radialGradient id="gf" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#ffde3b"/><stop offset=".45" stop-color="#ff7139"/><stop offset="1" stop-color="#c2205b"/></radialGradient></defs><circle cx="50" cy="52" r="42" fill="url(#gf)"/><circle cx="52" cy="54" r="24" fill="#5b2ab5"/><path d="M18 40c4-16 18-28 34-28-6 6-6 12-2 16 10 0 20 8 20 22" fill="#ff9640" opacity=".9"/></svg>`,
+  terminal: `<svg width="84" height="84" viewBox="0 0 100 100"><rect x="8" y="14" width="84" height="72" rx="12" fill="#2b2b2b" stroke="#5a5a5a" stroke-width="3"/><path d="M24 40l14 12-14 12" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M46 66h26" stroke="#fff" stroke-width="7" stroke-linecap="round"/></svg>`,
+  powershell: `<svg width="84" height="84" viewBox="0 0 100 100"><path d="M22 14h70L78 86H8z" fill="#2671be"/><path d="M28 34l22 16-30 18" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M50 70h22" stroke="#fff" stroke-width="7" stroke-linecap="round"/></svg>`,
 };
-const CARDS = [
-  ['edge', 'Edge', 'WebView2 conservé', 'Désinstallé'],
-  ['office', 'Office', 'OfficeSetup.exe', 'Installé'],
-  ['win', 'Windows', 'Activation', 'Vérifiée'],
-];
-const CARD_T = [13.95, 14.2, 14.45];
-const cardEls = CARDS.map(([ic, name, note, pill], i) => {
+const PIN_W = 170, TB_X0 = 100;          // position (dans #tb) de chaque emplacement
+const slotX = i => TB_X0 + i * PIN_W;
+function mkPin(ic, slot, dot) {
   const d = document.createElement('div');
-  d.className = 'abs card';
-  d.style.top = (470 + i * 236) + 'px';
-  d.innerHTML = `${ICONS[ic]}<div><div class="name">${name}</div><div class="note">${note}</div></div><div class="pill">✓ ${pill}</div>`;
-  $('cards').appendChild(d);
+  d.className = 'pin';
+  d.style.left = slotX(slot) + 'px';
+  d.innerHTML = ICON[ic] + (dot ? '<div class="dot"></div>' : '');
+  $('tb').appendChild(d);
+  return d;
+}
+mkPin('start', 0, false);
+const OLD = ['edge', 'store', 'explorer'].map((ic, i) => mkPin(ic, i + 1, false));
+const T_DROP = 16.0;
+const NEW = [['explorer', 'Explorateur'], ['firefox', 'Firefox'], ['terminal', 'Terminal'], ['powershell', 'PowerShell']];
+const PIN_T = NEW.map((_, i) => 16.55 + i * .38);
+const newEls = NEW.map(([ic], i) => mkPin(ic, i + 1, true));
+const lblEls = NEW.map(([, name], i) => {
+  const d = document.createElement('div');
+  d.className = 'plbl';
+  d.style.left = (40 + slotX(i + 1) + 60 - 85) + 'px';
+  d.innerHTML = `<div class="n">${i + 1}</div><div class="l">${name}</div>`;
+  $('plbls').appendChild(d);
   return d;
 });
 
@@ -228,13 +269,16 @@ window.TIMELINE = {
   chores: CHORES.map((_, i) => .85 + i * .17),
   hook2: 1.95,
   clicks: [4.92, 5.12],
-  beatStart: 5.4,
-  termLines: LINES.map((l, i) => ({ t: lineTimes[i], ok: l[1].includes('ok'), head: l[1] === 'c-cyan' })).filter(x => x.ok || x.head),
+  termLines: [
+    ...STEPS.map(s => ({ t: s[2], head: true })),
+    ...STEPS.map(s => ({ t: s[3], head: false })),
+    ...Array.from({ length: TWEAKS }, (_, k) => ({ t: tweakTime(k + 1), head: false })).filter((_, k) => k % 3 === 0),
+  ].sort((a, b) => a.t - b.t),
   dark: T_DARK,
-  chips: CHIP_T,
-  cards: CARD_T,
-  resume: 15.55,
-  outro: 18.35,
+  chips: CHIPS.map(c => c[1]),
+  drop: T_DROP,
+  pins: PIN_T,
+  outro: 20.35,
 };
 
 // ---------------------------------------------------------------------------
@@ -272,7 +316,6 @@ window.render = function (t) {
   ico.style.transform += ` translateY(${-230 * moveUp}px) scale(${1 - .28 * moveUp})`;
   $('iconlbl').style.color = txt;
   $('iconsel').style.opacity = t >= 4.92 ? 1 : 0;
-  // Curseur : arrive, double-clic, repart
   const cm = eInOut(prog(t, 4.2, .65));
   const cx = lerp(930, 560, cm), cy = lerp(1560, 820, cm);
   const press = (t > 4.92 && t < 5.0) || (t > 5.12 && t < 5.2) ? .88 : 1;
@@ -292,47 +335,83 @@ window.render = function (t) {
   $('s2sub').style.color = txt;
   show($('s2sub'), t, 5.9, .45, 7.4, .3, 30);
 
-  // Scène 3 : le terminal
-  show($('term'), t, 7.55, .5, 13.4, .35, 160);
-  let rows = 0;
-  lineEls.forEach((el, i) => {
-    const p = prog(t, lineTimes[i], .1);
-    el.style.opacity = p;
-    el.style.transform = `translateX(${(1 - eOut(p)) * -14}px)`;
-    rows += eOut(p);
-    if (i === DARK_IDX) {
-      const g = t < T_DARK ? 0 : Math.max(0, 1 - prog(t, T_DARK + .5, .9));
-      el.style.background = `rgba(76,194,255,${.22 * g})`;
-      el.style.boxShadow = `0 0 ${30 * g}px rgba(76,194,255,${.35 * g})`;
+  // Scène 3 : l'application (suit le thème de Windows, comme la vraie)
+  show($('win'), t, 7.55, .5, 14.25, .35, 160);
+  const W = {
+    bg: mix([243, 243, 243], [32, 32, 32], D), bar: mix([238, 238, 238], [28, 28, 28], D),
+    row: mix([251, 251, 251], [43, 43, 43], D), line: mix([229, 229, 229], [56, 56, 56], D),
+    tx: mix([26, 26, 26], [255, 255, 255], D), tx2: mix([96, 96, 96], [197, 197, 197], D),
+    acc: mix([0, 95, 184], [96, 205, 255], D), ok: mix([15, 123, 15], [108, 203, 95], D),
+  };
+  $('win').style.background = W.bg;
+  $('winbar').style.background = W.bar; $('winbar').style.color = W.tx;
+  $('winhead').style.color = W.tx;
+  $('winhead').querySelector('.s').style.color = W.tx2;
+  $('track').style.background = W.line;
+  $('bar').style.background = W.acc;
+  let done = 0;
+  rowEls.forEach((el, i) => {
+    const [, , a, b, details, final, isNew] = STEPS[i];
+    const state = t >= b ? 2 : t >= a ? 1 : 0;
+    if (t >= b) done += 1; else if (t >= a) done += (t - a) / (b - a);
+    el.style.background = W.row;
+    el.style.color = W.tx;
+    el.querySelector('.gl').style.color = W.tx;
+    const ring = el.querySelector('.ring'), spin = el.querySelector('.spin'), chk = el.querySelector('.chk');
+    ring.style.stroke = state === 2 ? W.ok : W.tx2;
+    ring.style.opacity = state === 1 ? 0 : 1;
+    spin.style.stroke = W.acc;
+    spin.style.opacity = state === 1 ? 1 : 0;
+    spin.setAttribute('transform', `rotate(${t * 520} 19 19)`);
+    const pc = back(prog(t, b, .3));
+    chk.style.stroke = W.ok;
+    chk.style.opacity = state === 2 ? 1 : 0;
+    chk.setAttribute('transform', `translate(19 19) scale(${Math.max(0, pc)}) translate(-19 -19)`);
+    let dt = 'En attente';
+    if (state === 1) dt = details ? details.filter(d => t >= d[0]).pop()[1] : cfDetail(t);
+    if (state === 2) dt = final;
+    el.querySelector('.dt').textContent = dt;
+    el.querySelector('.dt').style.color = W.tx2;
+    const rs = el.querySelector('.rs');
+    rs.textContent = ['En attente', 'En cours', 'Terminée'][state];
+    rs.style.color = state === 1 ? W.acc : W.tx;
+    if (isNew) {
+      const tag = el.querySelector('.tag');
+      tag.style.background = W.acc; tag.style.color = W.bg;
+      const glow = t < a ? 0 : Math.max(0, 1 - prog(t, b + .3, .8));
+      el.style.boxShadow = `0 0 0 ${3 * glow}px ${W.acc}, 0 0 ${40 * glow}px rgba(76,194,255,${.5 * glow})`;
     }
   });
-  const VISIBLE = 23;
-  $('lines').style.transform = `translateY(${-Math.max(0, rows - VISIBLE) * 43}px)`;
-  const last = lineEls[Math.max(0, Math.ceil(rows) - 1)];
-  if (t > TERM_START && Math.floor(t * 2.2) % 2 === 0) { if (caret.parentNode !== last) last.appendChild(caret); caret.style.display = 'inline-block'; }
-  else caret.style.display = 'none';
+  $('bar').style.width = (100 * done / STEPS.length) + '%';
   chipEls.forEach((el, i) => {
-    show(el, t, CHIP_T[i], .35, 13.35 + i * .03, .3, 24, 0, .15);
+    show(el, t, CHIPS[i][1], .35, 14.2 + i * .03, .3, 24, 0, .15);
     el.style.color = txt;
     el.style.background = D < .5 ? 'rgba(0,120,212,.12)' : 'rgba(76,194,255,.14)';
     el.style.border = `2px solid ${D < .5 ? 'rgba(0,120,212,.35)' : 'rgba(76,194,255,.4)'}`;
   });
 
-  // Scène 4 : la suite
-  show($('s4h'), t, 13.75, .4, 18.0, .3, 30);
-  cardEls.forEach((el, i) => {
-    show(el, t, CARD_T[i], .45, 17.95 + i * .04, .3, 0, 140);
-    const pp = back(prog(t, CARD_T[i] + .3, .35));
-    el.querySelector('.pill').style.transform = `scale(${Math.max(0, pp)})`;
+  // Scène 4 : la barre des tâches
+  show($('s4new'), t, 14.45, .4, 19.9, .3, 24, 0, .2);
+  show($('s4h'), t, 14.6, .45, 19.9, .3, 30);
+  show($('tb'), t, 14.95, .5, 19.95, .3, 60);
+  OLD.forEach((el, i) => {
+    const q = eInOut(prog(t, T_DROP + i * .08, .4));
+    el.style.opacity = 1 - q;
+    el.style.transform = `translateY(${q * 140}px) rotate(${q * (i - 1) * 12}deg)`;
   });
-  show($('s4q'), t, 15.55, .35, 18.0, .3, 30);
-  show($('s4a'), t, 15.8, .4, 18.02, .3, 30);
+  newEls.forEach((el, i) => {
+    const p = back(prog(t, PIN_T[i], .4));
+    el.style.opacity = clamp(p * 2);
+    el.style.transform = `translateY(${(1 - p) * -90}px) scale(${.6 + .4 * Math.max(0, p)})`;
+  });
+  lblEls.forEach((el, i) => show(el, t, PIN_T[i] + .1, .35, 19.9, .3, 20));
+  show($('s4c'), t, 18.15, .45, 19.95, .3, 24);
 
   // Scène 5 : outro
-  show($('s5title'), t, 18.35, .6, 99, 1, 50, 0, .06);
-  show($('s5btn'), t, 18.75, .45, 99, 1, 30, 0, .2);
-  show($('s5os'), t, 19.05, .4, 99, 1, 24);
-  show($('s5gh'), t, 19.3, .4, 99, 1, 24);
+  show($('s5title'), t, 20.35, .6, 99, 1, 50, 0, .06);
+  show($('s5btn'), t, 20.75, .45, 99, 1, 30, 0, .2);
+  show($('s5os'), t, 21.05, .4, 99, 1, 24);
+  show($('s5gh'), t, 21.3, .4, 99, 1, 24);
 };
 window.render(0);
 </script>
