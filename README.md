@@ -60,8 +60,8 @@ end. If a Windows key is stored in the BIOS, it is pointed out.
 
 <table>
 <tr>
-<td width="50%"><img src="docs/capture-configuration.png" alt="Settings screen"></td>
-<td width="50%"><img src="docs/capture-execution.png" alt="Setup in progress"></td>
+<td width="50%"><img src="docs/en/capture-configuration.png" alt="Settings screen"></td>
+<td width="50%"><img src="docs/en/capture-execution.png" alt="Setup in progress"></td>
 </tr>
 <tr>
 <td align="center"><sub>Configure this PC</sub></td>
