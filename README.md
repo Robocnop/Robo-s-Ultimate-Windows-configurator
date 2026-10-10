@@ -16,7 +16,8 @@
 [Usage](#usage) ·
 [What it does](#what-it-does) ·
 [Options](#command-line-options) ·
-[Build](#build)
+[After the run](#recommended-after-the-run) ·
+[Contributing](CONTRIBUTING.md)
 
 <img src="https://flagcdn.com/20x15/fr.png" width="20" height="15" alt="FR"> [Lire en français](README.fr.md)
 
@@ -101,6 +102,20 @@ enough to update the tweaks.
   failed, so it can be resumed.
 - **Restart** after 60 seconds (on by default), which can be cancelled or brought forward from the app.
 
+## Recommended after the run
+
+Robo's Ultimate Windows Configurator covers what every fresh install needs. To go further, these two free,
+open-source tools are worth running afterwards:
+
+| Tool | Why |
+|---|---|
+| [**CrapFixer**](https://github.com/builtbybel/CrapFixer) | The app applies CrapFixer's *recommended* tweaks only. Open CrapFixer itself to review every other tweak and app, and pick what suits this PC. |
+| [**optimizerDuck**](https://github.com/itsfatduck/optimizerDuck) | Goes further on performance and privacy: services, startup apps, power settings, telemetry... |
+
+> [!WARNING]
+> Download them only from their official GitHub pages above, and create a restore point before applying
+> anything you are unsure about.
+
 ## Language
 
 The app, its log and the PC report are in **English**, or in **French** when Windows is in French. Use
@@ -134,6 +149,11 @@ The script produces `dist\RoboConfigurator.exe`. It uses the installed .NET SDK,
 - For an exe that works **offline**, put the files in `payloads\` before building
   (see [payloads/README.md](payloads/README.md)).
 - The Debug build does not ask for administrator rights: handy for testing the interface with `-Simulation`.
+
+## Contributing
+
+Bug reports, ideas and pull requests are welcome, in English or French. See [CONTRIBUTING.md](CONTRIBUTING.md),
+which also contains the code of conduct.
 
 ## Good to know
 

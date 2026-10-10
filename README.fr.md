@@ -16,7 +16,8 @@
 [Utilisation](#utilisation) ·
 [Ce que fait l'application](#ce-que-fait-lapplication) ·
 [Options](#options-en-ligne-de-commande) ·
-[Compiler](#compiler)
+[Après le passage](#recommandé-après-le-passage) ·
+[Contribuer](CONTRIBUTING.md)
 
 <img src="https://flagcdn.com/20x15/gb.png" width="20" height="15" alt="EN"> [Read in English](README.md)
 
@@ -102,6 +103,20 @@ mettre à jour les tweaks.
   si une étape a échoué, pour pouvoir la reprendre.
 - **Redémarrage** au bout de 60 secondes (activé par défaut), annulable ou avançable depuis l'application.
 
+## Recommandé après le passage
+
+Robo's Ultimate Windows Configurator fait ce dont toute installation neuve a besoin. Pour aller plus loin, ces
+deux outils gratuits et open source valent le coup d'être lancés ensuite :
+
+| Outil | Pourquoi |
+|---|---|
+| [**CrapFixer**](https://github.com/builtbybel/CrapFixer) | L'application n'applique que les tweaks *recommandés* de CrapFixer. Ouvrir CrapFixer lui-même permet de passer en revue tous les autres tweaks et applis, et de choisir ce qui convient à ce PC. |
+| [**optimizerDuck**](https://github.com/itsfatduck/optimizerDuck) | Va plus loin sur les performances et la confidentialité : services, applis au démarrage, alimentation, télémétrie... |
+
+> [!WARNING]
+> Ne les télécharger que depuis leurs pages GitHub officielles ci-dessus, et créer un point de restauration
+> avant d'appliquer un réglage dont on n'est pas sûr.
+
 ## Langue
 
 L'application, son journal et le rapport du poste sont en **français** quand Windows est en français, en
@@ -136,6 +151,11 @@ locale dans `%USERPROFILE%\.dotnet` (sans droits administrateur) s'il n'y en a p
   (voir [payloads/README.md](payloads/README.md)).
 - La version Debug ne demande pas les droits administrateur : pratique pour tester l'interface avec
   `-Simulation`.
+
+## Contribuer
+
+Signalements de bugs, idées et pull requests sont les bienvenus, en français ou en anglais. Voir
+[CONTRIBUTING.md](CONTRIBUTING.md) (en anglais), qui contient aussi le code de conduite.
 
 ## Bon à savoir
 
