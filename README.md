@@ -11,6 +11,7 @@
 ![.NET Framework 4.7.2](https://img.shields.io/badge/.NET%20Framework-4.7.2-512BD4)
 ![Portable](https://img.shields.io/badge/portable-single%20exe-2ea043)
 ![English | Français](https://img.shields.io/badge/lang-English%20%7C%20Fran%C3%A7ais-lightgrey)
+[![License: GPL v3](https://img.shields.io/badge/license-GPLv3-blue)](LICENSE)
 
 [Download](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/latest) ·
 [Usage](#usage) ·
@@ -154,6 +155,12 @@ The script produces `dist\RoboConfigurator.exe`. It uses the installed .NET SDK,
 
 Bug reports, ideas and pull requests are welcome, in English or French. See [CONTRIBUTING.md](CONTRIBUTING.md)
 and the [code of conduct](CODE_OF_CONDUCT.md).
+
+## License
+
+Robo's Ultimate Windows Configurator is free software, released under the [GNU General Public License v3.0](LICENSE).
+You can use, study, share and modify it; modified versions you distribute must stay under the same licence and
+come with their source code.
 
 ## Good to know
 

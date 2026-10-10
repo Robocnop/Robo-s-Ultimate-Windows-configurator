@@ -11,6 +11,7 @@
 ![.NET Framework 4.7.2](https://img.shields.io/badge/.NET%20Framework-4.7.2-512BD4)
 ![Portable](https://img.shields.io/badge/portable-un%20seul%20exe-2ea043)
 ![English | Français](https://img.shields.io/badge/langue-English%20%7C%20Fran%C3%A7ais-lightgrey)
+[![License: GPL v3](https://img.shields.io/badge/licence-GPLv3-blue)](LICENSE)
 
 [Télécharger](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/latest) ·
 [Utilisation](#utilisation) ·
@@ -156,6 +157,12 @@ locale dans `%USERPROFILE%\.dotnet` (sans droits administrateur) s'il n'y en a p
 
 Signalements de bugs, idées et pull requests sont les bienvenus, en français ou en anglais. Voir
 [CONTRIBUTING.md](CONTRIBUTING.md) et le [code de conduite](CODE_OF_CONDUCT.md) (en anglais).
+
+## Licence
+
+Robo's Ultimate Windows Configurator est un logiciel libre, distribué sous la [licence publique générale GNU v3.0](LICENSE).
+Vous pouvez l'utiliser, l'étudier, le partager et le modifier ; les versions modifiées que vous distribuez doivent
+rester sous la même licence et être accompagnées de leur code source.
 
 ## Bon à savoir
 
