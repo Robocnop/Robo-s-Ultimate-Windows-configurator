@@ -5,7 +5,6 @@ using Wpf.Ui.Controls;
 
 namespace RoboConfigurator
 {
-    /// <summary>SymbolRegular -> icône, pour la propriété Icon des cartes.</summary>
     public sealed class SymbolToIconConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>

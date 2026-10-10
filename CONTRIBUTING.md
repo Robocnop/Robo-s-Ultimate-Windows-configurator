@@ -24,8 +24,8 @@ Open an [issue](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator
   `edge-uninstall.log` (or `edge-desinstallation.log`) from the same folder.
 
 > [!IMPORTANT]
-> Remove anything private before posting: Windows product key, serial number, MAC and IP addresses. The PC
-> report contains some of them, and the log can show the Windows key when one was installed.
+> Remove anything private before posting: serial number, MAC and IP addresses. The PC report contains them.
+> Product keys are masked in the log (only their last 5 characters are kept).
 
 If the working folder was already cleaned up, run the app again with **Clean up when done** turned off.
 

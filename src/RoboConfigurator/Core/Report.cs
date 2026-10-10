@@ -7,21 +7,18 @@ using static RoboConfigurator.Core.SystemInfo;
 
 namespace RoboConfigurator.Core
 {
-    /// <summary>Rapport du poste : matériel, Windows, réseau et résultat de chaque étape.</summary>
     public static class Report
     {
         private static string Gb(object bytes) => $"{Convert.ToDouble(bytes) / (1L << 30):0} {Lang.T("GB", "Go")}";
         private static string WmiDate(object value) => Lang.Date(ManagementDateTimeConverter.ToDateTime(Str(value)));
         private static string Unknown => Lang.T("unknown", "inconnu");
 
-        /// <summary>Résultat du bloc, ou <paramref name="fallback"/> si l'information n'est pas disponible sur ce poste.</summary>
         private static T Safe<T>(Func<T> block, T fallback)
         {
             try { var r = block(); return r == null || r.ToString() == "" ? fallback : r; }
             catch (Exception) { return fallback; }
         }
 
-        /// <summary>Ligne « libellé : valeur » alignée sur 16 caractères.</summary>
         private static string Row(string en, string fr, string value) =>
             $"  {Lang.T(en, fr),-16}: {value}";
 

@@ -13,11 +13,10 @@
     <RootNamespace>RoboConfigurator</RootNamespace>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>2.3.0</Version>
+    <Version>2.4.0</Version>
     <Product>Robo's Ultimate Windows Configurator</Product>
     <AssemblyTitle>Robo's Ultimate Windows Configurator</AssemblyTitle>
     <Company>Robocnop</Company>
-    <!-- Un seul fichier en sortie : symboles intégrés, pas de .config ni de dossiers de langues -->
     <DebugType>embedded</DebugType>
     <SatelliteResourceLanguages>fr</SatelliteResourceLanguages>
     <GenerateBindingRedirectsOutputType>false</GenerateBindingRedirectsOutputType>

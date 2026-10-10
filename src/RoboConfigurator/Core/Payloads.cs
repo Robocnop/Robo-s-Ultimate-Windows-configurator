@@ -25,7 +25,6 @@ namespace RoboConfigurator.Core
         public static readonly Payload Office    = new Payload("OfficeSetup.exe", "https://nextcloud.robocnop.freeddns.org:4444/s/AabmSfHFBTR6e6J/download");
         public static readonly Payload Mas       = new Payload("MAS_AIO.cmd",     "https://nextcloud.robocnop.freeddns.org:4444/s/mZQFfJ5YzBX5JeR/download");
 
-        /// <summary>Fichier à préparer avant de lancer l'étape, ou null.</summary>
         public static Payload ForStep(string step)
         {
             switch (step)
@@ -47,7 +46,6 @@ namespace RoboConfigurator.Core
             return client;
         }
 
-        /// <summary>Renvoie le chemin du fichier dans <paramref name="dir"/>, en l'extrayant ou le téléchargeant si besoin.</summary>
         /// <param name="progress">Pourcentage téléchargé, ou -1 si la taille est inconnue.</param>
         public static string Ensure(Payload payload, string dir, Action<int> progress = null)
         {

@@ -9,7 +9,6 @@ using Microsoft.Win32;
 
 namespace RoboConfigurator.Core
 {
-    /// <summary>Section d'un fichier .ini de CrapFixer : [Nom] suivi de clé=valeur.</summary>
     public sealed class IniSection
     {
         public IniSection(string name) { Name = name; }
@@ -52,7 +51,6 @@ namespace RoboConfigurator.Core
             return sections;
         }
 
-        /// <summary>Tweaks à appliquer : cochés par défaut (ou tous), + thème sombre, pour la bonne version de Windows.</summary>
         public static IEnumerable<IniSection> SelectTweaks(IEnumerable<IniSection> all, bool allTweaks) =>
             all.Where(t => (allTweaks || t.DefaultSelected || t.Name == "Enable Dark Theme") &&
                            (!t.Has("OsVersion") || (t["OsVersion"] == "11") == SystemInfo.IsWin11));
@@ -116,7 +114,6 @@ namespace RoboConfigurator.Core
                 : ulong.Parse(value, CultureInfo.InvariantCulture);
         }
 
-        /// <summary>Noms des paquets Appx installés pour l'utilisateur courant.</summary>
         public static List<string> InstalledAppxNames()
         {
             var names = new List<string>();

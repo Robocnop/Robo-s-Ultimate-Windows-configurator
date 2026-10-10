@@ -9,7 +9,6 @@ using System.Text.RegularExpressions;
 
 namespace RoboConfigurator.Core
 {
-    /// <summary>Étapes de la configuration, dans l'ordre d'exécution.</summary>
     public static class StepNames
     {
         public const string Ninite = "Ninite";
@@ -32,6 +31,10 @@ namespace RoboConfigurator.Core
         [DataMember] public string WindowsKey { get; set; } = "";
         [DataMember] public bool AutoRestart { get; set; } = true;
         [DataMember] public bool CleanUp { get; set; } = true;
+        /// <summary>Nettoyer même si une étape a échoué (les étapes en échec ne pourront plus être reprises).</summary>
+        [DataMember] public bool CleanUpOnError { get; set; }
+        /// <summary>Édition voulue pour l'activation : "" = garder l'actuelle, "Pro" ou "Home" (Famille).</summary>
+        [DataMember] public string Edition { get; set; } = "";
 
         public bool Has(string step) => Steps.Contains(step);
 
@@ -47,6 +50,7 @@ namespace RoboConfigurator.Core
                 var config = (RunConfig)new DataContractJsonSerializer(typeof(RunConfig)).ReadObject(stream);
                 config.NewName = config.NewName ?? "";
                 config.WindowsKey = config.WindowsKey ?? "";
+                config.Edition = Editions.Normalize(config.Edition) ?? "";
                 config.Steps = StepNames.All.Where(s => (config.Steps ?? new string[0]).Contains(s)).ToArray();
                 return config;
             }
@@ -62,6 +66,25 @@ namespace RoboConfigurator.Core
         }
     }
 
+    public static class Editions
+    {
+        public const string Keep = "";
+        public const string Pro = "Pro";
+        public const string Home = "Home";
+
+        /// <summary>"pro", "home", "famille"... -> constante, "" -> Keep, null si inconnu.</summary>
+        public static string Normalize(string value)
+        {
+            switch ((value ?? "").Trim().ToLowerInvariant())
+            {
+                case "": case "keep": return Keep;
+                case "pro": case "professional": return Pro;
+                case "home": case "famille": case "core": return Home;
+                default: return null;
+            }
+        }
+    }
+
     /// <summary>Étapes réussies, mémorisées dans etapes-terminees.txt (une par ligne).</summary>
     public sealed class StepState
     {
@@ -72,7 +95,6 @@ namespace RoboConfigurator.Core
         public void MarkDone(string step) => File.AppendAllLines(_file, new[] { step });
     }
 
-    /// <summary>Arguments de la ligne de commande (mêmes options que l'ancien Lancer.bat).</summary>
     public sealed class Options
     {
         public List<string> Skip { get; } = new List<string>();
@@ -80,6 +102,8 @@ namespace RoboConfigurator.Core
         public string WindowsKey { get; private set; } = "";
         public bool Reset { get; private set; }
         public bool Simulation { get; private set; }
+        public bool ForceCleanUp { get; private set; }
+        public string Edition { get; private set; } = Editions.Keep;
         public List<string> Errors { get; } = new List<string>();
 
         public static Options Parse(string[] args)
@@ -104,6 +128,14 @@ namespace RoboConfigurator.Core
                     case "windowskey": o.WindowsKey = Next().Trim().ToUpperInvariant(); break;
                     case "reset": o.Reset = true; break;
                     case "simulation": o.Simulation = true; break;
+                    case "forcecleanup": o.ForceCleanUp = true; break;
+                    case "edition":
+                        string edition = Next();
+                        o.Edition = Editions.Normalize(edition) ?? Editions.Keep;
+                        if (Editions.Normalize(edition) == null)
+                            o.Errors.Add(Lang.T($"Unknown edition for -Edition: “{edition}”. Possible values: Pro, Home",
+                                                $"Édition inconnue pour -Edition : « {edition} ». Valeurs possibles : Pro, Home"));
+                        break;
                     case "lang":
                         string code = Next();
                         if (!Lang.Set(code)) o.Errors.Add(Lang.T($"Unknown language for -Lang: “{code}”. Possible values: en, fr",

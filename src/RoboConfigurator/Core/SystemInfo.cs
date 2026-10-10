@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Management;
 using System.Runtime.InteropServices;
@@ -17,7 +18,6 @@ namespace RoboConfigurator.Core
         public string Description { get; }
     }
 
-    /// <summary>Lecture d'informations Windows (WMI, registre) et lancement de programmes.</summary>
     public static class SystemInfo
     {
         private const string WindowsAppId = "55c92734-d682-4d71-983e-d6ec3f16059f";
@@ -46,7 +46,6 @@ namespace RoboConfigurator.Core
             return $"{Str(cs["Manufacturer"])} {Str(cs["Model"])}".Trim();
         }
 
-        /// <summary>Clé Windows enregistrée dans le BIOS par le fabricant (PC de marque), ou null.</summary>
         public static OemKey GetOemKey()
         {
             try
@@ -96,9 +95,33 @@ namespace RoboConfigurator.Core
             return Convert.ToInt32(value) == 1 ? Lang.T("enabled", "activé") : Lang.T("disabled", "désactivé");
         }
 
-        /// <summary>Lance un programme sans fenêtre et transmet chaque ligne de sortie au journal.</summary>
-        public static int Run(string file, string arguments, Action<string> onLine = null)
+        /// <summary>Édition installée (registre EditionID) : Core = Famille, Professional = Pro, etc.</summary>
+        public static string EditionId() =>
+            Str(Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "EditionID", ""));
+
+        public static bool IsAdministrator() =>
+            new System.Security.Principal.WindowsPrincipal(System.Security.Principal.WindowsIdentity.GetCurrent())
+                .IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
+
+        public static bool IsHomeEdition(string editionId) => editionId.StartsWith("Core", StringComparison.OrdinalIgnoreCase);
+        public static bool IsProEdition(string editionId) => editionId.StartsWith("Professional", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Lance un programme sans fenêtre et transmet chaque ligne de sortie au journal. Un code de retour non nul est
+        /// journalisé avec la commande (ou <paramref name="display"/>) et la durée, pour comprendre un échec.
+        /// </summary>
+        public static int Run(string file, string arguments, Action<string> onLine = null, string display = null)
         {
+            int code = RunCore(file, arguments, onLine, out TimeSpan elapsed);
+            if (code != 0)
+                Log.Info(Lang.T($"{display ?? $"{Path.GetFileName(file)} {arguments}"} returned code {code} (0x{code:X8}) after {elapsed.TotalSeconds:0.#} s",
+                                $"{display ?? $"{Path.GetFileName(file)} {arguments}"} a renvoyé le code {code} (0x{code:X8}) après {elapsed.TotalSeconds:0.#} s"));
+            return code;
+        }
+
+        private static int RunCore(string file, string arguments, Action<string> onLine, out TimeSpan elapsed)
+        {
+            var start = DateTime.Now;
             var oem = Encoding.GetEncoding(CultureInfo.CurrentCulture.TextInfo.OEMCodePage);
             var psi = new ProcessStartInfo(file, arguments)
             {
@@ -121,16 +144,20 @@ namespace RoboConfigurator.Core
                 p.BeginOutputReadLine();
                 p.BeginErrorReadLine();
                 p.WaitForExit();
+                elapsed = DateTime.Now - start;
                 return p.ExitCode;
             }
         }
 
-        /// <summary>Lance un programme avec son interface et attend qu'il se ferme.</summary>
         public static int RunVisible(string file, string arguments = "")
         {
+            var start = DateTime.Now;
             using (var p = Process.Start(new ProcessStartInfo(file, arguments) { UseShellExecute = true }))
             {
                 p.WaitForExit();
+                string name = Path.GetFileName(file);
+                Log.Info(Lang.T($"{name} closed with code {p.ExitCode} (0x{p.ExitCode:X8}) after {(DateTime.Now - start).TotalSeconds:0} s",
+                                $"{name} s'est fermé avec le code {p.ExitCode} (0x{p.ExitCode:X8}) après {(DateTime.Now - start).TotalSeconds:0} s"));
                 return p.ExitCode;
             }
         }
@@ -139,7 +166,8 @@ namespace RoboConfigurator.Core
         public static int PowerShell(string command, Action<string> onLine = null)
         {
             string encoded = Convert.ToBase64String(Encoding.Unicode.GetBytes("$ProgressPreference='SilentlyContinue'; " + command));
-            return Run("powershell.exe", $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand {encoded}", onLine);
+            return Run("powershell.exe", $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand {encoded}", onLine,
+                       display: $"PowerShell « {command} »");
         }
     }
 }

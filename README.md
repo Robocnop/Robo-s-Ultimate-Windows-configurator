@@ -85,9 +85,9 @@ shows its progress, and a detailed log is available in the app.
 | **Ninite** | Installs 7-Zip, Chrome, Firefox, Foxit Reader and Notepad++ | Yes, click **Close** at the end |
 | **CrapFixer** | Applies the recommended tweaks and dark theme, removes bloatware (Candy Crush, Skype, Bing News...) | Fully |
 | **Edge** | Uninstalls Edge with its official uninstaller (same method as WinUtil), WebView2 kept | Fully |
-| **Taskbar** | Pins, in this order: File Explorer, Firefox, Terminal, PowerShell (the Windows pins are removed). Applied at next sign-in | Fully |
+| **Taskbar** | Pins, in this order: File Explorer, Firefox, Terminal, PowerShell (the Windows pins are removed). Applied right away to the current session (previous pins are backed up), and for every account at sign-in | Fully |
 | **Office** | Runs `OfficeSetup.exe` and waits for the installation to finish | Fully |
-| **Activation** | If Windows is not activated: installs the key provided, otherwise the OEM key stored in the BIOS (branded PCs) | Yes |
+| **Activation** | Optionally switches Windows Home to Pro first (restart, then run the app again). If Windows is not activated: installs the key provided, otherwise the OEM key stored in the BIOS (branded PCs) | Yes |
 
 For CrapFixer, the app reads its `Wintweak2.ini` and `Winappx.ini` files directly and applies the entries
 that are selected by default in CrapFixer. Updating the CrapFixer archive on the Nextcloud is therefore
@@ -100,7 +100,8 @@ enough to update the tweaks.
   Boot, TPM, Windows version and activation, processor, memory, disks and free space, graphics card,
   network adapters (MAC / IP) and the result of each step.
 - **Clean-up** (on by default): the working folder `C:\RoboConfigurator` is deleted. It is kept if a step
-  failed, so it can be resumed.
+  failed, so it can be resumed, unless **Clean up even if a step fails** is on (a copy of the log then stays on
+  the desktop).
 - **Restart** after 60 seconds (on by default), which can be cancelled or brought forward from the app.
 
 ## Recommended after the run
@@ -131,6 +132,8 @@ RoboConfigurator.exe -Skip Office,Activation   :: turn steps off (Ninite, CrapFi
 RoboConfigurator.exe -AllTweaks                :: select ALL CrapFixer tweaks, not just the recommended ones
 RoboConfigurator.exe -WindowsKey XXXXX-XXXXX-XXXXX-XXXXX-XXXXX   :: Windows key to install if not activated
 RoboConfigurator.exe -Lang fr                  :: force the language (en or fr)
+RoboConfigurator.exe -Edition Pro              :: Windows edition wanted for activation (Pro or Home)
+RoboConfigurator.exe -ForceCleanUp             :: clean up the working folder even if a step fails
 RoboConfigurator.exe -Reset                    :: forget the settings and completed steps, redo everything
 RoboConfigurator.exe -Simulation               :: walk through the app without changing anything on the PC
 ```
@@ -168,7 +171,8 @@ come with their source code.
   (1803 and later) and Windows 11; all libraries are embedded in the exe.
 - **Session**: user settings (dark theme, taskbar...) apply to the account that runs the app. Run it from
   the session that will be used.
-- **Files**: everything is downloaded to `C:\RoboConfigurator`, with a log in `log.txt`. The settings are
+- **Files**: everything is downloaded to `C:\RoboConfigurator`, with a detailed log in `log.txt`
+  (product keys are masked). The settings are
   saved there in `configuration.json` (Windows key included) so the run can be resumed.
 - **Previous version**: the PowerShell script (`Configurator.ps1` + `Lancer.bat`, French only) is still
   available in [v1.3.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.3.0).

@@ -7,7 +7,6 @@ namespace RoboConfigurator
 {
     public enum StepStatus { Pending, Skipped, AlreadyDone, Downloading, Running, Done, Warning, Failed }
 
-    /// <summary>Une ligne de l'interface : étape cochable dans la configuration, puis suivie pendant l'exécution.</summary>
     public sealed class StepItem : INotifyPropertyChanged
     {
         public StepItem(string key, string title, string description, SymbolRegular icon)

@@ -65,9 +65,6 @@
             </ui:TitleBar.Icon>
         </ui:TitleBar>
 
-        <!-- ============================================================ -->
-        <!-- Configuration : tout est réglé ici avant de lancer           -->
-        <!-- ============================================================ -->
         <Grid x:Name="ConfigView" Grid.Row="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
@@ -82,7 +79,6 @@
                         Style="{StaticResource Secondary}"
                         Text="{local:T 'Set everything up here, then click Start: the setup then runs on its own until the end.', 'Réglez tout ici puis cliquez sur Démarrer : la configuration se déroule ensuite seule jusqu’à la fin.'}" />
 
-                    <!-- Carte du poste, comme l'en-tête des Paramètres Windows -->
                     <Border Margin="0,20,0,0" Padding="20" Style="{StaticResource Card}">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -199,6 +195,19 @@
                             MaxLength="29"
                             PlaceholderText="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" />
                     </ui:CardControl>
+                    <ui:CardControl Margin="0,0,0,4" Icon="{ui:SymbolIcon Window24}">
+                        <ui:CardControl.Header>
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:T 'Windows edition', 'Édition de Windows'}" />
+                                <TextBlock Style="{StaticResource Secondary}" Text="{local:T 'Used by the activation step. Home to Pro is done in place (restart needed, then run the app again); Pro to Home needs a reinstall.', 'Utilisée par l’étape Activation. Famille vers Pro se fait sur place (redémarrage nécessaire, puis relancer l’application) ; Pro vers Famille demande une réinstallation.'}" />
+                            </StackPanel>
+                        </ui:CardControl.Header>
+                        <ComboBox x:Name="EditionBox" Width="240" SelectedIndex="0">
+                            <ComboBoxItem Content="{local:T 'Keep the current one', 'Garder l’actuelle'}" />
+                            <ComboBoxItem Content="Windows Pro" />
+                            <ComboBoxItem Content="{local:T 'Windows Home', 'Windows Famille'}" />
+                        </ComboBox>
+                    </ui:CardControl>
                     <ui:CardControl Icon="{ui:SymbolIcon ArrowClockwise24}">
                         <ui:CardControl.Header>
                             <StackPanel>
@@ -222,6 +231,19 @@
                         <ui:ToggleSwitch
                             x:Name="CleanUpSwitch"
                             IsChecked="True"
+                            OffContent="{local:T 'Off', 'Désactivé'}"
+                            OnContent="{local:T 'On', 'Activé'}" />
+                    </ui:CardControl>
+                    <ui:CardControl Margin="0,4,0,0" Icon="{ui:SymbolIcon DeleteDismiss24}" IsEnabled="{Binding IsChecked, ElementName=CleanUpSwitch}">
+                        <ui:CardControl.Header>
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:T 'Clean up even if a step fails', 'Nettoyer même en cas d’erreur'}" />
+                                <TextBlock Style="{StaticResource Secondary}" Text="{local:T 'Deletes the working folder even when a step failed: the failed steps can then not be resumed. A copy of the log stays on the desktop.', 'Supprime le dossier de travail même si une étape a échoué : les étapes en échec ne pourront plus être reprises. Une copie du journal reste sur le Bureau.'}" />
+                            </StackPanel>
+                        </ui:CardControl.Header>
+                        <ui:ToggleSwitch
+                            x:Name="CleanUpOnErrorSwitch"
+                            IsChecked="False"
                             OffContent="{local:T 'Off', 'Désactivé'}"
                             OnContent="{local:T 'On', 'Activé'}" />
                     </ui:CardControl>
@@ -258,9 +280,6 @@
             </Border>
         </Grid>
 
-        <!-- ============================================================ -->
-        <!-- Exécution : suivi des étapes puis résumé                     -->
-        <!-- ============================================================ -->
         <Grid x:Name="RunView" Grid.Row="1" Visibility="Collapsed">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />

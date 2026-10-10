@@ -79,9 +79,6 @@ namespace RoboConfigurator
             Closing += OnClosing;
         }
 
-        // -------------------------------------------------------------------
-        // Configuration
-        // -------------------------------------------------------------------
         private void LoadConfig()
         {
             RunConfig config = null;
@@ -103,6 +100,8 @@ namespace RoboConfigurator
                 Steps = StepNames.All.Except(_options.Skip).ToArray(),
                 AllTweaks = _options.AllTweaks,
                 WindowsKey = _options.WindowsKey,
+                Edition = _options.Edition,
+                CleanUpOnError = _options.ForceCleanUp,
             };
             if (_options.Errors.Any())
                 ShowMessage(ConfigMessage, InfoBarSeverity.Error, Lang.T("Command-line options ignored", "Options de lancement ignorées"), string.Join("\n", _options.Errors));
@@ -113,7 +112,12 @@ namespace RoboConfigurator
             KeyBox.Text = config.WindowsKey;
             RestartSwitch.IsChecked = config.AutoRestart;
             CleanUpSwitch.IsChecked = config.CleanUp;
+            CleanUpOnErrorSwitch.IsChecked = config.CleanUpOnError;
+            EditionBox.SelectedIndex = Array.IndexOf(EditionValues, config.Edition) is int i && i >= 0 ? i : 0;
         }
+
+        // Même ordre que les choix de EditionBox
+        private static readonly string[] EditionValues = { Editions.Keep, Editions.Pro, Editions.Home };
 
         private async Task LoadSystemInfoAsync()
         {
@@ -169,13 +173,12 @@ namespace RoboConfigurator
             TweaksBox.SelectedIndex = 0;
             RestartSwitch.IsChecked = true;
             CleanUpSwitch.IsChecked = true;
+            CleanUpOnErrorSwitch.IsChecked = false;
+            EditionBox.SelectedIndex = 0;
             ShowMessage(ConfigMessage, InfoBarSeverity.Success, Lang.T("Everything will be redone", "Tout sera refait"),
                 Lang.T("Completed steps and the saved settings have been forgotten.", "Les étapes déjà faites et la configuration enregistrée ont été oubliées."));
         }
 
-        // -------------------------------------------------------------------
-        // Exécution
-        // -------------------------------------------------------------------
         private async void OnStartClick(object sender, RoutedEventArgs e)
         {
             string name = NewNameBox.Text.Trim().ToUpperInvariant();
@@ -201,6 +204,8 @@ namespace RoboConfigurator
                 WindowsKey = key,
                 AutoRestart = RestartSwitch.IsChecked == true,
                 CleanUp = CleanUpSwitch.IsChecked == true,
+                CleanUpOnError = CleanUpSwitch.IsChecked == true && CleanUpOnErrorSwitch.IsChecked == true,
+                Edition = EditionValues[Math.Max(0, EditionBox.SelectedIndex)],
             };
 
             var confirm = new Wpf.Ui.Controls.MessageBox
@@ -264,6 +269,13 @@ namespace RoboConfigurator
                 ShowMessage(RunMessage, InfoBarSeverity.Error, Lang.T("Failed steps: ", "Étapes en échec : ") + string.Join(", ", _result.Failed),
                     Lang.T("Run the app again to retry them: the settings are kept and successful steps will not be redone.", "Relancez l'application pour les réessayer : la configuration est conservée et les étapes réussies ne seront pas refaites."));
             }
+            else if (_result.AfterRestart.Any())
+            {
+                RunTitle.Text = Lang.T("Restart needed", "Redémarrage nécessaire");
+                ShowMessage(RunMessage, InfoBarSeverity.Warning, Lang.T("To finish after restarting: ", "À terminer après le redémarrage : ") + string.Join(", ", _result.AfterRestart),
+                    Lang.T("After the restart, run the app again: the settings are kept and it will pick up where it stopped.",
+                           "Après le redémarrage, relancez l’application : la configuration est conservée et elle reprendra là où elle s’est arrêtée."));
+            }
             else if (warnings.Any())
             {
                 RunTitle.Text = Lang.T("Setup finished", "Configuration terminée");
@@ -274,7 +286,9 @@ namespace RoboConfigurator
                 RunTitle.Text = Lang.T("Setup finished", "Configuration terminée");
                 ShowMessage(RunMessage, InfoBarSeverity.Success, Lang.T("All done", "Tout est terminé"), Lang.T("The PC is ready.", "Le PC est prêt."));
             }
-            RunSubtitle.Text = File.Exists(LogFile) ? Lang.T("Log: ", "Journal : ") + LogFile : Lang.T("The working folder has been deleted.", "Le dossier de travail a été supprimé.");
+            RunSubtitle.Text = File.Exists(LogFile) ? Lang.T("Log: ", "Journal : ") + LogFile
+                             : _result.LogCopyPath != null ? Lang.T("The working folder has been deleted. Copy of the log: ", "Le dossier de travail a été supprimé. Copie du journal : ") + _result.LogCopyPath
+                             : Lang.T("The working folder has been deleted.", "Le dossier de travail a été supprimé.");
             OpenFolderButton.Visibility = Directory.Exists(_workDir) ? Visibility.Visible : Visibility.Collapsed;
             OpenReportButton.Visibility = _result.ReportPath != null ? Visibility.Visible : Visibility.Collapsed;
             RestartNowButton.Visibility = Visibility.Visible;
@@ -284,9 +298,6 @@ namespace RoboConfigurator
             else CloseButton.Visibility = Visibility.Visible;
         }
 
-        // -------------------------------------------------------------------
-        // Redémarrage
-        // -------------------------------------------------------------------
         private static string ShutdownComment => Lang.T("Robo's Ultimate Windows Configurator: restarting to finish the setup.",
                                                        "Robo's Ultimate Windows Configurator : redémarrage pour finaliser la configuration.");
 
@@ -334,9 +345,6 @@ namespace RoboConfigurator
             SystemInfo.Run("shutdown.exe", $"/r /t 0 /c \"{ShutdownComment}\"");
         }
 
-        // -------------------------------------------------------------------
-        // Divers
-        // -------------------------------------------------------------------
         private void OnOpenFolderClick(object sender, RoutedEventArgs e) => Process.Start("explorer.exe", $"\"{_workDir}\"");
 
         private void OnOpenReportClick(object sender, RoutedEventArgs e) =>

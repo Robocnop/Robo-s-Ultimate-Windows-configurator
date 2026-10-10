@@ -86,9 +86,9 @@ Une fois lancée, la configuration se déroule seule jusqu'à la fin : seul Nini
 | **Ninite** | Installe 7-Zip, Chrome, Firefox, Foxit Reader et Notepad++ | Oui, cliquer sur **Close** à la fin |
 | **CrapFixer** | Applique les tweaks recommandés et le thème sombre, supprime les applis inutiles (Candy Crush, Skype, Bing News...) | Entièrement |
 | **Edge** | Désinstalle Edge avec son désinstalleur officiel (même méthode que WinUtil), WebView2 conservé | Entièrement |
-| **Barre des tâches** | Épingle, dans cet ordre : Explorateur, Firefox, Terminal, PowerShell (les épingles de Windows sont retirées). Appliqué à la prochaine ouverture de session | Entièrement |
+| **Barre des tâches** | Épingle, dans cet ordre : Explorateur, Firefox, Terminal, PowerShell (les épingles de Windows sont retirées). Appliqué tout de suite à la session en cours (les anciennes épingles sont sauvegardées), et pour chaque compte à l'ouverture de session | Entièrement |
 | **Office** | Lance `OfficeSetup.exe` et attend la fin de l'installation | Entièrement |
-| **Activation** | Si Windows n'est pas activé : installe la clé fournie, sinon la clé OEM enregistrée dans le BIOS (PC de marque) | Oui |
+| **Activation** | Peut d'abord passer Windows Famille en Pro (redémarrage, puis relancer l'application). Si Windows n'est pas activé : installe la clé fournie, sinon la clé OEM enregistrée dans le BIOS (PC de marque) | Oui |
 
 Pour CrapFixer, l'application lit directement ses fichiers `Wintweak2.ini` et `Winappx.ini` et applique les
 entrées cochées par défaut dans l'appli. Mettre à jour l'archive CrapFixer sur le Nextcloud suffit donc pour
@@ -101,7 +101,8 @@ mettre à jour les tweaks.
   Secure Boot, TPM, version et activation de Windows, processeur, mémoire, disques et espace libre, carte
   graphique, cartes réseau (MAC / IP) et résultat de chaque étape.
 - **Nettoyage** (activé par défaut) : le dossier de travail `C:\RoboConfigurator` est supprimé. Il est conservé
-  si une étape a échoué, pour pouvoir la reprendre.
+  si une étape a échoué, pour pouvoir la reprendre, sauf si **Nettoyer même en cas d'erreur** est activé (une
+  copie du journal reste alors sur le Bureau).
 - **Redémarrage** au bout de 60 secondes (activé par défaut), annulable ou avançable depuis l'application.
 
 ## Recommandé après le passage
@@ -132,6 +133,8 @@ RoboConfigurator.exe -Skip Office,Activation   :: désactiver des étapes (Ninit
 RoboConfigurator.exe -AllTweaks                :: sélectionner TOUS les tweaks CrapFixer, pas seulement les recommandés
 RoboConfigurator.exe -WindowsKey XXXXX-XXXXX-XXXXX-XXXXX-XXXXX   :: clé Windows à installer si non activé
 RoboConfigurator.exe -Lang en                  :: forcer la langue (en ou fr)
+RoboConfigurator.exe -Edition Pro              :: édition de Windows voulue pour l'activation (Pro ou Home)
+RoboConfigurator.exe -ForceCleanUp             :: nettoyer le dossier de travail même si une étape échoue
 RoboConfigurator.exe -Reset                    :: oublier la configuration et les étapes faites, tout refaire
 RoboConfigurator.exe -Simulation               :: parcourir l'application sans rien modifier sur le PC
 ```
@@ -170,7 +173,8 @@ rester sous la même licence et être accompagnées de leur code source.
   (1803 et plus récents) et Windows 11 ; toutes les bibliothèques sont intégrées dans l'exe.
 - **Session** : les réglages utilisateur (thème sombre, barre des tâches...) s'appliquent au compte qui lance
   l'application. La lancer depuis la session qui sera utilisée.
-- **Fichiers** : tout est téléchargé dans `C:\RoboConfigurator`, avec un journal dans `journal.txt`. La
+- **Fichiers** : tout est téléchargé dans `C:\RoboConfigurator`, avec un journal détaillé dans
+  `journal.txt` (les clés de produit y sont masquées). La
   configuration y est enregistrée dans `configuration.json` (clé Windows comprise) pour pouvoir reprendre.
 - **Ancienne version** : le script PowerShell (`Configurator.ps1` + `Lancer.bat`) reste disponible dans la
   [v1.3.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.3.0).

@@ -1,6 +1,6 @@
 # État d'avancement
 
-Dernière mise à jour : 10/10/2026. Dernière version publiée : [v2.3.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v2.3.0) ; dernière version du script PowerShell : [v1.3.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.3.0).
+Dernière mise à jour : 10/10/2026. Dernière version publiée : [v2.4.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v2.4.0) ; dernière version du script PowerShell : [v1.3.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.3.0).
 
 ## État des étapes
 
@@ -38,6 +38,13 @@ Dernière mise à jour : 10/10/2026. Dernière version publiée : [v2.3.0](https
 - **v2.1.0** : option « Nettoyer à la fin » (activée par défaut). Avant le redémarrage, le dossier `C:\RoboConfigurator` (téléchargements, configuration, journal) est supprimé ; ce qui est verrouillé part au redémarrage. Le dossier est conservé si une étape échoue. Le rapport reste sur le Bureau.
 - **v2.2.0** : nouvelle étape « Barre des tâches » (cochée par défaut) : épingle Explorateur, Firefox, Terminal et PowerShell dans cet ordre, à la place des épingles de Windows, via la stratégie « Disposition de l'écran de démarrage » (appliquée à l'ouverture de session suivante). Journal détaillé de la désinstallation d'Edge : région Windows, entrée des programmes installés, processus `msedge`, code de retour du désinstalleur, et copie de `msedge_installer.log` dans `C:\RoboConfigurator\edge-desinstallation.log`.
 - **v2.3.0** : application en anglais et en français. Elle s'affiche en français si Windows est en français, en anglais sinon (option `-Lang en|fr` pour forcer). L'interface, le journal (`log.txt` / `journal.txt`) et le rapport du poste (`Report-...` / `Rapport-...`) suivent la langue. README anglais (`README.md`) et français (`README.fr.md`), vidéo de présentation dans les deux langues. Testé sur PC réel en mode simulation dans les deux langues (interface, déroulement, rapport).
+- **v2.4.0** :
+  - Option « Édition de Windows » (Garder / Pro / Famille, ou `-Edition Pro|Home`) utilisée par l'étape Activation. Famille → Pro se fait avec `changepk.exe` (clé fournie, sinon clé générique Pro de Microsoft) ; l'étape est alors marquée « à terminer après le redémarrage » et l'activation reprend au lancement suivant. Pro → Famille est signalé (réinstallation nécessaire). Une clé OEM Famille n'est pas utilisée pour activer Pro.
+  - Journal beaucoup plus détaillé pour comprendre un échec : diagnostic au démarrage (version, édition, droits, langue, région, espace libre, configuration), durée de chaque étape, exceptions complètes (type, HRESULT, code Win32, exceptions internes, début de la pile), code de retour et durée de chaque programme lancé, tweak / appli CrapFixer en cause, état de la licence (`slmgr /dli`) avant et après l'activation. Les clés de produit sont masquées dans le journal.
+  - Option « Nettoyer même en cas d'erreur » (`-ForceCleanUp`) : le dossier de travail est supprimé même si une étape a échoué, et une copie du journal est laissée sur le Bureau.
+  - Barre des tâches : l'étape disait « Terminée » alors que rien ne changeait. Cause : elle écrivait seulement la stratégie, que Windows n'applique qu'à l'ouverture de session suivante, et un profil déjà utilisé garde ses épingles. Désormais, la stratégie est aussi écrite côté utilisateur, la disposition est copiée dans le profil actuel, les anciennes épingles sont sauvegardées (`C:\ProgramData\RoboConfigurator\Sauvegarde-barre-des-taches`) puis effacées, l'explorateur est relancé, et le résultat est vérifié : l'étape passe en « À vérifier » si les épingles n'apparaissent pas encore.
+  - Désinstallation d'Edge : en VM (Edge 155), le désinstalleur sortait en 3 s avec le code 532 (non documenté) sans écrire de journal. Il est maintenant lancé avec les mêmes arguments que l'`UninstallString` d'Edge (`--msedge --channel=stable --verbose-logging` en plus), et `EdgeUpdateDev\AllowUninstall` est mis à 1 (vues 64 et 32 bits) avant la désinstallation. À revalider en VM.
+  - Testé en simulation sur PC réel (interface, journal, options). Le changement d'édition et la barre des tâches restent à valider en VM.
 
 ## Problèmes connus
 
