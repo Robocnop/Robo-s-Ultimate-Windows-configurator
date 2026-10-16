@@ -36,7 +36,7 @@
 - **Logiciels** : 7-Zip, Chrome, Firefox, Foxit Reader et Notepad++ via Ninite.
 - **Nettoyage** : tweaks recommandés de CrapFixer, thème sombre, applis inutiles supprimées.
 - **Edge** désinstallé proprement, WebView2 conservé.
-- **Barre des tâches** rangée : Explorateur, Firefox, Terminal, PowerShell.
+- **Barre des tâches** rangée : Explorateur, Firefox, Terminal, PowerShell, Paramètres, Panneau de configuration.
 - **Office** installé et **Windows activé** (clé fournie ou clé OEM du BIOS).
 - **Rapport du poste** sur le Bureau, renommage du PC, nettoyage et redémarrage.
 
@@ -86,7 +86,7 @@ Une fois lancée, la configuration se déroule seule jusqu'à la fin : seul Nini
 | **Ninite** | Installe 7-Zip, Chrome, Firefox, Foxit Reader et Notepad++ | Oui, cliquer sur **Close** à la fin |
 | **CrapFixer** | Applique les tweaks recommandés et le thème sombre, supprime les applis inutiles (Candy Crush, Skype, Bing News...) | Entièrement |
 | **Edge** | Désinstalle Edge avec son désinstalleur officiel (même méthode que WinUtil), WebView2 conservé | Entièrement |
-| **Barre des tâches** | Épingle, dans cet ordre : Explorateur, Firefox, Terminal, PowerShell (les épingles de Windows sont retirées). Appliqué tout de suite à la session en cours (les anciennes épingles sont sauvegardées), et pour chaque compte à l'ouverture de session | Entièrement |
+| **Barre des tâches** | Épingle, dans cet ordre : Explorateur, Firefox, Terminal, PowerShell, Paramètres, Panneau de configuration (les épingles de Windows sont retirées). Appliqué tout de suite à la session en cours (les anciennes épingles sont sauvegardées), et pour chaque compte à l'ouverture de session | Entièrement |
 | **Office** | Lance `OfficeSetup.exe` et attend la fin de l'installation | Entièrement |
 | **Activation** | Peut d'abord passer Windows Famille en Pro (redémarrage, puis relancer l'application). Si Windows n'est pas activé : installe la clé fournie, sinon la clé OEM enregistrée dans le BIOS (PC de marque) | Oui |
 

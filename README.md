@@ -36,7 +36,7 @@
 - **Software**: 7-Zip, Chrome, Firefox, Foxit Reader and Notepad++ through Ninite.
 - **Clean-up**: CrapFixer's recommended tweaks, dark theme, bloatware removed.
 - **Edge** cleanly uninstalled, WebView2 kept.
-- **Taskbar** sorted: File Explorer, Firefox, Terminal, PowerShell.
+- **Taskbar** sorted: File Explorer, Firefox, Terminal, PowerShell, Settings, Control Panel.
 - **Office** installed and **Windows activated** (key provided or the BIOS OEM key).
 - **PC report** on the desktop, PC renaming, clean-up and restart.
 
@@ -85,7 +85,7 @@ shows its progress, and a detailed log is available in the app.
 | **Ninite** | Installs 7-Zip, Chrome, Firefox, Foxit Reader and Notepad++ | Yes, click **Close** at the end |
 | **CrapFixer** | Applies the recommended tweaks and dark theme, removes bloatware (Candy Crush, Skype, Bing News...) | Fully |
 | **Edge** | Uninstalls Edge with its official uninstaller (same method as WinUtil), WebView2 kept | Fully |
-| **Taskbar** | Pins, in this order: File Explorer, Firefox, Terminal, PowerShell (the Windows pins are removed). Applied right away to the current session (previous pins are backed up), and for every account at sign-in | Fully |
+| **Taskbar** | Pins, in this order: File Explorer, Firefox, Terminal, PowerShell, Settings, Control Panel (the Windows pins are removed). Applied right away to the current session (previous pins are backed up), and for every account at sign-in | Fully |
 | **Office** | Runs `OfficeSetup.exe` and waits for the installation to finish | Fully |
 | **Activation** | Optionally switches Windows Home to Pro first (restart, then run the app again). If Windows is not activated: installs the key provided, otherwise the OEM key stored in the BIOS (branded PCs) | Yes |
 
