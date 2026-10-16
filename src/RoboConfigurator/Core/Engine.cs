@@ -274,11 +274,41 @@ namespace RoboConfigurator.Core
                 catch (Exception ex) { Log.Warn(Lang.T($"Could not set EdgeUpdateDev\\AllowUninstall ({view}): {ex.Message}", $"Impossible de créer EdgeUpdateDev\\AllowUninstall ({view}) : {ex.Message}")); }
             }
 
+            // Les étiquettes d'expérimentation d'EdgeUpdate peuvent désactiver la désinstallation
+            try
+            {
+                using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32))
+                using (var key = hklm.OpenSubKey(@"SOFTWARE\Microsoft\EdgeUpdate\ClientState\{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062}", true))
+                {
+                    if (key?.GetValue("experiment_control_labels") != null)
+                    {
+                        key.DeleteValue("experiment_control_labels");
+                        Log.Info(Lang.T("EdgeUpdate experiment_control_labels removed", "experiment_control_labels d'EdgeUpdate supprimé"));
+                    }
+                }
+            }
+            catch (Exception ex) { Log.Warn(Lang.T($"Could not remove experiment_control_labels: {ex.Message}", $"Impossible de supprimer experiment_control_labels : {ex.Message}")); }
+
+            // Depuis Windows 11 24H2, setup.exe refuse la désinstallation (code 532) si son processus parent
+            // n'est pas dans une liste autorisée. Même méthode qu'ave9858 : une copie de cmd.exe nommée
+            // dllhost.exe lance le désinstalleur.
+            string tempDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "SystemTemp");
+            if (!Directory.Exists(tempDir)) tempDir = Path.GetTempPath();
+            string fakeDllhost = Path.Combine(tempDir, "dllhost.exe");
+            File.Copy(Path.Combine(Environment.SystemDirectory, "cmd.exe"), fakeDllhost, true);
+            Log.Info(Lang.T($"Uninstaller launcher: {fakeDllhost} (copy of cmd.exe)", $"Lanceur du désinstalleur : {fakeDllhost} (copie de cmd.exe)"));
+
             Detail(StepNames.Edge, Lang.T("Uninstalling Microsoft Edge...", "Désinstallation de Microsoft Edge..."));
             const string args = "--uninstall --msedge --channel=stable --system-level --verbose-logging --force-uninstall --delete-profile";
             Log.Info(Lang.T($"Command: \"{setup}\" {args}", $"Commande : \"{setup}\" {args}"));
             var start = DateTime.Now;
-            int code = SystemInfo.Run(setup, args);
+            int code;
+            try { code = SystemInfo.Run(fakeDllhost, $"/c \"\"{setup}\" {args}\"", display: $"setup.exe {args}"); }
+            finally
+            {
+                try { File.Delete(fakeDllhost); } catch { }
+                try { File.Delete(fake); } catch { }
+            }
             Log.Info(Lang.T($"The uninstaller returned after {(DateTime.Now - start).TotalSeconds:0} s with code {code}{EdgeExitCode(code)}", $"Le désinstalleur a rendu la main en {(DateTime.Now - start).TotalSeconds:0} s avec le code {code}{EdgeExitCode(code)}"));
             CopyEdgeInstallerLog(start);
 
@@ -307,6 +337,7 @@ namespace RoboConfigurator.Core
                 case 20: return Lang.T(": uninstall failed", " : désinstallation en échec");
                 case 21: return Lang.T(": uninstall cancelled", " : désinstallation annulée");
                 case 93: return Lang.T(": uninstall refused by Edge (outside the European Economic Area?)", " : désinstallation refusée par Edge (hors Espace économique européen ?)");
+                case 532: return Lang.T(": uninstall blocked by Edge for the calling process", " : désinstallation bloquée par Edge pour le processus appelant");
                 default: return "";
             }
         }
@@ -381,6 +412,8 @@ namespace RoboConfigurator.Core
         <taskbar:DesktopApp DesktopApplicationLinkPath=""%ALLUSERSPROFILE%\Microsoft\Windows\Start Menu\Programs\Firefox.lnk"" />
         <taskbar:UWA AppUserModelID=""Microsoft.WindowsTerminal_8wekyb3d8bbwe!App"" />
         <taskbar:DesktopApp DesktopApplicationLinkPath=""%APPDATA%\Microsoft\Windows\Start Menu\Programs\Windows PowerShell\Windows PowerShell.lnk"" />
+        <taskbar:UWA AppUserModelID=""windows.immersivecontrolpanel_cw5n1h2txyewy!microsoft.windows.immersivecontrolpanel"" />
+        <taskbar:DesktopApp DesktopApplicationLinkPath=""%APPDATA%\Microsoft\Windows\Start Menu\Programs\System Tools\Control Panel.lnk"" />
       </taskbar:TaskbarPinList>
     </defaultlayout:TaskbarLayout>
   </CustomTaskbarLayoutCollection>
@@ -438,14 +471,15 @@ namespace RoboConfigurator.Core
                 Log.Warn(Lang.T("Firefox shortcut not found: Firefox will not be pinned", "Raccourci de Firefox introuvable : Firefox ne sera pas épinglé"));
                 return Lang.T("Firefox not found: it will not be pinned (Ninite step not done?)", "Firefox introuvable : il ne sera pas épinglé (étape Ninite non faite ?)");
             }
-            var missing = new[] { "Firefox", "PowerShell" }.Where(n => after.IndexOf(n, StringComparison.OrdinalIgnoreCase) < 0).ToList();
+            // Terminal et Paramètres sont des applis du Store : elles n'ont pas de raccourci dans ce dossier
+            var missing = new[] { "Firefox", "PowerShell", "Control Panel" }.Where(n => after.IndexOf(n, StringComparison.OrdinalIgnoreCase) < 0).ToList();
             if (missing.Any())
             {
                 Log.Warn(Lang.T($"Not pinned yet: {string.Join(", ", missing)}. Windows will apply the layout at the next sign-in (the final restart).",
                                 $"Pas encore épinglé : {string.Join(", ", missing)}. Windows appliquera la disposition à la prochaine ouverture de session (le redémarrage de fin)."));
                 return Lang.T("Layout saved: it will show after the restart", "Disposition enregistrée : elle s’affichera après le redémarrage");
             }
-            Log.Ok(Lang.T("File Explorer, Firefox, Terminal and PowerShell are pinned", "Explorateur, Firefox, Terminal et PowerShell sont épinglés"));
+            Log.Ok(Lang.T("File Explorer, Firefox, Terminal, PowerShell, Settings and Control Panel are pinned", "Explorateur, Firefox, Terminal, PowerShell, Paramètres et Panneau de configuration sont épinglés"));
             return null;
         }
 
@@ -458,6 +492,8 @@ namespace RoboConfigurator.Core
             Log.Info($"  Firefox : {firefox} ({Exists(firefox)})");
             Log.Info($"  PowerShell : {powershell} ({Exists(powershell)})");
             Log.Info($"  Terminal : {terminal} ({Exists(terminal)})");
+            string controlPanel = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Windows\Start Menu\Programs\System Tools\Control Panel.lnk");
+            Log.Info(Lang.T($"  Control Panel : {controlPanel} ({Exists(controlPanel)})", $"  Panneau de configuration : {controlPanel} ({Exists(controlPanel)})"));
         }
 
         private static string PinnedList(string folder)
