@@ -84,7 +84,7 @@ shows its progress, and a detailed log is available in the app.
 |---|---|---|
 | **Ninite** | Installs 7-Zip, Chrome, Firefox, Foxit Reader and Notepad++ | Yes, click **Close** at the end |
 | **CrapFixer** | Applies the recommended tweaks and dark theme, removes bloatware (Candy Crush, Skype, Bing News...) | Fully |
-| **Edge** | Uninstalls Edge with its official uninstaller (same method as WinUtil), WebView2 kept | Fully |
+| **Edge** | Uninstalls Edge with its official uninstaller (started through a renamed process to get past the Windows 11 24H2 block), WebView2 kept | Fully |
 | **Taskbar** | Pins, in this order: File Explorer, Firefox, Terminal, PowerShell, Settings, Control Panel (the Windows pins are removed). Applied right away to the current session (previous pins are backed up), and for every account at sign-in | Fully |
 | **Office** | Runs `OfficeSetup.exe` and waits for the installation to finish | Fully |
 | **Activation** | Optionally switches Windows Home to Pro first (restart, then run the app again). If Windows is not activated: installs the key provided, otherwise the OEM key stored in the BIOS (branded PCs) | Yes |

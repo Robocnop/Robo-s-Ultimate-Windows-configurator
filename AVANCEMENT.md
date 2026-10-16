@@ -1,6 +1,6 @@
 # État d'avancement
 
-Dernière mise à jour : 10/10/2026. Dernière version publiée : [v2.4.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v2.4.0) ; dernière version du script PowerShell : [v1.3.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.3.0).
+Dernière mise à jour : 16/10/2026. Dernière version publiée : [v2.4.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v2.4.0) ; pré-version en test : [v2.5.0-beta.1](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v2.5.0-beta.1) (branche `beta`) ; dernière version du script PowerShell : [v1.3.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.3.0).
 
 ## État des étapes
 
@@ -9,8 +9,8 @@ Dernière mise à jour : 10/10/2026. Dernière version publiée : [v2.4.0](https
 | Téléchargements | ✅ Fonctionne | Oui (v1.0.0) | Liens Nextcloud valides, 3 essais par fichier |
 | Ninite | ✅ Fonctionne | Oui (v1.0.0) | Cliquer sur **Close** à la fin |
 | CrapFixer | ✅ Fonctionne | Oui (v1.0.0) | 47 tweaks recommandés (46 sur Win10) + thème sombre, 13 applis supprimées |
-| Edge | ⚠️ À valider | Non | Réécrit en v1.1.0 (voir plus bas) |
-| Barre des tâches | ⚠️ À valider | Non | Stratégie « Disposition de l'écran de démarrage » (`C:\ProgramData\RoboConfigurator\BarreDesTaches.xml`) : Explorateur, Firefox, Terminal, PowerShell, appliqué à l'ouverture de session suivante |
+| Edge | ❌ Bloqué en v2.4.0 | Oui (PC réel, v2.4.0) | Code 532 sur Edge 155, même depuis les Paramètres. Contournement dans la v2.5.0-beta.1, à valider |
+| Barre des tâches | ⚠️ À valider | Non | Stratégie « Disposition de l'écran de démarrage » (`C:\ProgramData\RoboConfigurator\BarreDesTaches.xml`) : Explorateur, Firefox, Terminal, PowerShell, Paramètres, Panneau de configuration. Testé sur PC réel en v2.4.0 (sans Paramètres ni Panneau de configuration) : OK, mais Terminal absent des épingles relevées |
 | Office | ⚠️ À valider | Interrompu | La VM a planté pendant l'installation (voir plus bas) |
 | Activation | ⚠️ À valider | Non atteint | Clé fournie, sinon clé OEM du BIOS. Lecture de la clé OEM testée (absente sur un PC monté) |
 | Assistant de configuration | ⚠️ À valider | Non | Tout est demandé au début, puis le script tourne seul. Menu testé avec des réponses simulées |
@@ -46,6 +46,11 @@ Dernière mise à jour : 10/10/2026. Dernière version publiée : [v2.4.0](https
   - Désinstallation d'Edge : en VM (Edge 155), le désinstalleur sortait en 3 s avec le code 532 (non documenté) sans écrire de journal. Il est maintenant lancé avec les mêmes arguments que l'`UninstallString` d'Edge (`--msedge --channel=stable --verbose-logging` en plus), et `EdgeUpdateDev\AllowUninstall` est mis à 1 (vues 64 et 32 bits) avant la désinstallation. À revalider en VM.
   - Testé en simulation sur PC réel (interface, journal, options). Le changement d'édition et la barre des tâches restent à valider en VM.
 
+- **v2.5.0-beta.1** (pré-version, branche `beta`) :
+  - Désinstallation d'Edge : sur un PC réel (POSTE6, Windows 11 25H2, Edge 155, région BE), le désinstalleur refuse toujours avec le code 532 (« Uninstall was blocked for this product », « Stable is not uninstallable for process »), y compris depuis les Paramètres de Windows. Depuis Windows 11 24H2, `setup.exe` n'accepte la désinstallation que si son processus parent fait partie d'une liste autorisée : la méthode WinUtil ne suffit plus. `setup.exe` est maintenant lancé par une copie de `cmd.exe` nommée `dllhost.exe` (méthode d'ave9858), et `experiment_control_labels` est supprimé de `EdgeUpdate\ClientState` avant. Le code 532 est expliqué dans le journal. À valider sur PC réel.
+  - Barre des tâches : Paramètres et Panneau de configuration sont épinglés après PowerShell.
+  - La branche `beta` est compilée par la CI.
+
 ## Problèmes connus
 
 ### Écran bleu WHEA_UNCORRECTABLE_ERROR dans la VM pendant l'installation d'Office
@@ -65,7 +70,8 @@ Ce n'est probablement pas lié au script : c'est Windows, dans la VM, qui s'est 
 ## Prochaines étapes
 
 1. Recréer la VM avec les réglages ci-dessus.
-2. Lancer `RoboConfigurator.exe -Reset` et valider toutes les étapes avec l'application (Ninite, CrapFixer, désinstallation d'Edge).
-3. Valider l'installation d'Office et l'étape Activation.
-4. Valider le renommage, le redémarrage automatique et relire le rapport généré (Secure Boot et TPM en admin).
-5. Corriger et publier une v2.0.1 si une étape pose problème.
+2. Tester la v2.5.0-beta.1 sur POSTE6 (étapes Edge et Barre des tâches, sans nettoyage forcé) ; si Edge passe, publier la v2.5.0.
+3. Lancer `RoboConfigurator.exe -Reset` et valider toutes les étapes avec l'application (Ninite, CrapFixer, désinstallation d'Edge).
+4. Valider l'installation d'Office et l'étape Activation.
+5. Valider le renommage, le redémarrage automatique et relire le rapport généré (Secure Boot et TPM en admin).
+6. Corriger et publier une v2.0.1 si une étape pose problème.
