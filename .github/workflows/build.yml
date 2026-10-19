@@ -54,6 +54,10 @@ jobs:
           if ($lang::T('Done', $fr) -ne 'Done') { throw 'Traduction anglaise incorrecte' }
           $o = $options::Parse([string[]]@('-Inconnue'))
           if ($o.Errors.Count -ne 1) { throw 'Une option inconnue doit être signalée' }
+          $o = $options::Parse([string[]]@('-Apps', 'VLC,7zip,inconnue'))
+          if (($o.Apps -join ',') -ne 'vlc,7zip' -or $o.Errors.Count -ne 1) { throw "-Apps inattendu : $($o.Apps -join ',') / $($o.Errors.Count) erreur(s)" }
+          $updates = $asm.GetType('RoboConfigurator.Core.Updates')
+          if (-not $updates::IsNewer('2.6.0', '2.6.0-beta.1') -or $updates::IsNewer('2.5.0', '2.6.0')) { throw 'Comparaison de versions incorrecte' }
           Write-Host 'Test de fumée OK'
 
       - uses: actions/upload-artifact@v4

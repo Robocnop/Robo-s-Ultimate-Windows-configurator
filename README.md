@@ -33,7 +33,8 @@
 
 ### At a glance
 
-- **Software**: 7-Zip, Chrome, Firefox, Foxit Reader and Notepad++ through Ninite.
+- **Software** through Ninite: 7-Zip, Chrome, Firefox, Foxit Reader and Notepad++ by default, plus or minus
+  the apps you pick from about 80.
 - **Clean-up**: CrapFixer's recommended tweaks, dark theme, bloatware removed.
 - **Edge** cleanly uninstalled, WebView2 kept.
 - **Taskbar** sorted: File Explorer, Firefox, Terminal, PowerShell, Settings, Control Panel.
@@ -43,7 +44,8 @@
 A single portable app with nothing to install and a Windows 11 look: light or dark theme and accent
 colour taken from Windows, Mica effect. It speaks English, or French on a French Windows.
 
-Interrupted? On the next launch it picks up right where it left off.
+Interrupted? On the next launch it picks up right where it left off. Outdated? It tells you when a newer
+exe is available.
 
 </td>
 </tr>
@@ -56,9 +58,16 @@ Interrupted? On the next launch it picks up right where it left off.
 2. Double-click it and accept the administrator prompt.
 3. Adjust the settings, then click **Start**.
 
-On launch, the app shows the PC (name, model, Windows version, activation) and lets you set everything up:
-new PC name, steps to run, CrapFixer tweaks (recommended or all), Windows key, restart and clean-up at the
-end. If a Windows key is stored in the BIOS, it is pointed out.
+On launch, the app shows the PC (name, model, Windows version, activation) and lets you set everything up
+from the menu on the left:
+
+- **PC**: new PC name and steps to run.
+- **Applications**: apps installed by Ninite. The default selection is already checked; add or remove apps
+  (browsers, messaging, media, utilities, developer tools...).
+- **Options**: CrapFixer tweaks (recommended or all), Windows key and edition, restart and clean-up at the end.
+
+If a Windows key is stored in the BIOS, it is pointed out. If a newer version of the app has been released,
+a banner suggests downloading the latest `RoboConfigurator.exe`.
 
 <table>
 <tr>
@@ -82,7 +91,7 @@ shows its progress, and a detailed log is available in the app.
 
 | Step | What it does | Automatic? |
 |---|---|---|
-| **Ninite** | Installs 7-Zip, Chrome, Firefox, Foxit Reader and Notepad++ | Yes, click **Close** at the end |
+| **Ninite** | Installs the apps chosen in **Applications** (by default 7-Zip, Chrome, Firefox, Foxit Reader and Notepad++) | Yes, click **Close** at the end |
 | **CrapFixer** | Applies the recommended tweaks and dark theme, removes bloatware (Candy Crush, Skype, Bing News...) | Fully |
 | **Edge** | Uninstalls Edge with its official uninstaller (started through a renamed process to get past the Windows 11 24H2 block), WebView2 kept | Fully |
 | **Taskbar** | Pins, in this order: File Explorer, Firefox, Terminal, PowerShell, Settings, Control Panel (the Windows pins are removed). Applied right away to the current session (previous pins are backed up), and for every account at sign-in | Fully |
@@ -129,6 +138,7 @@ The options pre-fill the settings (from a command prompt or a shortcut):
 
 ```bat
 RoboConfigurator.exe -Skip Office,Activation   :: turn steps off (Ninite, CrapFixer, Edge, Taskbar, Office, Activation)
+RoboConfigurator.exe -Apps 7zip,chrome,vlc     :: apps installed by Ninite (ninite.com identifiers)
 RoboConfigurator.exe -AllTweaks                :: select ALL CrapFixer tweaks, not just the recommended ones
 RoboConfigurator.exe -WindowsKey XXXXX-XXXXX-XXXXX-XXXXX-XXXXX   :: Windows key to install if not activated
 RoboConfigurator.exe -Lang fr                  :: force the language (en or fr)

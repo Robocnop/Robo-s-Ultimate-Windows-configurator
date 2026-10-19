@@ -33,7 +33,8 @@
 
 ### En bref
 
-- **Logiciels** : 7-Zip, Chrome, Firefox, Foxit Reader et Notepad++ via Ninite.
+- **Logiciels** via Ninite : 7-Zip, Chrome, Firefox, Foxit Reader et Notepad++ par défaut, plus ou moins
+  les applis choisies parmi environ 80.
 - **Nettoyage** : tweaks recommandés de CrapFixer, thème sombre, applis inutiles supprimées.
 - **Edge** désinstallé proprement, WebView2 conservé.
 - **Barre des tâches** rangée : Explorateur, Firefox, Terminal, PowerShell, Paramètres, Panneau de configuration.
@@ -44,7 +45,8 @@ Une seule application portable, sans rien à installer, avec une interface au st
 thème clair ou sombre et couleur d'accent repris de Windows, effet Mica. Elle s'affiche en français sur un
 Windows en français, en anglais sinon.
 
-Interrompue ? Au lancement suivant, elle reprend là où elle s'était arrêtée.
+Interrompue ? Au lancement suivant, elle reprend là où elle s'était arrêtée. Plus à jour ? Elle prévient
+quand un exe plus récent est disponible.
 
 </td>
 </tr>
@@ -58,8 +60,15 @@ Interrompue ? Au lancement suivant, elle reprend là où elle s'était arrêtée
 3. Régler la configuration, puis cliquer sur **Démarrer**.
 
 Au démarrage, l'application affiche le poste (nom, modèle, version de Windows, activation) et permet de tout
-régler : nouveau nom du PC, étapes à faire, tweaks CrapFixer (recommandés ou tous), clé Windows, redémarrage
-et nettoyage à la fin. Si une clé Windows est enregistrée dans le BIOS, elle est signalée.
+régler depuis le menu de gauche :
+
+- **Poste** : nouveau nom du PC et étapes à faire.
+- **Applications** : applis installées par Ninite. La sélection par défaut est déjà cochée ; on peut en ajouter
+  ou en retirer (navigateurs, messagerie, multimédia, utilitaires, outils de développement...).
+- **Options** : tweaks CrapFixer (recommandés ou tous), clé et édition de Windows, redémarrage et nettoyage à la fin.
+
+Si une clé Windows est enregistrée dans le BIOS, elle est signalée. Si une version plus récente de l'application
+est sortie, un bandeau propose de télécharger le dernier `RoboConfigurator.exe`.
 
 <table>
 <tr>
@@ -83,7 +92,7 @@ Une fois lancée, la configuration se déroule seule jusqu'à la fin : seul Nini
 
 | Étape | Ce qu'elle fait | Automatique ? |
 |---|---|---|
-| **Ninite** | Installe 7-Zip, Chrome, Firefox, Foxit Reader et Notepad++ | Oui, cliquer sur **Close** à la fin |
+| **Ninite** | Installe les applis choisies dans **Applications** (par défaut 7-Zip, Chrome, Firefox, Foxit Reader et Notepad++) | Oui, cliquer sur **Close** à la fin |
 | **CrapFixer** | Applique les tweaks recommandés et le thème sombre, supprime les applis inutiles (Candy Crush, Skype, Bing News...) | Entièrement |
 | **Edge** | Désinstalle Edge avec son désinstalleur officiel (lancé par un processus renommé pour passer le blocage de Windows 11 24H2), WebView2 conservé | Entièrement |
 | **Barre des tâches** | Épingle, dans cet ordre : Explorateur, Firefox, Terminal, PowerShell, Paramètres, Panneau de configuration (les épingles de Windows sont retirées). Appliqué tout de suite à la session en cours (les anciennes épingles sont sauvegardées), et pour chaque compte à l'ouverture de session | Entièrement |
@@ -130,6 +139,7 @@ Les options pré-remplissent la configuration (depuis une invite de commandes ou
 
 ```bat
 RoboConfigurator.exe -Skip Office,Activation   :: désactiver des étapes (Ninite, CrapFixer, Edge, Taskbar, Office, Activation)
+RoboConfigurator.exe -Apps 7zip,chrome,vlc     :: applis installées par Ninite (identifiants de ninite.com)
 RoboConfigurator.exe -AllTweaks                :: sélectionner TOUS les tweaks CrapFixer, pas seulement les recommandés
 RoboConfigurator.exe -WindowsKey XXXXX-XXXXX-XXXXX-XXXXX-XXXXX   :: clé Windows à installer si non activé
 RoboConfigurator.exe -Lang en                  :: forcer la langue (en ou fr)

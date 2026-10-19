@@ -35,6 +35,8 @@ namespace RoboConfigurator.Core
         [DataMember] public bool CleanUpOnError { get; set; }
         /// <summary>Édition voulue pour l'activation : "" = garder l'actuelle, "Pro" ou "Home" (Famille).</summary>
         [DataMember] public string Edition { get; set; } = "";
+        /// <summary>Applis installées par l'étape Ninite (identifiants de ninite.com).</summary>
+        [DataMember] public string[] NiniteApps { get; set; } = Core.NiniteApps.Default.ToArray();
 
         public bool Has(string step) => Steps.Contains(step);
 
@@ -52,6 +54,8 @@ namespace RoboConfigurator.Core
                 config.WindowsKey = config.WindowsKey ?? "";
                 config.Edition = Editions.Normalize(config.Edition) ?? "";
                 config.Steps = StepNames.All.Where(s => (config.Steps ?? new string[0]).Contains(s)).ToArray();
+                // Configuration d'avant la v2.6.0 : pas de choix d'applis, sélection par défaut
+                config.NiniteApps = config.NiniteApps == null ? Core.NiniteApps.Default.ToArray() : Core.NiniteApps.Normalize(config.NiniteApps);
                 return config;
             }
         }
@@ -104,6 +108,7 @@ namespace RoboConfigurator.Core
         public bool Simulation { get; private set; }
         public bool ForceCleanUp { get; private set; }
         public string Edition { get; private set; } = Editions.Keep;
+        public string[] Apps { get; private set; } = NiniteApps.Default.ToArray();
         public List<string> Errors { get; } = new List<string>();
 
         public static Options Parse(string[] args)
@@ -123,6 +128,13 @@ namespace RoboConfigurator.Core
                             else o.Errors.Add(Lang.T($"Unknown step for -Skip: “{s}”. Possible values: {string.Join(", ", StepNames.All)}",
                                                      $"Étape inconnue pour -Skip : « {s} ». Valeurs possibles : {string.Join(", ", StepNames.All)}"));
                         }
+                        break;
+                    case "apps":
+                        var apps = Next().Split(',').Select(s => s.Trim()).Where(s => s.Length > 0).ToList();
+                        foreach (var unknown in apps.Where(s => NiniteApps.Find(s) == null))
+                            o.Errors.Add(Lang.T($"Unknown app for -Apps: “{unknown}”. Use the app identifiers of ninite.com (7zip, chrome, vlc...)",
+                                                $"Appli inconnue pour -Apps : « {unknown} ». Utiliser les identifiants de ninite.com (7zip, chrome, vlc...)"));
+                        o.Apps = NiniteApps.Normalize(apps);
                         break;
                     case "alltweaks": o.AllTweaks = true; break;
                     case "windowskey": o.WindowsKey = Next().Trim().ToUpperInvariant(); break;

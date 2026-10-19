@@ -74,7 +74,7 @@ namespace RoboConfigurator.Core
             Log.Title(Lang.T("Downloads", "Téléchargements"));
             foreach (string step in todo)
             {
-                var payload = Payloads.ForStep(step);
+                var payload = Payloads.ForStep(step, _config);
                 if (payload == null) continue;
                 Set(step, StepStatus.Downloading, Lang.T($"Preparing {payload.File}...", $"Préparation de {payload.File}..."));
                 try
@@ -140,8 +140,8 @@ namespace RoboConfigurator.Core
                 var drive = new DriveInfo(Path.GetPathRoot(_workDir));
                 return Lang.T($"Free space on {drive.Name}: {drive.AvailableFreeSpace / (1L << 30)} GB", $"Espace libre sur {drive.Name} : {drive.AvailableFreeSpace / (1L << 30)} Go");
             }));
-            Log.Info(Lang.T($"Settings: steps {string.Join(", ", _config.Steps)}; all tweaks {B(_config.AllTweaks)}; edition {(_config.Edition == "" ? "keep" : _config.Edition)}; Windows key {(_config.WindowsKey.Length > 0 ? "provided" : "none")}; restart {B(_config.AutoRestart)}; clean-up {B(_config.CleanUp)} (even on error: {B(_config.CleanUpOnError)})",
-                            $"Configuration : étapes {string.Join(", ", _config.Steps)} ; tous les tweaks {B(_config.AllTweaks)} ; édition {(_config.Edition == "" ? "garder" : _config.Edition)} ; clé Windows {(_config.WindowsKey.Length > 0 ? "fournie" : "aucune")} ; redémarrage {B(_config.AutoRestart)} ; nettoyage {B(_config.CleanUp)} (même en cas d'erreur : {B(_config.CleanUpOnError)})"));
+            Log.Info(Lang.T($"Settings: steps {string.Join(", ", _config.Steps)}; all tweaks {B(_config.AllTweaks)}; edition {(_config.Edition == "" ? "keep" : _config.Edition)}; Windows key {(_config.WindowsKey.Length > 0 ? "provided" : "none")}; restart {B(_config.AutoRestart)}; clean-up {B(_config.CleanUp)} (even on error: {B(_config.CleanUpOnError)}); Ninite apps {string.Join(",", _config.NiniteApps)}",
+                            $"Configuration : étapes {string.Join(", ", _config.Steps)} ; tous les tweaks {B(_config.AllTweaks)} ; édition {(_config.Edition == "" ? "garder" : _config.Edition)} ; clé Windows {(_config.WindowsKey.Length > 0 ? "fournie" : "aucune")} ; redémarrage {B(_config.AutoRestart)} ; nettoyage {B(_config.CleanUp)} (même en cas d'erreur : {B(_config.CleanUpOnError)}) ; applis Ninite {string.Join(",", _config.NiniteApps)}"));
         }
 
         private void Fail(string step, Exception ex, TimeSpan? elapsed = null)
@@ -169,8 +169,8 @@ namespace RoboConfigurator.Core
         private string Ninite()
         {
             Detail(StepNames.Ninite, Lang.T("Click “Close” in Ninite when it shows “Done”.", "Cliquez sur « Close » dans Ninite quand il affiche « Done »."));
-            Log.Info(Lang.T("Ninite installs the software automatically.", "Ninite installe les logiciels automatiquement."));
-            SystemInfo.RunVisible(Path.Combine(_workDir, Payloads.Ninite.File));
+            Log.Info(Lang.T($"Ninite installs: {NiniteApps.Names(_config.NiniteApps)}", $"Ninite installe : {NiniteApps.Names(_config.NiniteApps)}"));
+            SystemInfo.RunVisible(Path.Combine(_workDir, Payloads.ForStep(StepNames.Ninite, _config).File));
             return null;
         }
 

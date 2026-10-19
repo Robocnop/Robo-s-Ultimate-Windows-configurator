@@ -25,24 +25,27 @@ namespace RoboConfigurator.Core
         public static readonly Payload Office    = new Payload("OfficeSetup.exe", "https://nextcloud.robocnop.freeddns.org:4444/s/AabmSfHFBTR6e6J/download");
         public static readonly Payload Mas       = new Payload("MAS_AIO.cmd",     "https://nextcloud.robocnop.freeddns.org:4444/s/mZQFfJ5YzBX5JeR/download");
 
-        public static Payload ForStep(string step)
+        public static Payload ForStep(string step, RunConfig config)
         {
             switch (step)
             {
-                case StepNames.Ninite: return Ninite;
+                // La sélection par défaut garde le Ninite.exe intégré ou celui du Nextcloud ; une autre est générée par ninite.com
+                case StepNames.Ninite:
+                    return NiniteApps.IsDefault(config.NiniteApps) ? Ninite
+                         : new Payload(NiniteApps.FileName(config.NiniteApps), NiniteApps.Url(config.NiniteApps));
                 case StepNames.CrapFixer: return CrapFixer;
                 case StepNames.Office: return Office;
                 default: return null;
             }
         }
 
-        private static readonly HttpClient Http = CreateClient();
+        internal static readonly HttpClient Http = CreateClient();
 
         private static HttpClient CreateClient()
         {
             ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
             var client = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("RoboConfigurator/2.0");
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("RoboConfigurator/" + Updates.Current);
             return client;
         }
 

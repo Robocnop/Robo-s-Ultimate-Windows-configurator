@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Threading;
 using RoboConfigurator.Core;
 using Wpf.Ui.Appearance;
@@ -23,6 +24,8 @@ namespace RoboConfigurator
         private readonly List<StepItem> _steps;
         private readonly List<StepItem> _runItems;
         private readonly Dictionary<string, StepItem> _items;
+        private readonly List<AppItem> _apps;
+        private UpdateInfo _update;
 
         private string LogFile => Path.Combine(_workDir, Lang.T("log.txt", "journal.txt"));
 
@@ -70,12 +73,19 @@ namespace RoboConfigurator
             StepsList.ItemsSource = _steps;
             RunList.ItemsSource = _runItems;
 
+            _apps = NiniteApps.All.Select(a => new AppItem(a)).ToList();
+            foreach (var app in _apps) app.PropertyChanged += (s, e) => UpdateAppsSummary();
+            var appsView = new ListCollectionView(_apps);
+            appsView.GroupDescriptions.Add(new PropertyGroupDescription(nameof(AppItem.Category)));
+            AppsList.ItemsSource = appsView;
+            ShowPage(PostePageIndex);
+
             PcNameText.Text = Environment.MachineName;
             NewNameBox.PlaceholderText = Environment.MachineName;
             if (options.Simulation) SimulationBadge.Visibility = Visibility.Visible;
             LoadConfig();
 
-            Loaded += async (s, e) => await LoadSystemInfoAsync();
+            Loaded += async (s, e) => await Task.WhenAll(LoadSystemInfoAsync(), CheckForUpdateAsync());
             Closing += OnClosing;
         }
 
@@ -102,6 +112,7 @@ namespace RoboConfigurator
                 WindowsKey = _options.WindowsKey,
                 Edition = _options.Edition,
                 CleanUpOnError = _options.ForceCleanUp,
+                NiniteApps = _options.Apps,
             };
             if (_options.Errors.Any())
                 ShowMessage(ConfigMessage, InfoBarSeverity.Error, Lang.T("Command-line options ignored", "Options de lancement ignorées"), string.Join("\n", _options.Errors));
@@ -114,6 +125,82 @@ namespace RoboConfigurator
             CleanUpSwitch.IsChecked = config.CleanUp;
             CleanUpOnErrorSwitch.IsChecked = config.CleanUpOnError;
             EditionBox.SelectedIndex = Array.IndexOf(EditionValues, config.Edition) is int i && i >= 0 ? i : 0;
+            SelectApps(config.NiniteApps);
+        }
+
+        private const int PostePageIndex = 0, AppsPageIndex = 1, OptionsPageIndex = 2;
+
+        private void OnNavChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            // Appelé pendant InitializeComponent, avant que les pages existent
+            if (PostePage == null) return;
+            int page = NavList.SelectedIndex;
+            PostePage.Visibility = page == PostePageIndex ? Visibility.Visible : Visibility.Collapsed;
+            AppsPage.Visibility = page == AppsPageIndex ? Visibility.Visible : Visibility.Collapsed;
+            OptionsPage.Visibility = page == OptionsPageIndex ? Visibility.Visible : Visibility.Collapsed;
+            switch (page)
+            {
+                case AppsPageIndex:
+                    PageTitleText.Text = "Applications";
+                    PageSubtitleText.Text = Lang.T("Apps installed by the Ninite step. The default selection is already checked: add or remove apps as needed.",
+                                                   "Applis installées par l’étape Ninite. La sélection par défaut est déjà cochée : ajoutez-en ou retirez-en selon le besoin.");
+                    break;
+                case OptionsPageIndex:
+                    PageTitleText.Text = "Options";
+                    PageSubtitleText.Text = Lang.T("Settings used by the steps and at the end of the setup.", "Réglages utilisés par les étapes et à la fin de la configuration.");
+                    break;
+                default:
+                    PageTitleText.Text = Lang.T("Configure this PC", "Configuration du poste");
+                    PageSubtitleText.Text = Lang.T("Set everything up here, then click Start: the setup then runs on its own until the end.",
+                                                   "Réglez tout ici puis cliquez sur Démarrer : la configuration se déroule ensuite seule jusqu’à la fin.");
+                    break;
+            }
+            PageScroll.ScrollToTop();
+        }
+
+        private void ShowPage(int page)
+        {
+            if (NavList.SelectedIndex == page) OnNavChanged(NavList, null);
+            else NavList.SelectedIndex = page;
+        }
+
+        private void SelectApps(IEnumerable<string> slugs)
+        {
+            var selected = new HashSet<string>(NiniteApps.Normalize(slugs));
+            foreach (var app in _apps) app.IsSelected = selected.Contains(app.App.Slug);
+            UpdateAppsSummary();
+        }
+
+        private string[] SelectedApps => _apps.Where(a => a.IsSelected).Select(a => a.App.Slug).ToArray();
+
+        private void UpdateAppsSummary()
+        {
+            var apps = SelectedApps;
+            AppsCountText.Text = Lang.T($"{apps.Length} app(s) selected", $"{apps.Length} appli(s) sélectionnée(s)");
+            _items[StepNames.Ninite].Description = apps.Length == 0
+                ? Lang.T("No app selected: choose them in the Applications menu.", "Aucune appli choisie : à choisir dans le menu Applications.")
+                : Lang.T($"Installs {NiniteApps.Names(apps)}. Click “Close” at the end.", $"Installe {NiniteApps.Names(apps)}. Cliquer sur « Close » à la fin.");
+        }
+
+        private void OnAppsDefaultClick(object sender, RoutedEventArgs e) => SelectApps(NiniteApps.Default);
+
+        private void OnAppsNoneClick(object sender, RoutedEventArgs e) => SelectApps(new string[0]);
+
+        private async Task CheckForUpdateAsync()
+        {
+            _update = await Updates.CheckAsync();
+            if (_update == null) return;
+            UpdateTitle.Text = Lang.T($"Version {_update.Version} is available (this exe: {Updates.Current})", $"La version {_update.Version} est disponible (cet exe : {Updates.Current})");
+            UpdateBanner.Visibility = Visibility.Visible;
+        }
+
+        private void OnUpdateDownloadClick(object sender, RoutedEventArgs e) => OpenUrl(_update?.DownloadUrl);
+
+        private void OnUpdateNotesClick(object sender, RoutedEventArgs e) => OpenUrl(_update?.PageUrl);
+
+        private static void OpenUrl(string url)
+        {
+            if (!string.IsNullOrEmpty(url)) Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         }
 
         // Même ordre que les choix de EditionBox
@@ -175,6 +262,7 @@ namespace RoboConfigurator
             CleanUpSwitch.IsChecked = true;
             CleanUpOnErrorSwitch.IsChecked = false;
             EditionBox.SelectedIndex = 0;
+            SelectApps(NiniteApps.Default);
             ShowMessage(ConfigMessage, InfoBarSeverity.Success, Lang.T("Everything will be redone", "Tout sera refait"),
                 Lang.T("Completed steps and the saved settings have been forgotten.", "Les étapes déjà faites et la configuration enregistrée ont été oubliées."));
         }
@@ -185,6 +273,7 @@ namespace RoboConfigurator
             if (name.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase)) name = "";
             if (name.Length > 0 && !RunConfig.IsValidPcName(name))
             {
+                ShowPage(PostePageIndex);
                 ShowMessage(ConfigMessage, InfoBarSeverity.Error, Lang.T("Invalid PC name", "Nom du PC invalide"),
                     Lang.T("1 to 15 characters: letters, digits and hyphens, not digits only.", "1 à 15 caractères : lettres, chiffres et tirets, pas uniquement des chiffres."));
                 return;
@@ -192,7 +281,15 @@ namespace RoboConfigurator
             string key = KeyBox.Text.Trim().ToUpperInvariant();
             if (key.Length > 0 && !RunConfig.IsValidKey(key))
             {
+                ShowPage(OptionsPageIndex);
                 ShowMessage(ConfigMessage, InfoBarSeverity.Error, Lang.T("Invalid Windows key", "Clé Windows invalide"), Lang.T("Expected format: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX.", "Format attendu : XXXXX-XXXXX-XXXXX-XXXXX-XXXXX."));
+                return;
+            }
+            if (_items[StepNames.Ninite].IsSelected && SelectedApps.Length == 0)
+            {
+                ShowPage(AppsPageIndex);
+                ShowMessage(ConfigMessage, InfoBarSeverity.Error, Lang.T("No app selected for Ninite", "Aucune appli choisie pour Ninite"),
+                    Lang.T("Check at least one app, or turn off the Ninite step.", "Cochez au moins une appli, ou désactivez l’étape Ninite."));
                 return;
             }
 
@@ -206,6 +303,7 @@ namespace RoboConfigurator
                 CleanUp = CleanUpSwitch.IsChecked == true,
                 CleanUpOnError = CleanUpSwitch.IsChecked == true && CleanUpOnErrorSwitch.IsChecked == true,
                 Edition = EditionValues[Math.Max(0, EditionBox.SelectedIndex)],
+                NiniteApps = SelectedApps,
             };
 
             var confirm = new Wpf.Ui.Controls.MessageBox

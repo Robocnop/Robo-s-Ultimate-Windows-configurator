@@ -6,7 +6,7 @@ Pour un exe qui fonctionne **sans Internet**, déposer ici un ou plusieurs de ce
 
 | Fichier | Étape |
 |---|---|
-| `Ninite.exe` | Ninite |
+| `Ninite.exe` | Ninite (sélection d'applis par défaut ; une autre sélection est téléchargée sur ninite.com) |
 | `CrapFixer.zip` | CrapFixer |
 | `OfficeSetup.exe` | Office |
 | `MAS_AIO.cmd` | Activation (script de secours) |

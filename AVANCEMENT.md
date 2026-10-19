@@ -1,6 +1,6 @@
 # État d'avancement
 
-Dernière mise à jour : 19/10/2026. Dernière version publiée : [v2.5.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v2.5.0) ; dernière version du script PowerShell : [v1.3.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.3.0).
+Dernière mise à jour : 19/10/2026. Dernière version publiée : [v2.6.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v2.6.0) ; dernière version du script PowerShell : [v1.3.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.3.0).
 
 ## État des étapes
 
@@ -50,6 +50,11 @@ Dernière mise à jour : 19/10/2026. Dernière version publiée : [v2.5.0](https
   - Désinstallation d'Edge : sur un PC réel (POSTE6, Windows 11 25H2, Edge 155, région BE), le désinstalleur refuse toujours avec le code 532 (« Uninstall was blocked for this product », « Stable is not uninstallable for process »), y compris depuis les Paramètres de Windows. Depuis Windows 11 24H2, `setup.exe` n'accepte la désinstallation que si son processus parent fait partie d'une liste autorisée : la méthode WinUtil ne suffit plus. `setup.exe` est maintenant lancé par une copie de `cmd.exe` nommée `dllhost.exe` (méthode d'ave9858), et `experiment_control_labels` est supprimé de `EdgeUpdate\ClientState` avant. Le code 532 est expliqué dans le journal. À valider sur PC réel.
   - Barre des tâches : Paramètres et Panneau de configuration sont épinglés après PowerShell.
   - La branche `beta` est compilée par la CI.
+
+- **v2.6.0** :
+  - Avertissement de mise à jour : au lancement, l'application compare sa version à la dernière release GitHub (pré-versions exclues). Si elle est plus ancienne, un bandeau propose de télécharger le dernier `RoboConfigurator.exe`. Sans Internet, rien n'est affiché (une ligne dans le journal).
+  - Menu à gauche : **Poste** (nom du PC, étapes), **Applications** (choix des applis Ninite), **Options**.
+  - Choix des applis Ninite : environ 80 applis de ninite.com, la sélection par défaut est déjà cochée. Une autre sélection télécharge un installateur généré par ninite.com (`Ninite-<empreinte>.exe`). Option `-Apps`. Testé en simulation (interface, enregistrement de la sélection) ; l'installation d'une sélection personnalisée reste à valider sur un vrai PC.
 
 ## Problèmes connus
 

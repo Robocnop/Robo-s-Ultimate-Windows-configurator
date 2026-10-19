@@ -11,12 +11,13 @@ namespace RoboConfigurator
     {
         public StepItem(string key, string title, string description, SymbolRegular icon)
         {
-            Key = key; Title = title; Description = description; Icon = icon;
+            Key = key; Title = title; _description = description; Icon = icon;
         }
 
         public string Key { get; }
         public string Title { get; }
-        public string Description { get; }
+        private string _description;
+        public string Description { get => _description; set => Set(ref _description, value); }
         public SymbolRegular Icon { get; }
 
         private bool _isSelected = true;
@@ -89,5 +90,29 @@ namespace RoboConfigurator
             OnPropertyChanged(name);
             return true;
         }
+    }
+
+    /// <summary>Appli proposée sur la page Applications (étape Ninite).</summary>
+    public sealed class AppItem : INotifyPropertyChanged
+    {
+        public AppItem(NiniteApp app) { App = app; }
+
+        public NiniteApp App { get; }
+        public string Name => App.Name;
+        public string Category => App.Category;
+
+        private bool _isSelected;
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set
+            {
+                if (_isSelected == value) return;
+                _isSelected = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSelected)));
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
     }
 }

@@ -71,184 +71,351 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel MaxWidth="1000" Margin="40,4,40,28">
-                    <TextBlock Style="{StaticResource PageTitle}" Text="{local:T 'Configure this PC', 'Configuration du poste'}" />
-                    <TextBlock
-                        Margin="0,4,0,0"
-                        Style="{StaticResource Secondary}"
-                        Text="{local:T 'Set everything up here, then click Start: the setup then runs on its own until the end.', 'Réglez tout ici puis cliquez sur Démarrer : la configuration se déroule ensuite seule jusqu’à la fin.'}" />
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
 
-                    <Border Margin="0,20,0,0" Padding="20" Style="{StaticResource Card}">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <Border
-                                Width="64"
-                                Height="64"
-                                Background="{DynamicResource AccentFillColorDefaultBrush}"
-                                CornerRadius="8">
-                                <ui:SymbolIcon
-                                    FontSize="34"
-                                    Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"
-                                    Symbol="Laptop24" />
-                            </Border>
-                            <StackPanel Grid.Column="1" Margin="16,0,16,0" VerticalAlignment="Center">
-                                <TextBlock
-                                    x:Name="PcNameText"
-                                    FontSize="20"
-                                    FontWeight="SemiBold"
-                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
-                                <TextBlock x:Name="PcModelText" Style="{StaticResource Secondary}" Text="{local:T 'Reading PC information...', 'Lecture des informations du poste...'}" />
-                                <TextBlock x:Name="WindowsText" Style="{StaticResource Secondary}" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal">
-                                <ui:SymbolIcon x:Name="ActivationIcon" FontSize="20" Symbol="ShieldQuestion24" />
-                                <TextBlock
-                                    x:Name="ActivationText"
-                                    Margin="8,0,0,0"
-                                    VerticalAlignment="Center"
-                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-
-                    <ui:InfoBar x:Name="ConfigMessage" Margin="0,12,0,0" IsClosable="True" />
-
-                    <TextBlock Style="{StaticResource SectionHeader}" Text="{local:T 'PC', 'Poste'}" />
-                    <ui:CardControl Icon="{ui:SymbolIcon Rename24}">
-                        <ui:CardControl.Header>
-                            <StackPanel>
-                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:T 'PC name', 'Nom du PC'}" />
-                                <TextBlock Style="{StaticResource Secondary}" Text="{local:T 'Applied on restart. Up to 15 characters: letters, digits and hyphens. Leave empty to keep the current name.', 'Appliqué au redémarrage. 15 caractères maximum : lettres, chiffres et tirets. Vide = garder le nom actuel.'}" />
-                            </StackPanel>
-                        </ui:CardControl.Header>
-                        <ui:TextBox
-                            x:Name="NewNameBox"
-                            Width="240"
-                            CharacterCasing="Upper"
-                            MaxLength="15" />
-                    </ui:CardControl>
-
-                    <TextBlock Style="{StaticResource SectionHeader}" Text="{local:T 'Steps', 'Étapes'}" />
-                    <ItemsControl x:Name="StepsList">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type local:StepItem}">
-                                <ui:CardControl Margin="0,0,0,4" Icon="{Binding Icon, Converter={StaticResource SymbolToIcon}}">
-                                    <ui:CardControl.Header>
-                                        <StackPanel>
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Style="{StaticResource CardTitle}" Text="{Binding Title}" />
+                <ListBox
+                    x:Name="NavList"
+                    Width="190"
+                    Margin="12,8,0,12"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    SelectedIndex="0"
+                    SelectionChanged="OnNavChanged">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Cursor" Value="Hand" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border
+                                            x:Name="Bd"
+                                            Margin="0,2"
+                                            Padding="12,9"
+                                            Background="Transparent"
+                                            CornerRadius="4">
+                                            <Grid>
                                                 <Border
-                                                    Margin="8,0,0,0"
-                                                    Padding="6,1"
-                                                    VerticalAlignment="Center"
-                                                    Background="{DynamicResource SystemFillColorSuccessBackgroundBrush}"
-                                                    CornerRadius="4"
-                                                    Visibility="{Binding AlreadyDone, Converter={StaticResource BoolToVisibility}}">
-                                                    <TextBlock
-                                                        FontSize="11"
-                                                        Foreground="{DynamicResource SystemFillColorSuccessBrush}"
-                                                        Text="{local:T 'Already done', 'Déjà faite'}" />
-                                                </Border>
-                                            </StackPanel>
-                                            <TextBlock Style="{StaticResource Secondary}" Text="{Binding Description}" />
-                                        </StackPanel>
-                                    </ui:CardControl.Header>
-                                    <ui:ToggleSwitch
-                                        IsChecked="{Binding IsSelected}"
-                                        OffContent="{local:T 'Off', 'Désactivé'}"
-                                        OnContent="{local:T 'On', 'Activé'}" />
-                                </ui:CardControl>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                                                    x:Name="Indicator"
+                                                    Width="3"
+                                                    Height="16"
+                                                    Margin="-12,0,0,0"
+                                                    HorizontalAlignment="Left"
+                                                    Background="{DynamicResource AccentFillColorDefaultBrush}"
+                                                    CornerRadius="1.5"
+                                                    Visibility="Collapsed" />
+                                                <ContentPresenter TextElement.Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                                                <Setter TargetName="Indicator" Property="Visibility" Value="Visible" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBoxItem>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon FontSize="18" Symbol="Desktop24" />
+                            <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="{local:T 'PC', 'Poste'}" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon FontSize="18" Symbol="AppsAddIn24" />
+                            <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="Applications" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon FontSize="18" Symbol="Options24" />
+                            <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="Options" />
+                        </StackPanel>
+                    </ListBoxItem>
+                </ListBox>
 
-                    <TextBlock Style="{StaticResource SectionHeader}" Text="Options" />
-                    <ui:CardControl Margin="0,0,0,4" Icon="{ui:SymbolIcon Options24}">
-                        <ui:CardControl.Header>
-                            <StackPanel>
-                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:T 'CrapFixer tweaks', 'Tweaks CrapFixer'}" />
-                                <TextBlock Style="{StaticResource Secondary}" Text="{local:T 'Settings applied by the CrapFixer step. Dark theme is always applied.', 'Réglages appliqués par l’étape CrapFixer. Le thème sombre est toujours appliqué.'}" />
-                            </StackPanel>
-                        </ui:CardControl.Header>
-                        <ComboBox x:Name="TweaksBox" Width="240" SelectedIndex="0">
-                            <ComboBoxItem Content="{local:T 'Recommended', 'Recommandés'}" />
-                            <ComboBoxItem Content="{local:T 'All', 'Tous'}" />
-                        </ComboBox>
-                    </ui:CardControl>
-                    <ui:CardControl Margin="0,0,0,4" Icon="{ui:SymbolIcon Key24}">
-                        <ui:CardControl.Header>
-                            <StackPanel>
-                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:T 'Windows product key', 'Clé de produit Windows'}" />
-                                <TextBlock x:Name="KeyHint" Style="{StaticResource Secondary}" Text="{local:T 'Only installed if Windows is not already activated.', 'Installée seulement si Windows n’est pas déjà activé.'}" />
-                            </StackPanel>
-                        </ui:CardControl.Header>
-                        <ui:TextBox
-                            x:Name="KeyBox"
-                            Width="320"
-                            CharacterCasing="Upper"
-                            FontFamily="Cascadia Mono, Consolas"
-                            MaxLength="29"
-                            PlaceholderText="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" />
-                    </ui:CardControl>
-                    <ui:CardControl Margin="0,0,0,4" Icon="{ui:SymbolIcon Window24}">
-                        <ui:CardControl.Header>
-                            <StackPanel>
-                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:T 'Windows edition', 'Édition de Windows'}" />
-                                <TextBlock Style="{StaticResource Secondary}" Text="{local:T 'Used by the activation step. Home to Pro is done in place (restart needed, then run the app again); Pro to Home needs a reinstall.', 'Utilisée par l’étape Activation. Famille vers Pro se fait sur place (redémarrage nécessaire, puis relancer l’application) ; Pro vers Famille demande une réinstallation.'}" />
-                            </StackPanel>
-                        </ui:CardControl.Header>
-                        <ComboBox x:Name="EditionBox" Width="240" SelectedIndex="0">
-                            <ComboBoxItem Content="{local:T 'Keep the current one', 'Garder l’actuelle'}" />
-                            <ComboBoxItem Content="Windows Pro" />
-                            <ComboBoxItem Content="{local:T 'Windows Home', 'Windows Famille'}" />
-                        </ComboBox>
-                    </ui:CardControl>
-                    <ui:CardControl Icon="{ui:SymbolIcon ArrowClockwise24}">
-                        <ui:CardControl.Header>
-                            <StackPanel>
-                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:T 'Restart when done', 'Redémarrer à la fin'}" />
-                                <TextBlock Style="{StaticResource Secondary}" Text="{local:T 'The PC restarts 60 seconds after the end. The restart can be cancelled from the app.', 'Le PC redémarre 60 secondes après la fin. Le redémarrage peut être annulé depuis l’application.'}" />
-                            </StackPanel>
-                        </ui:CardControl.Header>
-                        <ui:ToggleSwitch
-                            x:Name="RestartSwitch"
-                            IsChecked="True"
-                            OffContent="{local:T 'Off', 'Désactivé'}"
-                            OnContent="{local:T 'On', 'Activé'}" />
-                    </ui:CardControl>
-                    <ui:CardControl Icon="{ui:SymbolIcon Delete24}">
-                        <ui:CardControl.Header>
-                            <StackPanel>
-                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:T 'Clean up when done', 'Nettoyer à la fin'}" />
-                                <TextBlock Style="{StaticResource Secondary}" Text="{local:T 'Deletes the working folder (downloads, settings, log) before restarting. It is kept if a step fails. The report stays on the desktop.', 'Supprime le dossier de travail (téléchargements, configuration, journal) avant le redémarrage. Il est conservé si une étape échoue. Le rapport reste sur le Bureau.'}" />
-                            </StackPanel>
-                        </ui:CardControl.Header>
-                        <ui:ToggleSwitch
-                            x:Name="CleanUpSwitch"
-                            IsChecked="True"
-                            OffContent="{local:T 'Off', 'Désactivé'}"
-                            OnContent="{local:T 'On', 'Activé'}" />
-                    </ui:CardControl>
-                    <ui:CardControl Margin="0,4,0,0" Icon="{ui:SymbolIcon DeleteDismiss24}" IsEnabled="{Binding IsChecked, ElementName=CleanUpSwitch}">
-                        <ui:CardControl.Header>
-                            <StackPanel>
-                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:T 'Clean up even if a step fails', 'Nettoyer même en cas d’erreur'}" />
-                                <TextBlock Style="{StaticResource Secondary}" Text="{local:T 'Deletes the working folder even when a step failed: the failed steps can then not be resumed. A copy of the log stays on the desktop.', 'Supprime le dossier de travail même si une étape a échoué : les étapes en échec ne pourront plus être reprises. Une copie du journal reste sur le Bureau.'}" />
-                            </StackPanel>
-                        </ui:CardControl.Header>
-                        <ui:ToggleSwitch
-                            x:Name="CleanUpOnErrorSwitch"
-                            IsChecked="False"
-                            OffContent="{local:T 'Off', 'Désactivé'}"
-                            OnContent="{local:T 'On', 'Activé'}" />
-                    </ui:CardControl>
-                </StackPanel>
-            </ScrollViewer>
+                <ScrollViewer x:Name="PageScroll" Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                    <StackPanel MaxWidth="1000" Margin="28,4,40,28">
+                        <TextBlock x:Name="PageTitleText" Style="{StaticResource PageTitle}" />
+                        <TextBlock
+                            x:Name="PageSubtitleText"
+                            Margin="0,4,0,0"
+                            Style="{StaticResource Secondary}" />
+
+                        <Border
+                            x:Name="UpdateBanner"
+                            Margin="0,16,0,0"
+                            Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
+                            Style="{StaticResource Card}"
+                            Visibility="Collapsed">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <ui:SymbolIcon
+                                    Margin="0,0,14,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="22"
+                                    Foreground="{DynamicResource SystemFillColorCautionBrush}"
+                                    Symbol="ArrowDownload24" />
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock
+                                        x:Name="UpdateTitle"
+                                        FontWeight="SemiBold"
+                                        Style="{StaticResource CardTitle}" />
+                                    <TextBlock Style="{StaticResource Secondary}" Text="{local:T 'This portable exe is outdated: it is recommended to download the latest one before setting up the PC.', 'Cet exe portable n’est pas à jour : il est recommandé de télécharger le dernier avant de configurer le PC.'}" />
+                                </StackPanel>
+                                <StackPanel
+                                    Grid.Column="2"
+                                    Margin="16,0,0,0"
+                                    VerticalAlignment="Center"
+                                    Orientation="Horizontal">
+                                    <ui:Button
+                                        Margin="0,0,8,0"
+                                        Click="OnUpdateNotesClick"
+                                        Content="{local:T 'What’s new', 'Nouveautés'}" />
+                                    <ui:Button
+                                        Appearance="Primary"
+                                        Click="OnUpdateDownloadClick"
+                                        Content="{local:T 'Download', 'Télécharger'}"
+                                        Icon="{ui:SymbolIcon ArrowDownload24}" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <ui:InfoBar x:Name="ConfigMessage" Margin="0,12,0,0" IsClosable="True" />
+
+                        <StackPanel x:Name="PostePage">
+                            <Border Margin="0,12,0,0" Padding="20" Style="{StaticResource Card}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border
+                                        Width="64"
+                                        Height="64"
+                                        Background="{DynamicResource AccentFillColorDefaultBrush}"
+                                        CornerRadius="8">
+                                        <ui:SymbolIcon
+                                            FontSize="34"
+                                            Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"
+                                            Symbol="Laptop24" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Margin="16,0,16,0" VerticalAlignment="Center">
+                                        <TextBlock
+                                            x:Name="PcNameText"
+                                            FontSize="20"
+                                            FontWeight="SemiBold"
+                                            Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                        <TextBlock x:Name="PcModelText" Style="{StaticResource Secondary}" Text="{local:T 'Reading PC information...', 'Lecture des informations du poste...'}" />
+                                        <TextBlock x:Name="WindowsText" Style="{StaticResource Secondary}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal">
+                                        <ui:SymbolIcon x:Name="ActivationIcon" FontSize="20" Symbol="ShieldQuestion24" />
+                                        <TextBlock
+                                            x:Name="ActivationText"
+                                            Margin="8,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <TextBlock Style="{StaticResource SectionHeader}" Text="{local:T 'PC', 'Poste'}" />
+                            <ui:CardControl Icon="{ui:SymbolIcon Rename24}">
+                                <ui:CardControl.Header>
+                                    <StackPanel>
+                                        <TextBlock Style="{StaticResource CardTitle}" Text="{local:T 'PC name', 'Nom du PC'}" />
+                                        <TextBlock Style="{StaticResource Secondary}" Text="{local:T 'Applied on restart. Up to 15 characters: letters, digits and hyphens. Leave empty to keep the current name.', 'Appliqué au redémarrage. 15 caractères maximum : lettres, chiffres et tirets. Vide = garder le nom actuel.'}" />
+                                    </StackPanel>
+                                </ui:CardControl.Header>
+                                <ui:TextBox
+                                    x:Name="NewNameBox"
+                                    Width="240"
+                                    CharacterCasing="Upper"
+                                    MaxLength="15" />
+                            </ui:CardControl>
+
+                            <TextBlock Style="{StaticResource SectionHeader}" Text="{local:T 'Steps', 'Étapes'}" />
+                            <ItemsControl x:Name="StepsList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type local:StepItem}">
+                                        <ui:CardControl Margin="0,0,0,4" Icon="{Binding Icon, Converter={StaticResource SymbolToIcon}}">
+                                            <ui:CardControl.Header>
+                                                <StackPanel>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Style="{StaticResource CardTitle}" Text="{Binding Title}" />
+                                                        <Border
+                                                            Margin="8,0,0,0"
+                                                            Padding="6,1"
+                                                            VerticalAlignment="Center"
+                                                            Background="{DynamicResource SystemFillColorSuccessBackgroundBrush}"
+                                                            CornerRadius="4"
+                                                            Visibility="{Binding AlreadyDone, Converter={StaticResource BoolToVisibility}}">
+                                                            <TextBlock
+                                                                FontSize="11"
+                                                                Foreground="{DynamicResource SystemFillColorSuccessBrush}"
+                                                                Text="{local:T 'Already done', 'Déjà faite'}" />
+                                                        </Border>
+                                                    </StackPanel>
+                                                    <TextBlock Style="{StaticResource Secondary}" Text="{Binding Description}" />
+                                                </StackPanel>
+                                            </ui:CardControl.Header>
+                                            <ui:ToggleSwitch
+                                                IsChecked="{Binding IsSelected}"
+                                                OffContent="{local:T 'Off', 'Désactivé'}"
+                                                OnContent="{local:T 'On', 'Activé'}" />
+                                        </ui:CardControl>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+
+                        <StackPanel x:Name="AppsPage" Visibility="Collapsed">
+                            <Grid Margin="0,16,0,0">
+                                <TextBlock
+                                    x:Name="AppsCountText"
+                                    VerticalAlignment="Center"
+                                    Style="{StaticResource Secondary}" />
+                                <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                                    <ui:Button
+                                        Margin="0,0,8,0"
+                                        Click="OnAppsDefaultClick"
+                                        Content="{local:T 'Default selection', 'Sélection par défaut'}"
+                                        Icon="{ui:SymbolIcon ArrowReset24}" />
+                                    <ui:Button
+                                        Click="OnAppsNoneClick"
+                                        Content="{local:T 'Uncheck all', 'Tout décocher'}"
+                                        Icon="{ui:SymbolIcon Dismiss24}" />
+                                </StackPanel>
+                            </Grid>
+                            <ItemsControl x:Name="AppsList">
+                                <ItemsControl.GroupStyle>
+                                    <GroupStyle>
+                                        <GroupStyle.HeaderTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Style="{StaticResource SectionHeader}" Margin="0,20,0,8" Text="{Binding Name}" />
+                                            </DataTemplate>
+                                        </GroupStyle.HeaderTemplate>
+                                    </GroupStyle>
+                                </ItemsControl.GroupStyle>
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type local:AppItem}">
+                                        <Border
+                                            Width="210"
+                                            Margin="0,0,6,6"
+                                            Padding="12,4"
+                                            Style="{StaticResource Card}">
+                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected}" />
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+
+                        <StackPanel x:Name="OptionsPage" Margin="0,20,0,0" Visibility="Collapsed">
+                            <ui:CardControl Margin="0,0,0,4" Icon="{ui:SymbolIcon Options24}">
+                                <ui:CardControl.Header>
+                                    <StackPanel>
+                                        <TextBlock Style="{StaticResource CardTitle}" Text="{local:T 'CrapFixer tweaks', 'Tweaks CrapFixer'}" />
+                                        <TextBlock Style="{StaticResource Secondary}" Text="{local:T 'Settings applied by the CrapFixer step. Dark theme is always applied.', 'Réglages appliqués par l’étape CrapFixer. Le thème sombre est toujours appliqué.'}" />
+                                    </StackPanel>
+                                </ui:CardControl.Header>
+                                <ComboBox x:Name="TweaksBox" Width="240" SelectedIndex="0">
+                                    <ComboBoxItem Content="{local:T 'Recommended', 'Recommandés'}" />
+                                    <ComboBoxItem Content="{local:T 'All', 'Tous'}" />
+                                </ComboBox>
+                            </ui:CardControl>
+                            <ui:CardControl Margin="0,0,0,4" Icon="{ui:SymbolIcon Key24}">
+                                <ui:CardControl.Header>
+                                    <StackPanel>
+                                        <TextBlock Style="{StaticResource CardTitle}" Text="{local:T 'Windows product key', 'Clé de produit Windows'}" />
+                                        <TextBlock x:Name="KeyHint" Style="{StaticResource Secondary}" Text="{local:T 'Only installed if Windows is not already activated.', 'Installée seulement si Windows n’est pas déjà activé.'}" />
+                                    </StackPanel>
+                                </ui:CardControl.Header>
+                                <ui:TextBox
+                                    x:Name="KeyBox"
+                                    Width="320"
+                                    CharacterCasing="Upper"
+                                    FontFamily="Cascadia Mono, Consolas"
+                                    MaxLength="29"
+                                    PlaceholderText="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" />
+                            </ui:CardControl>
+                            <ui:CardControl Margin="0,0,0,4" Icon="{ui:SymbolIcon Window24}">
+                                <ui:CardControl.Header>
+                                    <StackPanel>
+                                        <TextBlock Style="{StaticResource CardTitle}" Text="{local:T 'Windows edition', 'Édition de Windows'}" />
+                                        <TextBlock Style="{StaticResource Secondary}" Text="{local:T 'Used by the activation step. Home to Pro is done in place (restart needed, then run the app again); Pro to Home needs a reinstall.', 'Utilisée par l’étape Activation. Famille vers Pro se fait sur place (redémarrage nécessaire, puis relancer l’application) ; Pro vers Famille demande une réinstallation.'}" />
+                                    </StackPanel>
+                                </ui:CardControl.Header>
+                                <ComboBox x:Name="EditionBox" Width="240" SelectedIndex="0">
+                                    <ComboBoxItem Content="{local:T 'Keep the current one', 'Garder l’actuelle'}" />
+                                    <ComboBoxItem Content="Windows Pro" />
+                                    <ComboBoxItem Content="{local:T 'Windows Home', 'Windows Famille'}" />
+                                </ComboBox>
+                            </ui:CardControl>
+                            <ui:CardControl Icon="{ui:SymbolIcon ArrowClockwise24}">
+                                <ui:CardControl.Header>
+                                    <StackPanel>
+                                        <TextBlock Style="{StaticResource CardTitle}" Text="{local:T 'Restart when done', 'Redémarrer à la fin'}" />
+                                        <TextBlock Style="{StaticResource Secondary}" Text="{local:T 'The PC restarts 60 seconds after the end. The restart can be cancelled from the app.', 'Le PC redémarre 60 secondes après la fin. Le redémarrage peut être annulé depuis l’application.'}" />
+                                    </StackPanel>
+                                </ui:CardControl.Header>
+                                <ui:ToggleSwitch
+                                    x:Name="RestartSwitch"
+                                    IsChecked="True"
+                                    OffContent="{local:T 'Off', 'Désactivé'}"
+                                    OnContent="{local:T 'On', 'Activé'}" />
+                            </ui:CardControl>
+                            <ui:CardControl Icon="{ui:SymbolIcon Delete24}">
+                                <ui:CardControl.Header>
+                                    <StackPanel>
+                                        <TextBlock Style="{StaticResource CardTitle}" Text="{local:T 'Clean up when done', 'Nettoyer à la fin'}" />
+                                        <TextBlock Style="{StaticResource Secondary}" Text="{local:T 'Deletes the working folder (downloads, settings, log) before restarting. It is kept if a step fails. The report stays on the desktop.', 'Supprime le dossier de travail (téléchargements, configuration, journal) avant le redémarrage. Il est conservé si une étape échoue. Le rapport reste sur le Bureau.'}" />
+                                    </StackPanel>
+                                </ui:CardControl.Header>
+                                <ui:ToggleSwitch
+                                    x:Name="CleanUpSwitch"
+                                    IsChecked="True"
+                                    OffContent="{local:T 'Off', 'Désactivé'}"
+                                    OnContent="{local:T 'On', 'Activé'}" />
+                            </ui:CardControl>
+                            <ui:CardControl Margin="0,4,0,0" Icon="{ui:SymbolIcon DeleteDismiss24}" IsEnabled="{Binding IsChecked, ElementName=CleanUpSwitch}">
+                                <ui:CardControl.Header>
+                                    <StackPanel>
+                                        <TextBlock Style="{StaticResource CardTitle}" Text="{local:T 'Clean up even if a step fails', 'Nettoyer même en cas d’erreur'}" />
+                                        <TextBlock Style="{StaticResource Secondary}" Text="{local:T 'Deletes the working folder even when a step failed: the failed steps can then not be resumed. A copy of the log stays on the desktop.', 'Supprime le dossier de travail même si une étape a échoué : les étapes en échec ne pourront plus être reprises. Une copie du journal reste sur le Bureau.'}" />
+                                    </StackPanel>
+                                </ui:CardControl.Header>
+                                <ui:ToggleSwitch
+                                    x:Name="CleanUpOnErrorSwitch"
+                                    IsChecked="False"
+                                    OffContent="{local:T 'Off', 'Désactivé'}"
+                                    OnContent="{local:T 'On', 'Activé'}" />
+                            </ui:CardControl>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
 
             <Border Grid.Row="1" Style="{StaticResource Footer}">
                 <Grid>
