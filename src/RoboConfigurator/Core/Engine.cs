@@ -226,8 +226,7 @@ namespace RoboConfigurator.Core
 
         private string Edge()
         {
-            // Même méthode que WinUtil (Chris Titus) : un faux MicrosoftEdge.exe dans l'ancien dossier
-            // d'Edge débloque le désinstalleur officiel. WebView2 (utilisé par Office, Teams...) est conservé.
+            // Méthode WinUtil : un faux MicrosoftEdge.exe dans SystemApps débloque le désinstalleur officiel. WebView2 est conservé.
             string edgeDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Microsoft\Edge\Application");
             Log.Info(Lang.T($"Edge folder: {edgeDir} ({(Directory.Exists(edgeDir) ? "present" : "missing")})", $"Dossier d'Edge : {edgeDir} ({(Directory.Exists(edgeDir) ? "présent" : "absent")})"));
             var setups = !Directory.Exists(edgeDir) ? new List<string>() : Directory.GetDirectories(edgeDir)
@@ -454,8 +453,7 @@ namespace RoboConfigurator.Core
                 catch (Exception ex) { Log.Error(Lang.T($"Copy to {shell}", $"Copie dans {shell}"), ex); }
             }
 
-            // Le compte actuel a déjà ses épingles : Windows les garde tant qu'elles ne sont pas réinitialisées.
-            // Elles sont sauvegardées, effacées, puis l'explorateur est relancé pour appliquer la disposition tout de suite.
+            // Un profil existant garde ses épingles malgré la stratégie : elles sont sauvegardées puis effacées
             Detail(StepNames.Taskbar, Lang.T("Applying the layout to this session...", "Application de la disposition à cette session..."));
             string pinned = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar");
             Log.Info(Lang.T("Pins before: ", "Épingles avant : ") + PinnedList(pinned));

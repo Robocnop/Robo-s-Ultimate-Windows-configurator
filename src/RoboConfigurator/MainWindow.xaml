@@ -325,7 +325,18 @@
                                             Margin="0,0,6,6"
                                             Padding="12,4"
                                             Style="{StaticResource Card}">
-                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected}" />
+                                            <CheckBox IsChecked="{Binding IsSelected}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Image
+                                                        Width="20"
+                                                        Height="20"
+                                                        Margin="0,0,8,0"
+                                                        VerticalAlignment="Center"
+                                                        RenderOptions.BitmapScalingMode="HighQuality"
+                                                        Source="{Binding Icon}" />
+                                                    <TextBlock VerticalAlignment="Center" Text="{Binding Name}" />
+                                                </StackPanel>
+                                            </CheckBox>
                                         </Border>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>

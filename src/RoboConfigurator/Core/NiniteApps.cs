@@ -10,14 +10,15 @@ namespace RoboConfigurator.Core
     {
         private readonly string[] _category;
         public NiniteApp(string slug, string name, string[] category) { Slug = slug; Name = name; _category = category; }
-        /// <summary>Identifiant de l'appli dans l'URL de ninite.com (valeur de sa case à cocher sur la page d'accueil).</summary>
+        /// <summary>Identifiant utilisé dans l'URL de ninite.com.</summary>
         public string Slug { get; }
         public string Name { get; }
-        /// <summary>Traduite à la lecture : le catalogue peut être créé avant que -Lang soit lu.</summary>
+        public string Icon => "pack://application:,,,/Assets/AppIcons/" + Slug.Replace('.', '_') + ".png";
+        // Traduite à la lecture : le catalogue peut être créé avant la lecture de -Lang
         public string Category => Lang.T(_category[0], _category[1]);
     }
 
-    /// <summary>Applis proposées pour l'étape Ninite. Identifiants relevés sur ninite.com le 19/10/2026.</summary>
+    // Identifiants et icônes relevés sur ninite.com le 19/10/2026
     public static class NiniteApps
     {
         public static readonly string[] Default = { "7zip", "chrome", "firefox", "foxit", "notepadplusplus" };
@@ -136,7 +137,6 @@ namespace RoboConfigurator.Core
 
         public static NiniteApp Find(string slug) => All.FirstOrDefault(a => a.Slug.Equals((slug ?? "").Trim(), StringComparison.OrdinalIgnoreCase));
 
-        /// <summary>Applis connues, dans l'ordre du catalogue et sans doublon.</summary>
         public static string[] Normalize(IEnumerable<string> slugs)
         {
             var known = new HashSet<string>((slugs ?? new string[0]).Select(Find).Where(a => a != null).Select(a => a.Slug));
@@ -149,7 +149,7 @@ namespace RoboConfigurator.Core
 
         public static string Url(IEnumerable<string> slugs) => "https://ninite.com/" + string.Join("-", Normalize(slugs)) + "/ninite.exe";
 
-        /// <summary>Nom de fichier propre à la sélection : un Ninite téléchargé pour d'autres applis n'est pas réutilisé.</summary>
+        // Un nom par sélection : Payloads.Ensure réutilise tout fichier déjà téléchargé
         public static string FileName(IEnumerable<string> slugs)
         {
             using (var sha = SHA1.Create())

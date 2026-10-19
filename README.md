@@ -27,7 +27,7 @@
 <table>
 <tr>
 <td width="40%">
-<video src="https://github.com/user-attachments/assets/3113d242-ca74-4676-a539-d62cf75943c2" controls muted></video>
+<video src="https://github.com/user-attachments/assets/009aed16-e48e-4335-9a57-26baf0a5304b" controls muted></video>
 </td>
 <td>
 
@@ -62,8 +62,8 @@ On launch, the app shows the PC (name, model, Windows version, activation) and l
 from the menu on the left:
 
 - **PC**: new PC name and steps to run.
-- **Applications**: apps installed by Ninite. The default selection is already checked; add or remove apps
-  (browsers, messaging, media, utilities, developer tools...).
+- **Applications**: apps installed by Ninite, each shown with its logo. The default selection is already
+  checked; add or remove apps (browsers, messaging, media, utilities, developer tools...).
 - **Options**: CrapFixer tweaks (recommended or all), Windows key and edition, restart and clean-up at the end.
 
 If a Windows key is stored in the BIOS, it is pointed out. If a newer version of the app has been released,
@@ -71,11 +71,13 @@ a banner suggests downloading the latest `RoboConfigurator.exe`.
 
 <table>
 <tr>
-<td width="50%"><img src="docs/en/capture-configuration.png" alt="Settings screen"></td>
-<td width="50%"><img src="docs/en/capture-execution.png" alt="Setup in progress"></td>
+<td width="33%"><img src="docs/en/capture-configuration.png" alt="Settings screen"></td>
+<td width="33%"><img src="docs/en/capture-applications.png" alt="Choosing the Ninite apps"></td>
+<td width="33%"><img src="docs/en/capture-execution.png" alt="Setup in progress"></td>
 </tr>
 <tr>
 <td align="center"><sub>Configure this PC</sub></td>
+<td align="center"><sub>Applications</sub></td>
 <td align="center"><sub>Setting up</sub></td>
 </tr>
 </table>

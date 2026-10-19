@@ -92,13 +92,13 @@ namespace RoboConfigurator
         }
     }
 
-    /// <summary>Appli proposée sur la page Applications (étape Ninite).</summary>
     public sealed class AppItem : INotifyPropertyChanged
     {
         public AppItem(NiniteApp app) { App = app; }
 
         public NiniteApp App { get; }
         public string Name => App.Name;
+        public string Icon => App.Icon;
         public string Category => App.Category;
 
         private bool _isSelected;

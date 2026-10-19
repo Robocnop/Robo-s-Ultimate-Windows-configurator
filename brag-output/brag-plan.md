@@ -1,4 +1,4 @@
-# Brag plan — Robo's Ultimate Windows Configurator (v2.3)
+# Brag plan — Robo's Ultimate Windows Configurator (v2.6)
 
 **Format :** vertical 1080×1920, 30 fps, 24,3 s. **Langues :** anglais (`brag.mp4`) et français (`brag.fr.mp4`), mêmes timings et même bande-son. **Ton :** `default` (punchy, propre, un brin moqueur envers la corvée post-install).
 
@@ -6,7 +6,7 @@
 - **C'est quoi ?** Une appli portable, `RoboConfigurator.exe`, qui configure un PC juste après l'installation de Windows 10/11 : logiciels, nettoyage, thème sombre, Edge retiré, barre des tâches rangée, Office, activation.
 - **Pour qui ?** Ceux qui réinstallent des PC (le leur, ceux de la famille, des clients) et refont toujours les mêmes clics.
 - **Ce qui le distingue :** un seul exe, rien à installer, il suit le thème de Windows et reprend où il s'était arrêté.
-- **Nouveauté mise en avant (v2.2) :** l'étape « Barre des tâches » épingle Explorateur, Firefox, Terminal et PowerShell dans cet ordre, à la place des épingles de Windows.
+- **Nouveauté mise en avant (v2.6) :** la page **Applications** du menu de gauche, où l'on choisit les applis installées par Ninite parmi plus de 80, chacune avec son logo. La sélection habituelle est déjà cochée.
 - **Vrai produit montré :** la vraie fenêtre « Configuration en cours » (étapes de `MainWindow.xaml.cs`, détail « Réglage n/47 » de CrapFixer, vrais noms de tweaks de `Wintweak2.ini`).
 
 ## Identité visuelle
@@ -19,8 +19,8 @@
 |---|---|---|---|---|
 | 1 | 0–3,9 s | **Hook.** Bureau clair, les corvées tombent une à une. | « Windows vient de s'installer. », 5 corvées dont « Ranger la barre des tâches », « …et tu fais tout à la main ? » | Pad qui monte, ticks |
 | 2 | 4–7,4 s | **Reveal.** Icône `RoboConfigurator.exe`, double-clic, titre. | « Un double-clic. Il fait le reste. » | Clics, le beat démarre |
-| 3 | 7,5–14,3 s | **L'appli.** Fenêtre « Configuration en cours » : Ninite, CrapFixer (Réglage 1→47, bascule en sombre), Edge, Barre des tâches (badge NOUVEAU), Office, Activation, Nom du PC, Rapport. | Pastilles : « 47 tweaks », « thème sombre », « Edge viré », « Office installé » | Ticks par étape, swell au passage en sombre |
-| 4 | 14,4–20 s | **Nouveau · v2.2.** Barre des tâches : Edge, Store, Explorateur tombent, puis Explorateur, Firefox, Terminal, PowerShell arrivent un par un. | « La barre des tâches, rangée pour toi. » / « Les épingles de Windows dégagent. Prêt dès la prochaine session. » | Chute, 4 notes montantes |
+| 3 | 7,5–14,3 s | **L'appli.** Fenêtre « Configuration en cours » : Ninite (badge NOUVEAU, « Installation de Chrome, Firefox, VLC, Discord... »), CrapFixer (Réglage 1→47, bascule en sombre), Edge, Barre des tâches, Office, Activation, Nom du PC, Rapport. | Pastilles : « 47 tweaks », « thème sombre », « Edge viré », « Office installé » | Ticks par étape, swell au passage en sombre |
+| 4 | 14,4–20 s | **Nouveau · v2.6.** Page Applications (menu Poste / Applications / Options) : 12 tuiles avec logo, les 5 habituelles cochées, puis VLC, Discord, Spotify et VS Code cochées une à une (5 → 9 applis sélectionnées). Logos : `logos/app-*.png`, copiés de `src/RoboConfigurator/Assets/AppIcons`. | « Choisis tes applis. Ninite fait le reste. » / « Plus de 80 applis, chacune avec son logo. Les habituelles sont déjà cochées. » | Souffle à l'arrivée des tuiles, 4 notes montantes |
 | 5 | 20,35–24,3 s | **Outro.** Titre, `RoboConfigurator.exe`, lien GitHub. | « Windows 10 & 11 · un seul exe, rien à installer » | Accord final, fade |
 
 ## Régénérer

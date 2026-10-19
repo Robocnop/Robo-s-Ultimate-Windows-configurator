@@ -29,7 +29,7 @@ namespace RoboConfigurator.Core
         {
             switch (step)
             {
-                // La sélection par défaut garde le Ninite.exe intégré ou celui du Nextcloud ; une autre est générée par ninite.com
+                // Seule la sélection par défaut existe en Ninite.exe intégré ou sur le Nextcloud
                 case StepNames.Ninite:
                     return NiniteApps.IsDefault(config.NiniteApps) ? Ninite
                          : new Payload(NiniteApps.FileName(config.NiniteApps), NiniteApps.Url(config.NiniteApps));

@@ -11,14 +11,13 @@ namespace RoboConfigurator.Core
     public sealed class UpdateInfo
     {
         public string Version { get; set; }
-        /// <summary>Lien direct vers le dernier RoboConfigurator.exe, sinon la page de la release.</summary>
         public string DownloadUrl { get; set; }
         public string PageUrl { get; set; }
     }
 
-    /// <summary>Compare la version de l'exe à la dernière release publiée sur GitHub (pré-versions exclues).</summary>
     public static class Updates
     {
+        // N'inclut pas les pré-versions
         private const string LatestApi = "https://api.github.com/repos/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/latest";
 
         [DataContract]
@@ -36,7 +35,7 @@ namespace RoboConfigurator.Core
             [DataMember(Name = "browser_download_url")] public string Url { get; set; }
         }
 
-        /// <summary>Version de l'exe sans le hash du commit, par ex. "2.6.0" ou "2.6.0-beta.1".</summary>
+        /// <summary>Sans le hash du commit : "2.6.0" ou "2.6.0-beta.1".</summary>
         public static string Current
         {
             get
@@ -47,7 +46,7 @@ namespace RoboConfigurator.Core
             }
         }
 
-        /// <summary>Renvoie la release plus récente que l'exe, ou null (à jour, pas d'Internet, GitHub indisponible).</summary>
+        /// <summary>null si l'exe est à jour ou si GitHub est injoignable.</summary>
         public static async Task<UpdateInfo> CheckAsync()
         {
             try
@@ -78,7 +77,7 @@ namespace RoboConfigurator.Core
             }
         }
 
-        /// <summary>"2.6.0" &gt; "2.5.0" ; à numéro égal, la version finale est plus récente qu'une pré-version ("2.6.0" &gt; "2.6.0-beta.1").</summary>
+        /// <summary>À numéro égal, la version finale est plus récente que la pré-version.</summary>
         public static bool IsNewer(string candidate, string current)
         {
             if (!TryParse(candidate, out var a, out bool aPre) || !TryParse(current, out var b, out bool bPre)) return false;

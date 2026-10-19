@@ -35,7 +35,6 @@ namespace RoboConfigurator.Core
         [DataMember] public bool CleanUpOnError { get; set; }
         /// <summary>Édition voulue pour l'activation : "" = garder l'actuelle, "Pro" ou "Home" (Famille).</summary>
         [DataMember] public string Edition { get; set; } = "";
-        /// <summary>Applis installées par l'étape Ninite (identifiants de ninite.com).</summary>
         [DataMember] public string[] NiniteApps { get; set; } = Core.NiniteApps.Default.ToArray();
 
         public bool Has(string step) => Steps.Contains(step);
@@ -54,7 +53,7 @@ namespace RoboConfigurator.Core
                 config.WindowsKey = config.WindowsKey ?? "";
                 config.Edition = Editions.Normalize(config.Edition) ?? "";
                 config.Steps = StepNames.All.Where(s => (config.Steps ?? new string[0]).Contains(s)).ToArray();
-                // Configuration d'avant la v2.6.0 : pas de choix d'applis, sélection par défaut
+                // Absent des configurations antérieures à la v2.6.0
                 config.NiniteApps = config.NiniteApps == null ? Core.NiniteApps.Default.ToArray() : Core.NiniteApps.Normalize(config.NiniteApps);
                 return config;
             }

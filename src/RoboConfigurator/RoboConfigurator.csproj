@@ -13,7 +13,7 @@
     <RootNamespace>RoboConfigurator</RootNamespace>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>2.6.0</Version>
+    <Version>2.6.1</Version>
     <Product>Robo's Ultimate Windows Configurator</Product>
     <AssemblyTitle>Robo's Ultimate Windows Configurator</AssemblyTitle>
     <Company>Robocnop</Company>
@@ -44,6 +44,7 @@
 
   <ItemGroup>
     <Resource Include="Assets\app.ico" />
+    <Resource Include="Assets\AppIcons\*.png" />
     <!-- Fichiers optionnels déposés dans payloads\ : intégrés à l'exe pour fonctionner sans Internet -->
     <EmbeddedResource Include="..\..\payloads\*.exe;..\..\payloads\*.zip;..\..\payloads\*.cmd" LogicalName="Payload.%(Filename)%(Extension)" />
   </ItemGroup>

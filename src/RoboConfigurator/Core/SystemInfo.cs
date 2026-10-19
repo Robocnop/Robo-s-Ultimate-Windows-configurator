@@ -106,10 +106,7 @@ namespace RoboConfigurator.Core
         public static bool IsHomeEdition(string editionId) => editionId.StartsWith("Core", StringComparison.OrdinalIgnoreCase);
         public static bool IsProEdition(string editionId) => editionId.StartsWith("Professional", StringComparison.OrdinalIgnoreCase);
 
-        /// <summary>
-        /// Lance un programme sans fenêtre et transmet chaque ligne de sortie au journal. Un code de retour non nul est
-        /// journalisé avec la commande (ou <paramref name="display"/>) et la durée, pour comprendre un échec.
-        /// </summary>
+        /// <summary>Lance un programme sans fenêtre ; sa sortie et un code de retour non nul vont au journal.</summary>
         public static int Run(string file, string arguments, Action<string> onLine = null, string display = null)
         {
             int code = RunCore(file, arguments, onLine, out TimeSpan elapsed);

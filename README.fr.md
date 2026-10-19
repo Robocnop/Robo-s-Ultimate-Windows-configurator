@@ -27,7 +27,7 @@
 <table>
 <tr>
 <td width="40%">
-<video src="https://github.com/user-attachments/assets/d62ebe6d-a8d7-4a0a-9620-bfb5e57f04e5" controls muted></video>
+<video src="https://github.com/user-attachments/assets/b98381f3-054e-4158-bd56-8fa12ace9bbc" controls muted></video>
 </td>
 <td>
 
@@ -63,8 +63,9 @@ Au démarrage, l'application affiche le poste (nom, modèle, version de Windows,
 régler depuis le menu de gauche :
 
 - **Poste** : nouveau nom du PC et étapes à faire.
-- **Applications** : applis installées par Ninite. La sélection par défaut est déjà cochée ; on peut en ajouter
-  ou en retirer (navigateurs, messagerie, multimédia, utilitaires, outils de développement...).
+- **Applications** : applis installées par Ninite, chacune affichée avec son logo. La sélection par défaut est
+  déjà cochée ; on peut en ajouter ou en retirer (navigateurs, messagerie, multimédia, utilitaires, outils de
+  développement...).
 - **Options** : tweaks CrapFixer (recommandés ou tous), clé et édition de Windows, redémarrage et nettoyage à la fin.
 
 Si une clé Windows est enregistrée dans le BIOS, elle est signalée. Si une version plus récente de l'application
@@ -72,11 +73,13 @@ est sortie, un bandeau propose de télécharger le dernier `RoboConfigurator.exe
 
 <table>
 <tr>
-<td width="50%"><img src="docs/fr/capture-configuration.png" alt="Écran de configuration"></td>
-<td width="50%"><img src="docs/fr/capture-execution.png" alt="Configuration en cours"></td>
+<td width="33%"><img src="docs/fr/capture-configuration.png" alt="Écran de configuration"></td>
+<td width="33%"><img src="docs/fr/capture-applications.png" alt="Choix des applis Ninite"></td>
+<td width="33%"><img src="docs/fr/capture-execution.png" alt="Configuration en cours"></td>
 </tr>
 <tr>
 <td align="center"><sub>Configuration du poste</sub></td>
+<td align="center"><sub>Applications</sub></td>
 <td align="center"><sub>Configuration en cours</sub></td>
 </tr>
 </table>

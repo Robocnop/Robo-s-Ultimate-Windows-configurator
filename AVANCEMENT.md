@@ -1,6 +1,6 @@
 # État d'avancement
 
-Dernière mise à jour : 19/10/2026. Dernière version publiée : [v2.6.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v2.6.0) ; dernière version du script PowerShell : [v1.3.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.3.0).
+Dernière mise à jour : 19/10/2026. Dernière version publiée : [v2.6.1](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v2.6.1) ; dernière version du script PowerShell : [v1.3.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.3.0).
 
 ## État des étapes
 
@@ -55,6 +55,10 @@ Dernière mise à jour : 19/10/2026. Dernière version publiée : [v2.6.0](https
   - Avertissement de mise à jour : au lancement, l'application compare sa version à la dernière release GitHub (pré-versions exclues). Si elle est plus ancienne, un bandeau propose de télécharger le dernier `RoboConfigurator.exe`. Sans Internet, rien n'est affiché (une ligne dans le journal).
   - Menu à gauche : **Poste** (nom du PC, étapes), **Applications** (choix des applis Ninite), **Options**.
   - Choix des applis Ninite : environ 80 applis de ninite.com, la sélection par défaut est déjà cochée. Une autre sélection télécharge un installateur généré par ninite.com (`Ninite-<empreinte>.exe`). Option `-Apps`. Testé en simulation (interface, enregistrement de la sélection) ; l'installation d'une sélection personnalisée reste à valider sur un vrai PC.
+- **v2.6.1** :
+  - Page Applications : le logo de chaque appli est affiché à gauche de son nom. Les 84 icônes viennent de ninite.com et sont intégrées à l'exe (`Assets/AppIcons`), elles s'affichent donc hors ligne.
+  - Commentaires du code relus : ceux qui paraphrasaient le code sont retirés, celui de la méthode Edge est corrigé.
+  - Documentation et vidéos de présentation mises à jour pour la v2.6.
 
 ## Problèmes connus
 
