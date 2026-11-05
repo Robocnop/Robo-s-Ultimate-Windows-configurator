@@ -45,11 +45,14 @@ namespace RoboConfigurator
                 ? Path.Combine(Path.GetTempPath(), "RoboConfigurator-simulation")
                 : Path.Combine(Path.GetPathRoot(Environment.SystemDirectory), "RoboConfigurator");
             Directory.CreateDirectory(_workDir);
+            // Avant toute écriture : la configuration peut contenir la clé Windows
+            string permissions = options.Simulation ? null : WorkFolder.Secure(_workDir);
             _configFile = Path.Combine(_workDir, "configuration.json");
             _stateFile = Path.Combine(_workDir, "etapes-terminees.txt");
             if (options.Reset) ForgetPreviousRun();
             _state = new StepState(_stateFile);
             Log.Open(LogFile);
+            if (permissions != null) Log.Info(permissions);
             Log.Written += OnLog;
 
             _steps = new List<StepItem>

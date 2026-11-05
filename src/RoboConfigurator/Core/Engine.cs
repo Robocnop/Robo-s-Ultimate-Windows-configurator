@@ -760,7 +760,7 @@ namespace RoboConfigurator.Core
             Log.Close();
             try
             {
-                int pending = DeleteFolder(_workDir);
+                int pending = WorkFolder.Delete(_workDir);
                 string detail = pending == 0 ? Lang.T($"Folder {_workDir} deleted", $"Dossier {_workDir} supprimé")
                               : Lang.T($"Folder {_workDir} deleted ({pending} file(s) in use will be deleted on restart)",
                                        $"Dossier {_workDir} supprimé ({pending} fichier(s) en cours d'utilisation supprimé(s) au redémarrage)");
@@ -787,25 +787,6 @@ namespace RoboConfigurator.Core
                 _result.LogCopyPath = copy;
             }
             catch (Exception ex) { Log.Error(Lang.T("Copying the log to the desktop", "Copie du journal sur le Bureau"), ex); }
-        }
-
-        /// <summary>Supprime le dossier ; ce qui est verrouillé (exe lancé depuis ce dossier...) part au redémarrage.</summary>
-        private static int DeleteFolder(string dir)
-        {
-            int pending = 0;
-            foreach (string file in Directory.GetFiles(dir, "*", SearchOption.AllDirectories))
-            {
-                try { File.SetAttributes(file, FileAttributes.Normal); File.Delete(file); }
-                catch (Exception) { SystemInfo.DeleteAtReboot(file); pending++; }
-            }
-            // Dossiers du plus profond au dossier de travail lui-même, après leurs fichiers
-            var dirs = Directory.GetDirectories(dir, "*", SearchOption.AllDirectories).OrderByDescending(d => d.Length).Concat(new[] { dir });
-            foreach (string d in dirs)
-            {
-                try { Directory.Delete(d); }
-                catch (Exception) { SystemInfo.DeleteAtReboot(d); }
-            }
-            return pending;
         }
 
         private void Simulate(string key, string message)
