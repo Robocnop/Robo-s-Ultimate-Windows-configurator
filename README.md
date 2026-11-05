@@ -6,7 +6,8 @@
 
 **One double-click after installing Windows 10 or 11, and the PC sets itself up.**
 
-[![Version](https://img.shields.io/badge/version-2.3.0-0078D4)](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/latest)
+[![Version](https://img.shields.io/github/v/release/Robocnop/Robo-s-Ultimate-Windows-configurator?label=version&color=0078D4)](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/Robocnop/Robo-s-Ultimate-Windows-configurator/total?label=downloads&color=2ea043)](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases)
 ![Windows 10 | 11](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?logo=windows11&logoColor=white)
 ![.NET Framework 4.7.2](https://img.shields.io/badge/.NET%20Framework-4.7.2-512BD4)
 ![Portable](https://img.shields.io/badge/portable-single%20exe-2ea043)
