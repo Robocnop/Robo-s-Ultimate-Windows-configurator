@@ -32,6 +32,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Explicite : le SDK ne l'ajoute que sur les PC sans pack de ciblage .NET 4.7.2, ce qui rendait packages.lock.json
+         différent selon la machine. Assemblies de référence pour la compilation seulement, rien dans l'exe. -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
     <PackageReference Include="WPF-UI" Version="4.3.0" />
     <PackageReference Include="Costura.Fody" Version="6.2.0" PrivateAssets="all" />
     <PackageReference Include="Fody" Version="6.9.3" PrivateAssets="all" />
