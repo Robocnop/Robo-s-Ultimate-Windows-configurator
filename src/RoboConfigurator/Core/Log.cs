@@ -70,7 +70,7 @@ namespace RoboConfigurator.Core
         // Clé de produit Windows / Office (5 groupes de 5) : seuls les 5 derniers caractères restent dans le journal
         private static readonly Regex ProductKey = new Regex(@"\b[A-Z0-9]{5}(?:-[A-Z0-9]{5}){4}\b", RegexOptions.IgnoreCase);
 
-        private static string MaskKeys(string text) =>
+        internal static string MaskKeys(string text) =>
             ProductKey.Replace(text ?? "", m => "XXXXX-XXXXX-XXXXX-XXXXX-" + m.Value.Substring(24));
 
         private static void Write(LogLevel level, string text)

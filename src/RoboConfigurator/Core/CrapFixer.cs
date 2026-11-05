@@ -26,11 +26,13 @@ namespace RoboConfigurator.Core
     /// </summary>
     public static class CrapFixer
     {
-        public static List<IniSection> ReadIni(string path)
+        public static List<IniSection> ReadIni(string path) => ReadIni(File.ReadAllLines(path, Encoding.UTF8));
+
+        public static List<IniSection> ReadIni(IEnumerable<string> lines)
         {
             var sections = new List<IniSection>();
             IniSection current = null;
-            foreach (string raw in File.ReadAllLines(path, Encoding.UTF8))
+            foreach (string raw in lines)
             {
                 string line = raw.Trim();
                 if (line.Length == 0 || line.StartsWith(";")) continue;
@@ -52,8 +54,11 @@ namespace RoboConfigurator.Core
         }
 
         public static IEnumerable<IniSection> SelectTweaks(IEnumerable<IniSection> all, bool allTweaks) =>
+            SelectTweaks(all, allTweaks, SystemInfo.IsWin11);
+
+        public static IEnumerable<IniSection> SelectTweaks(IEnumerable<IniSection> all, bool allTweaks, bool isWin11) =>
             all.Where(t => (allTweaks || t.DefaultSelected || t.Name == "Enable Dark Theme") &&
-                           (!t.Has("OsVersion") || (t["OsVersion"] == "11") == SystemInfo.IsWin11));
+                           (!t.Has("OsVersion") || (t["OsVersion"] == "11") == isWin11));
 
         /// <summary>Une entrée peut modifier plusieurs valeurs : Path, Path2, Path3...</summary>
         public static void ApplyTweak(IniSection tweak)
@@ -106,7 +111,7 @@ namespace RoboConfigurator.Core
             }
         }
 
-        private static ulong ParseNumber(string value)
+        internal static ulong ParseNumber(string value)
         {
             value = (value ?? "").Trim();
             return value.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
