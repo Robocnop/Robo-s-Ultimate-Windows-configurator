@@ -33,6 +33,7 @@ namespace RoboConfigurator
         private bool _running;
         private bool _restartPending;
         private RunResult _result;
+        private Engine _engine;
         private DispatcherTimer _restartTimer;
 
         public MainWindow(Options options)
@@ -364,9 +365,9 @@ namespace RoboConfigurator
             RunView.Visibility = Visibility.Visible;
             OverallProgress.Maximum = _runItems.Count;
 
-            var engine = new Engine(config, _workDir, _configFile, _state, _oemKey, _options.Simulation, _items);
+            _engine = new Engine(config, _workDir, _configFile, _state, _oemKey, _options.Simulation, _items);
             _running = true;
-            try { _result = await Task.Run(engine.Run); }
+            try { _result = await Task.Run(_engine.Run); }
             catch (Exception ex)
             {
                 // Engine.Run ne lève pas d'exception : filet de sécurité pour toujours afficher l'écran de fin
@@ -404,6 +405,7 @@ namespace RoboConfigurator
         private void ShowSummary(RunConfig config)
         {
             OverallProgress.Value = OverallProgress.Maximum;
+            StopButton.Visibility = Visibility.Collapsed;
             var warnings = _runItems.Where(s => s.Status == StepStatus.Warning).ToList();
             if (_result.UnexpectedError != null)
             {
@@ -411,6 +413,14 @@ namespace RoboConfigurator
                 ShowMessage(RunMessage, InfoBarSeverity.Error, Lang.T("Unexpected error: ", "Erreur inattendue : ") + _result.UnexpectedError,
                     Lang.T("The details are in the log. Run the app again to resume: the settings are kept and successful steps will not be redone.",
                            "Le détail est dans le journal. Relancez l'application pour reprendre : la configuration est conservée et les étapes réussies ne seront pas refaites."));
+            }
+            else if (_result.StopRequested)
+            {
+                RunTitle.Text = Lang.T("Setup stopped", "Configuration arrêtée");
+                ShowMessage(RunMessage, InfoBarSeverity.Warning, Lang.T("Stopped at your request", "Arrêtée à votre demande"),
+                    (_result.Stopped.Any() ? Lang.T("Not started: ", "Non lancées : ") + string.Join(", ", _result.Stopped.Select(s => _items[s].Title)) + "\n" : "") +
+                    Lang.T("Run the app again to continue: the settings are kept and completed steps will not be redone.",
+                           "Relancez l'application pour continuer : la configuration est conservée et les étapes faites ne seront pas refaites."));
             }
             else if (_result.Failed.Any())
             {
@@ -450,7 +460,8 @@ namespace RoboConfigurator
             RestartNowButton.Visibility = Visibility.Visible;
             Activate();
 
-            if (config.AutoRestart) StartRestartCountdown();
+            // Arrêt demandé : pas de redémarrage automatique
+            if (config.AutoRestart && !_result.StopRequested) StartRestartCountdown();
             else CloseButton.Visibility = Visibility.Visible;
         }
 
@@ -508,6 +519,17 @@ namespace RoboConfigurator
 
         private void OnCloseClick(object sender, RoutedEventArgs e) => Close();
 
+        private void OnStopClick(object sender, RoutedEventArgs e) => RequestStop();
+
+        private void RequestStop()
+        {
+            _engine?.RequestStop();
+            StopButton.IsEnabled = false;
+            ShowMessage(RunMessage, InfoBarSeverity.Informational, Lang.T("Stop requested", "Arrêt demandé"),
+                Lang.T("The current step finishes, then the setup stops. Nothing is cleaned up and the PC does not restart.",
+                       "L'étape en cours se termine, puis la configuration s'arrête. Rien n'est nettoyé et le PC ne redémarre pas."));
+        }
+
         private async void OnClosing(object sender, CancelEventArgs e)
         {
             if (!_running) return;
@@ -515,11 +537,15 @@ namespace RoboConfigurator
             var confirm = new Wpf.Ui.Controls.MessageBox
             {
                 Title = Lang.T("Setup in progress", "Configuration en cours"),
-                Content = Lang.T("Quitting now interrupts the setup. Next time, the app will offer to resume where it stopped.", "Quitter maintenant interrompt la configuration. Au prochain lancement, l'application proposera de reprendre là où elle s'est arrêtée."),
-                PrimaryButtonText = Lang.T("Quit", "Quitter"),
+                Content = Lang.T("“Stop after this step” lets the current step finish cleanly. “Quit now” interrupts it: it will be redone at the next launch.",
+                                 "« Arrêter après cette étape » laisse l'étape en cours se terminer proprement. « Quitter maintenant » l'interrompt : elle sera refaite au prochain lancement."),
+                PrimaryButtonText = Lang.T("Stop after this step", "Arrêter après cette étape"),
+                SecondaryButtonText = Lang.T("Quit now", "Quitter maintenant"),
                 CloseButtonText = Lang.T("Keep going", "Continuer"),
             };
-            if (await confirm.ShowDialogAsync() == Wpf.Ui.Controls.MessageBoxResult.Primary)
+            var choice = await confirm.ShowDialogAsync();
+            if (choice == Wpf.Ui.Controls.MessageBoxResult.Primary) RequestStop();
+            else if (choice == Wpf.Ui.Controls.MessageBoxResult.Secondary)
             {
                 Log.Warn(Lang.T("Setup interrupted by the user", "Configuration interrompue par l'utilisateur"));
                 Application.Current.Shutdown();

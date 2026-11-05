@@ -43,6 +43,30 @@ namespace RoboConfigurator.Tests
         }
 
         [Fact]
+        public void StopRequested_NoStepStarted_SettingsKept()
+        {
+            using (var dir = new TempDir())
+            {
+                var config = new RunConfig { NewName = "SIMULATION-PC" };
+                config.Save(dir.File("configuration.json"));
+                var items = Items();
+                var state = new StepState(dir.File("etapes-terminees.txt"));
+                var engine = new Engine(config, dir.Path, dir.File("configuration.json"), state, null, true, items);
+
+                engine.RequestStop();
+                var result = engine.Run();
+
+                Assert.True(result.StopRequested);
+                Assert.Equal(StepNames.All, result.Stopped);
+                Assert.All(StepNames.All, s => Assert.False(state.IsDone(s)));
+                Assert.Equal(StepStatus.Skipped, items[Engine.RenameKey].Status);
+                Assert.Equal(StepStatus.Skipped, items[Engine.CleanUpKey].Status);
+                Assert.True(File.Exists(dir.File("configuration.json")));
+                Assert.True(File.Exists(result.ReportPath));
+            }
+        }
+
+        [Fact]
         public void UnexpectedErrorOutsideSteps_IsReturnedNotThrown()
         {
             using (var dir = new TempDir())

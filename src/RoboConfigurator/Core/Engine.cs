@@ -17,8 +17,11 @@ namespace RoboConfigurator.Core
         public List<string> AfterRestart { get; } = new List<string>();
         /// <summary>Étapes déroulées sans atteindre leur but (Windows non activé...) : réessayées au prochain lancement.</summary>
         public List<string> NotDone { get; } = new List<string>();
-        /// <summary>Étapes en échec ou non faites : la configuration et les fichiers sont gardés pour les reprendre.</summary>
-        public bool HasUnfinished => Failed.Any() || NotDone.Any();
+        /// <summary>Étapes non lancées parce que l'arrêt a été demandé (bouton « Arrêter après cette étape »).</summary>
+        public List<string> Stopped { get; } = new List<string>();
+        public bool StopRequested { get; set; }
+        /// <summary>Étapes en échec, non faites ou non lancées : la configuration et les fichiers sont gardés pour les reprendre.</summary>
+        public bool HasUnfinished => Failed.Any() || NotDone.Any() || Stopped.Any();
         /// <summary>Erreur inattendue qui a arrêté la configuration (hors des étapes), ou null.</summary>
         public string UnexpectedError { get; set; }
         public string ReportPath { get; set; }
@@ -75,6 +78,29 @@ namespace RoboConfigurator.Core
         /// <summary>Étape en cours, pour savoir laquelle marquer en échec si une erreur inattendue arrête tout.</summary>
         private string _current;
 
+        private volatile bool _stop;
+
+        /// <summary>
+        /// Demandé depuis l'interface : l'étape en cours se termine normalement, les suivantes ne sont pas lancées.
+        /// Pas d'arrêt au milieu d'une étape (Edge, barre des tâches...) : elle laisserait le PC dans un état intermédiaire.
+        /// </summary>
+        public void RequestStop()
+        {
+            if (_stop) return;
+            _stop = true;
+            Log.Warn(Lang.T("Stop requested: the current step finishes, the next ones will not be started",
+                            "Arrêt demandé : l'étape en cours se termine, les suivantes ne seront pas lancées"));
+        }
+
+        /// <summary>Si l'arrêt est demandé, marque l'étape comme non lancée et renvoie true.</summary>
+        private bool StopBefore(string step)
+        {
+            if (!_stop) return false;
+            if (!_result.Stopped.Contains(step)) _result.Stopped.Add(step);
+            Set(step, StepStatus.Skipped, Lang.T("Not started: stop requested", "Non lancée : arrêt demandé"));
+            return true;
+        }
+
         /// <summary>Ne lève jamais d'exception : une erreur inattendue est journalisée et rendue dans <see cref="RunResult.UnexpectedError"/>.</summary>
         public RunResult Run()
         {
@@ -91,6 +117,7 @@ namespace RoboConfigurator.Core
                 // Le rapport reste utile pour comprendre ; la configuration et les fichiers sont gardés pour reprendre
                 if (_result.ReportPath == null) try { WriteReport(); } catch (Exception) { }
             }
+            _result.StopRequested = _stop;
             return _result;
         }
 
@@ -112,7 +139,7 @@ namespace RoboConfigurator.Core
             foreach (string step in todo)
             {
                 var payload = Payloads.ForStep(step, _config);
-                if (payload == null) continue;
+                if (payload == null || StopBefore(step)) continue;
                 _current = step;
                 Set(step, StepStatus.Downloading, Lang.T($"Preparing {payload.File}...", $"Préparation de {payload.File}..."));
                 try
@@ -127,6 +154,7 @@ namespace RoboConfigurator.Core
 
             foreach (string step in todo.Where(s => !_result.Failed.Contains(s)))
             {
+                if (StopBefore(step)) continue;
                 _current = step;
                 Log.Title(step);
                 Set(step, StepStatus.Running, "");
@@ -163,6 +191,9 @@ namespace RoboConfigurator.Core
             if (_result.Failed.Any()) Log.Warn(Lang.T($"Failed steps: {string.Join(", ", _result.Failed)}. Run the app again to retry them.", $"Étapes en échec : {string.Join(", ", _result.Failed)}. Relancer l'application pour les réessayer."));
             if (_result.NotDone.Any()) Log.Warn(Lang.T($"Steps not done: {string.Join(", ", _result.NotDone)}. Run the app again to retry them.", $"Étapes non faites : {string.Join(", ", _result.NotDone)}. Relancer l'application pour les réessayer."));
             if (_result.AfterRestart.Any()) Log.Warn(Lang.T($"To finish after restarting: {string.Join(", ", _result.AfterRestart)}. Run the app again after the restart.", $"À terminer après le redémarrage : {string.Join(", ", _result.AfterRestart)}. Relancer l'application après le redémarrage."));
+            // Les étapes avec un téléchargement sont arrêtées en premier : remises dans l'ordre d'affichage
+            _result.Stopped.Sort((a, b) => Array.IndexOf(StepNames.All, a).CompareTo(Array.IndexOf(StepNames.All, b)));
+            if (_result.Stopped.Any()) Log.Warn(Lang.T($"Stopped at your request. Not started: {string.Join(", ", _result.Stopped)}. Run the app again to continue.", $"Arrêt demandé. Non lancées : {string.Join(", ", _result.Stopped)}. Relancer l'application pour continuer."));
             if (!_result.HasUnfinished && !_result.AfterRestart.Any()) Log.Ok(Lang.T("All done.", "Tout est terminé."));
 
             RenamePc();
@@ -798,6 +829,11 @@ namespace RoboConfigurator.Core
 
         private void RenamePc()
         {
+            if (_stop)
+            {
+                Set(RenameKey, StepStatus.Skipped, Lang.T("Not applied: stop requested", "Non appliqué : arrêt demandé"));
+                return;
+            }
             string name = _config.NewName;
             if (string.IsNullOrEmpty(name) || name.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase))
             {
@@ -883,6 +919,7 @@ namespace RoboConfigurator.Core
         private string CleanUpSkipReason()
         {
             if (!_config.CleanUp) return Lang.T($"Files kept in {_workDir}", $"Fichiers conservés dans {_workDir}");
+            if (_stop) return Lang.T("Files kept: the setup was stopped and can be continued", "Fichiers conservés : la configuration a été arrêtée et pourra être poursuivie");
             // Une étape à finir après le redémarrage a besoin de la configuration : jamais de nettoyage dans ce cas
             if (_result.AfterRestart.Any()) return Lang.T("Files kept to finish the setup after restarting", "Fichiers conservés pour finir la configuration après le redémarrage");
             if (_result.HasUnfinished && !_config.CleanUpOnError) return Lang.T("Files kept so the unfinished steps can be resumed", "Fichiers conservés pour pouvoir reprendre les étapes non terminées");
