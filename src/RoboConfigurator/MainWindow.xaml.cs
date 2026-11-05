@@ -235,18 +235,30 @@ namespace RoboConfigurator
         private async Task LoadSystemInfoAsync()
         {
             string Try(Func<string> read) { try { return read(); } catch (Exception) { return ""; } }
-            var info = await Task.Run(() => new
+            bool? TryBool(Func<bool> read) { try { return read(); } catch (Exception) { return null; } }
+            var load = Task.Run(() => new
             {
                 Model = Try(SystemInfo.Model),
                 Windows = Try(SystemInfo.WindowsCaption),
-                Activated = Try(() => SystemInfo.IsWindowsActivated() ? "oui" : "non"),
+                Activated = TryBool(SystemInfo.IsWindowsActivated),
                 Oem = SystemInfo.GetOemKey(),
             });
+            // Un service WMI abîmé peut ne jamais répondre : le bouton Démarrer ne doit pas rester grisé pour autant
+            if (await Task.WhenAny(load, Task.Delay(TimeSpan.FromSeconds(20))) != load)
+            {
+                Log.Warn(Lang.T("The PC information (WMI) did not answer within 20 s: the BIOS key will not be used",
+                                "Les informations du PC (WMI) n'ont pas répondu en 20 s : la clé du BIOS ne sera pas utilisée"));
+                PcModelText.Text = Lang.T("PC information unavailable", "Informations du PC indisponibles");
+                SetActivation(SymbolRegular.ShieldQuestion24, "TextFillColorSecondaryBrush", Lang.T("Activation unknown", "Activation inconnue"));
+                StartButton.IsEnabled = true;
+                return;
+            }
+            var info = load.Result;
 
             PcModelText.Text = info.Model;
             WindowsText.Text = info.Windows;
-            if (info.Activated == "oui") SetActivation(SymbolRegular.ShieldCheckmark24, "SystemFillColorSuccessBrush", Lang.T("Windows is activated", "Windows est activé"));
-            else if (info.Activated == "non") SetActivation(SymbolRegular.ShieldError24, "SystemFillColorCautionBrush", Lang.T("Windows is not activated", "Windows n'est pas activé"));
+            if (info.Activated == true) SetActivation(SymbolRegular.ShieldCheckmark24, "SystemFillColorSuccessBrush", Lang.T("Windows is activated", "Windows est activé"));
+            else if (info.Activated == false) SetActivation(SymbolRegular.ShieldError24, "SystemFillColorCautionBrush", Lang.T("Windows is not activated", "Windows n'est pas activé"));
             else SetActivation(SymbolRegular.ShieldQuestion24, "TextFillColorSecondaryBrush", Lang.T("Activation unknown", "Activation inconnue"));
 
             _oemKey = info.Oem;
