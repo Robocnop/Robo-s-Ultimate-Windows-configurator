@@ -53,6 +53,7 @@ namespace RoboConfigurator
             _state = new StepState(_stateFile);
             Log.Open(LogFile);
             if (permissions != null) Log.Info(permissions);
+            if (!options.Simulation) Engine.RemoveEdgeLeftovers();
             Log.Written += OnLog;
 
             _steps = new List<StepItem>

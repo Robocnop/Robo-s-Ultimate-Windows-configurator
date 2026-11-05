@@ -277,58 +277,62 @@ namespace RoboConfigurator.Core
             int left = Process.GetProcessesByName("msedge").Length;
             if (left > 0) Log.Warn(Lang.T($"{left} msedge process(es) still running before uninstalling", $"{left} processus msedge toujours actif(s) avant la désinstallation"));
 
-            string fake = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), @"SystemApps\Microsoft.MicrosoftEdge_8wekyb3d8bbwe\MicrosoftEdge.exe");
+            RemoveEdgeLeftovers();
+            string fake = FakeEdgeExe;
             Directory.CreateDirectory(Path.GetDirectoryName(fake));
             File.WriteAllBytes(fake, new byte[0]);
             Log.Info(Lang.T($"Dummy MicrosoftEdge.exe created: {fake}", $"Faux MicrosoftEdge.exe créé : {fake}"));
-
-            // EdgeUpdate est 32 bits : la valeur est écrite dans les deux vues du registre
-            foreach (var view in new[] { RegistryView.Registry64, RegistryView.Registry32 })
-            {
-                try
-                {
-                    using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view))
-                    using (var key = hklm.CreateSubKey(@"SOFTWARE\Microsoft\EdgeUpdateDev"))
-                        key.SetValue("AllowUninstall", 1, RegistryValueKind.DWord);
-                    Log.Info(Lang.T($"EdgeUpdateDev\\AllowUninstall set to 1 ({view})", $"EdgeUpdateDev\\AllowUninstall mis à 1 ({view})"));
-                }
-                catch (Exception ex) { Log.Warn(Lang.T($"Could not set EdgeUpdateDev\\AllowUninstall ({view}): {ex.Message}", $"Impossible de créer EdgeUpdateDev\\AllowUninstall ({view}) : {ex.Message}")); }
-            }
-
-            // Les étiquettes d'expérimentation d'EdgeUpdate peuvent désactiver la désinstallation
+            string fakeDllhost = null;
+            int code;
+            var start = DateTime.Now;
+            // Les deux faux fichiers sont supprimés quoi qu'il arrive (et au lancement suivant si l'application est coupée)
             try
             {
-                using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32))
-                using (var key = hklm.OpenSubKey(@"SOFTWARE\Microsoft\EdgeUpdate\ClientState\{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062}", true))
+                // EdgeUpdate est 32 bits : la valeur est écrite dans les deux vues du registre
+                foreach (var view in new[] { RegistryView.Registry64, RegistryView.Registry32 })
                 {
-                    if (key?.GetValue("experiment_control_labels") != null)
+                    try
                     {
-                        key.DeleteValue("experiment_control_labels");
-                        Log.Info(Lang.T("EdgeUpdate experiment_control_labels removed", "experiment_control_labels d'EdgeUpdate supprimé"));
+                        using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view))
+                        using (var key = hklm.CreateSubKey(@"SOFTWARE\Microsoft\EdgeUpdateDev"))
+                            key.SetValue("AllowUninstall", 1, RegistryValueKind.DWord);
+                        Log.Info(Lang.T($"EdgeUpdateDev\\AllowUninstall set to 1 ({view})", $"EdgeUpdateDev\\AllowUninstall mis à 1 ({view})"));
+                    }
+                    catch (Exception ex) { Log.Warn(Lang.T($"Could not set EdgeUpdateDev\\AllowUninstall ({view}): {ex.Message}", $"Impossible de créer EdgeUpdateDev\\AllowUninstall ({view}) : {ex.Message}")); }
+                }
+
+                // Les étiquettes d'expérimentation d'EdgeUpdate peuvent désactiver la désinstallation
+                try
+                {
+                    using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32))
+                    using (var key = hklm.OpenSubKey(@"SOFTWARE\Microsoft\EdgeUpdate\ClientState\{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062}", true))
+                    {
+                        if (key?.GetValue("experiment_control_labels") != null)
+                        {
+                            key.DeleteValue("experiment_control_labels");
+                            Log.Info(Lang.T("EdgeUpdate experiment_control_labels removed", "experiment_control_labels d'EdgeUpdate supprimé"));
+                        }
                     }
                 }
+                catch (Exception ex) { Log.Warn(Lang.T($"Could not remove experiment_control_labels: {ex.Message}", $"Impossible de supprimer experiment_control_labels : {ex.Message}")); }
+
+                // Depuis Windows 11 24H2, setup.exe refuse la désinstallation (code 532) si son processus parent
+                // n'est pas dans une liste autorisée. Même méthode qu'ave9858 : une copie de cmd.exe nommée
+                // dllhost.exe lance le désinstalleur.
+                fakeDllhost = FakeDllhostPaths.FirstOrDefault(f => Directory.Exists(Path.GetDirectoryName(f)));
+                File.Copy(Path.Combine(Environment.SystemDirectory, "cmd.exe"), fakeDllhost, true);
+                Log.Info(Lang.T($"Uninstaller launcher: {fakeDllhost} (copy of cmd.exe)", $"Lanceur du désinstalleur : {fakeDllhost} (copie de cmd.exe)"));
+
+                Detail(StepNames.Edge, Lang.T("Uninstalling Microsoft Edge...", "Désinstallation de Microsoft Edge..."));
+                const string args = "--uninstall --msedge --channel=stable --system-level --verbose-logging --force-uninstall --delete-profile";
+                Log.Info(Lang.T($"Command: \"{setup}\" {args}", $"Commande : \"{setup}\" {args}"));
+                start = DateTime.Now;
+                code = SystemInfo.Run(fakeDllhost, $"/c \"\"{setup}\" {args}\"", display: $"setup.exe {args}", timeout: TimeSpan.FromMinutes(10));
             }
-            catch (Exception ex) { Log.Warn(Lang.T($"Could not remove experiment_control_labels: {ex.Message}", $"Impossible de supprimer experiment_control_labels : {ex.Message}")); }
-
-            // Depuis Windows 11 24H2, setup.exe refuse la désinstallation (code 532) si son processus parent
-            // n'est pas dans une liste autorisée. Même méthode qu'ave9858 : une copie de cmd.exe nommée
-            // dllhost.exe lance le désinstalleur.
-            string tempDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "SystemTemp");
-            if (!Directory.Exists(tempDir)) tempDir = Path.GetTempPath();
-            string fakeDllhost = Path.Combine(tempDir, "dllhost.exe");
-            File.Copy(Path.Combine(Environment.SystemDirectory, "cmd.exe"), fakeDllhost, true);
-            Log.Info(Lang.T($"Uninstaller launcher: {fakeDllhost} (copy of cmd.exe)", $"Lanceur du désinstalleur : {fakeDllhost} (copie de cmd.exe)"));
-
-            Detail(StepNames.Edge, Lang.T("Uninstalling Microsoft Edge...", "Désinstallation de Microsoft Edge..."));
-            const string args = "--uninstall --msedge --channel=stable --system-level --verbose-logging --force-uninstall --delete-profile";
-            Log.Info(Lang.T($"Command: \"{setup}\" {args}", $"Commande : \"{setup}\" {args}"));
-            var start = DateTime.Now;
-            int code;
-            try { code = SystemInfo.Run(fakeDllhost, $"/c \"\"{setup}\" {args}\"", display: $"setup.exe {args}", timeout: TimeSpan.FromMinutes(10)); }
             finally
             {
-                try { File.Delete(fakeDllhost); } catch { }
-                try { File.Delete(fake); } catch { }
+                if (fakeDllhost != null) try { File.Delete(fakeDllhost); } catch (Exception) { }
+                try { File.Delete(fake); } catch (Exception) { }
             }
             Log.Info(Lang.T($"The uninstaller returned after {(DateTime.Now - start).TotalSeconds:0} s with code {code}{EdgeExitCode(code)}", $"Le désinstalleur a rendu la main en {(DateTime.Now - start).TotalSeconds:0} s avec le code {code}{EdgeExitCode(code)}"));
             CopyEdgeInstallerLog(start);
@@ -344,6 +348,39 @@ namespace RoboConfigurator.Core
             }
             Log.Ok(Lang.T("Edge uninstalled", "Edge désinstallé"));
             return null;
+        }
+
+        private static string FakeEdgeExe => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), @"SystemApps\Microsoft.MicrosoftEdge_8wekyb3d8bbwe\MicrosoftEdge.exe");
+
+        /// <summary>Emplacements possibles de la copie de cmd.exe nommée dllhost.exe, dans l'ordre de préférence.</summary>
+        private static string[] FakeDllhostPaths => new[]
+        {
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), @"SystemTemp\dllhost.exe"),
+            Path.Combine(Path.GetTempPath(), "dllhost.exe"),
+        };
+
+        /// <summary>
+        /// Supprime les faux fichiers d'une désinstallation d'Edge interrompue (application fermée, coupure de courant) :
+        /// un MicrosoftEdge.exe vide dans SystemApps et une copie exacte de cmd.exe nommée dllhost.exe. Rien d'autre n'est touché.
+        /// </summary>
+        public static void RemoveEdgeLeftovers()
+        {
+            try
+            {
+                if (File.Exists(FakeEdgeExe) && new FileInfo(FakeEdgeExe).Length == 0)
+                {
+                    File.Delete(FakeEdgeExe);
+                    Log.Info(Lang.T($"Leftover of an interrupted run removed: {FakeEdgeExe}", $"Reste d'un lancement interrompu supprimé : {FakeEdgeExe}"));
+                }
+                byte[] cmd = File.ReadAllBytes(Path.Combine(Environment.SystemDirectory, "cmd.exe"));
+                foreach (string copy in FakeDllhostPaths.Where(File.Exists))
+                {
+                    if (new FileInfo(copy).Length != cmd.Length || !File.ReadAllBytes(copy).SequenceEqual(cmd)) continue;
+                    File.Delete(copy);
+                    Log.Info(Lang.T($"Leftover of an interrupted run removed: {copy} (copy of cmd.exe)", $"Reste d'un lancement interrompu supprimé : {copy} (copie de cmd.exe)"));
+                }
+            }
+            catch (Exception ex) { Log.Warn(Lang.T($"Could not remove the leftovers of the Edge step: {ex.Message}", $"Impossible de supprimer les restes de l'étape Edge : {ex.Message}")); }
         }
 
         /// <summary>Codes de retour du désinstalleur Chromium/Edge les plus courants (util_constants.h).</summary>
