@@ -15,6 +15,10 @@ namespace RoboConfigurator.Core
         public List<string> Failed { get; } = new List<string>();
         /// <summary>Étapes à terminer après un redémarrage (changement d'édition de Windows...).</summary>
         public List<string> AfterRestart { get; } = new List<string>();
+        /// <summary>Étapes déroulées sans atteindre leur but (Windows non activé...) : réessayées au prochain lancement.</summary>
+        public List<string> NotDone { get; } = new List<string>();
+        /// <summary>Étapes en échec ou non faites : la configuration et les fichiers sont gardés pour les reprendre.</summary>
+        public bool HasUnfinished => Failed.Any() || NotDone.Any();
         public string ReportPath { get; set; }
         public string PendingName { get; set; }
         /// <summary>Copie du journal sur le Bureau quand le dossier de travail est nettoyé malgré une erreur.</summary>
@@ -25,6 +29,15 @@ namespace RoboConfigurator.Core
     public sealed class RestartRequiredException : Exception
     {
         public RestartRequiredException(string message) : base(message) { }
+    }
+
+    /// <summary>
+    /// L'étape s'est déroulée mais n'a pas atteint son but (Windows non activé...) : affichée « À vérifier »,
+    /// elle n'est pas marquée faite et sera réessayée au prochain lancement.
+    /// </summary>
+    public sealed class StepNotDoneException : Exception
+    {
+        public StepNotDoneException(string message) : base(message) { }
     }
 
     public sealed class Engine
@@ -107,19 +120,28 @@ namespace RoboConfigurator.Core
                     Set(step, StepStatus.Warning, ex.Message);
                     Log.Warn(Lang.T($"{step} will finish after restarting: {ex.Message}", $"{step} se terminera après le redémarrage : {ex.Message}"));
                 }
+                catch (StepNotDoneException ex)
+                {
+                    // Pas marquée comme faite : elle sera réessayée au prochain lancement
+                    _result.NotDone.Add(step);
+                    Set(step, StepStatus.Warning, ex.Message);
+                    Log.Warn(Lang.T($"{step} not done after {(DateTime.Now - start).TotalSeconds:0} s, it will be retried at the next launch: {ex.Message}",
+                                    $"{step} non faite après {(DateTime.Now - start).TotalSeconds:0} s, elle sera réessayée au prochain lancement : {ex.Message}"));
+                }
                 catch (Exception ex) { Fail(step, ex, DateTime.Now - start); }
             }
 
             Log.Title(Lang.T("Summary", "Résumé"));
             if (_result.Failed.Any()) Log.Warn(Lang.T($"Failed steps: {string.Join(", ", _result.Failed)}. Run the app again to retry them.", $"Étapes en échec : {string.Join(", ", _result.Failed)}. Relancer l'application pour les réessayer."));
+            if (_result.NotDone.Any()) Log.Warn(Lang.T($"Steps not done: {string.Join(", ", _result.NotDone)}. Run the app again to retry them.", $"Étapes non faites : {string.Join(", ", _result.NotDone)}. Relancer l'application pour les réessayer."));
             if (_result.AfterRestart.Any()) Log.Warn(Lang.T($"To finish after restarting: {string.Join(", ", _result.AfterRestart)}. Run the app again after the restart.", $"À terminer après le redémarrage : {string.Join(", ", _result.AfterRestart)}. Relancer l'application après le redémarrage."));
-            if (!_result.Failed.Any() && !_result.AfterRestart.Any()) Log.Ok(Lang.T("All done.", "Tout est terminé."));
+            if (!_result.HasUnfinished && !_result.AfterRestart.Any()) Log.Ok(Lang.T("All done.", "Tout est terminé."));
 
             RenamePc();
             WriteReport();
 
             // Tout est fait : la configuration n'est plus utile (elle peut contenir la clé Windows)
-            if (!_result.Failed.Any() && !_result.AfterRestart.Any()) File.Delete(_configFile);
+            if (!_result.HasUnfinished && !_result.AfterRestart.Any()) File.Delete(_configFile);
             CleanUp();
             return _result;
         }
@@ -629,14 +651,17 @@ namespace RoboConfigurator.Core
             catch (Exception ex)
             {
                 Log.Error(Lang.T("Could not download or run the activation script", "Impossible de télécharger ou lancer le script d'activation"), ex);
-                return Lang.T("Activation script unavailable: activate Windows manually.", "Script d'activation indisponible : activer Windows manuellement.");
+                throw new StepNotDoneException(WithEditionWarning(Lang.T("Activation script unavailable: Windows is not activated.", "Script d'activation indisponible : Windows n'est pas activé."), editionWarning));
             }
 
             if (SystemInfo.IsWindowsActivated()) { Log.Ok(Lang.T("Windows activated successfully", "Windows est activé avec succès")); return editionWarning; }
             Log.Warn(Lang.T("The script ran but Windows does not seem activated. Licence status:", "Le script s'est exécuté mais Windows ne semble pas activé. État de la licence :"));
             Slmgr("/dli");
-            return Lang.T("Windows does not seem activated: check manually.", "Windows ne semble pas activé : vérifier manuellement.");
+            throw new StepNotDoneException(WithEditionWarning(Lang.T("Windows does not seem activated.", "Windows ne semble pas activé."), editionWarning));
         }
+
+        private static string WithEditionWarning(string message, string editionWarning) =>
+            editionWarning == null ? message : message + " " + editionWarning;
 
         /// <summary>
         /// Passe Windows Famille à Pro avec changepk.exe (clé fournie, sinon clé générique Pro de Microsoft).
@@ -696,15 +721,7 @@ namespace RoboConfigurator.Core
             Set(ReportKey, StepStatus.Running, Lang.T("Collecting PC information...", "Collecte des informations du poste..."));
             try
             {
-                var status = StepNames.All.Select(s =>
-                {
-                    string state = !_config.Has(s) ? Lang.T("skipped", "ignorée")
-                                 : _result.Failed.Contains(s) ? Lang.T("FAILED", "EN ÉCHEC")
-                                 : _result.AfterRestart.Contains(s) ? Lang.T("to finish after restarting", "à terminer après le redémarrage")
-                                 : _state.IsDone(s) ? "OK"
-                                 : Lang.T("not done", "non faite");
-                    return $"{s,-15}{Lang.T(": ", " : ")}{state}";
-                });
+                var status = ReportStatus();
                 var lines = Report.Build(_result.PendingName, _oemKey, status);
                 string file = Lang.T($"Report-{_result.PendingName ?? Environment.MachineName}-{DateTime.Now:yyyy-MM-dd}.txt", $"Rapport-{_result.PendingName ?? Environment.MachineName}-{DateTime.Now:yyyy-MM-dd}.txt");
                 string path = Path.Combine(_workDir, file);
@@ -723,29 +740,61 @@ namespace RoboConfigurator.Core
             }
         }
 
+        /// <summary>État de chaque étape pour le rapport : le même que dans l'application, avec son détail.</summary>
+        private List<string> ReportStatus()
+        {
+            var lines = new List<string>();
+            void Add(string key, string state)
+            {
+                string detail = _items[key].Detail;
+                lines.Add($"{_items[key].Title,-26}{Lang.T(": ", " : ")}{state}{(string.IsNullOrEmpty(detail) ? "" : " - " + detail)}");
+            }
+            foreach (string s in StepNames.All)
+            {
+                switch (_items[s].Status)
+                {
+                    case StepStatus.Skipped: Add(s, Lang.T("skipped", "ignorée")); break;
+                    case StepStatus.AlreadyDone: Add(s, Lang.T("OK (previous run)", "OK (lancement précédent)")); break;
+                    case StepStatus.Done: Add(s, "OK"); break;
+                    case StepStatus.Failed: Add(s, Lang.T("FAILED", "EN ÉCHEC")); break;
+                    case StepStatus.Warning:
+                        Add(s, _result.NotDone.Contains(s) ? Lang.T("NOT DONE (retried at the next launch)", "NON FAITE (réessayée au prochain lancement)")
+                             : _result.AfterRestart.Contains(s) ? Lang.T("TO FINISH after restarting", "À TERMINER après le redémarrage")
+                             : Lang.T("OK, TO CHECK", "OK, À VÉRIFIER"));
+                        break;
+                    default: Add(s, Lang.T("not done", "non faite")); break;
+                }
+            }
+            Add(RenameKey, _items[RenameKey].Status == StepStatus.Failed ? Lang.T("FAILED", "EN ÉCHEC") : _items[RenameKey].Status == StepStatus.Done ? "OK" : Lang.T("unchanged", "inchangé"));
+            string keep = CleanUpSkipReason();
+            lines.Add($"{_items[CleanUpKey].Title,-26}{Lang.T(": ", " : ")}{keep ?? Lang.T($"{_workDir} deleted after this report", $"{_workDir} supprimé après ce rapport")}");
+            return lines;
+        }
+
+        /// <summary>Raison de garder le dossier de travail, ou null s'il doit être supprimé.</summary>
+        private string CleanUpSkipReason()
+        {
+            if (!_config.CleanUp) return Lang.T($"Files kept in {_workDir}", $"Fichiers conservés dans {_workDir}");
+            // Une étape à finir après le redémarrage a besoin de la configuration : jamais de nettoyage dans ce cas
+            if (_result.AfterRestart.Any()) return Lang.T("Files kept to finish the setup after restarting", "Fichiers conservés pour finir la configuration après le redémarrage");
+            if (_result.HasUnfinished && !_config.CleanUpOnError) return Lang.T("Files kept so the unfinished steps can be resumed", "Fichiers conservés pour pouvoir reprendre les étapes non terminées");
+            return null;
+        }
+
         private void CleanUp()
         {
-            if (!_config.CleanUp)
+            string keep = CleanUpSkipReason();
+            if (keep != null)
             {
-                Set(CleanUpKey, StepStatus.Skipped, Lang.T($"Files kept in {_workDir}", $"Fichiers conservés dans {_workDir}"));
+                Set(CleanUpKey, StepStatus.Skipped, keep);
                 return;
             }
-            // Une étape à finir après le redémarrage a besoin de la configuration : jamais de nettoyage dans ce cas
-            if (_result.AfterRestart.Any())
-            {
-                Set(CleanUpKey, StepStatus.Skipped, Lang.T("Files kept to finish the setup after restarting", "Fichiers conservés pour finir la configuration après le redémarrage"));
-                return;
-            }
-            if (_result.Failed.Any() && !_config.CleanUpOnError)
-            {
-                Set(CleanUpKey, StepStatus.Skipped, Lang.T("Files kept so the failed steps can be resumed", "Fichiers conservés pour pouvoir reprendre les étapes en échec"));
-                return;
-            }
-            if (_result.Failed.Any())
+            if (_result.HasUnfinished)
             {
                 // Nettoyage forcé : le journal part avec le dossier, une copie reste sur le Bureau pour comprendre l'échec
-                Log.Warn(Lang.T($"Clean-up forced despite failed steps ({string.Join(", ", _result.Failed)}): they cannot be resumed",
-                                $"Nettoyage forcé malgré des étapes en échec ({string.Join(", ", _result.Failed)}) : elles ne pourront pas être reprises"));
+                string unfinished = string.Join(", ", _result.Failed.Concat(_result.NotDone));
+                Log.Warn(Lang.T($"Clean-up forced despite unfinished steps ({unfinished}): they cannot be resumed",
+                                $"Nettoyage forcé malgré des étapes non terminées ({unfinished}) : elles ne pourront pas être reprises"));
                 CopyLogToDesktop();
             }
             Log.Title(Lang.T("Clean-up", "Nettoyage"));

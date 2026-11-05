@@ -32,6 +32,11 @@ namespace RoboConfigurator.Tests
                 Assert.Equal(StepStatus.Done, items[Engine.ReportKey].Status);
                 Assert.True(File.Exists(result.ReportPath));
                 Assert.StartsWith(dir.Path, result.ReportPath);
+                // Le rapport donne l'état réel de chaque étape avec son détail
+                string report = File.ReadAllText(result.ReportPath);
+                Assert.Contains("Activation", report);
+                Assert.Contains(items[StepNames.Activation].Detail, report);
+                Assert.Contains(Engine.RenameKey, report);
                 // Simulation : le dossier de travail n'est pas supprimé
                 Assert.True(Directory.Exists(dir.Path));
             }

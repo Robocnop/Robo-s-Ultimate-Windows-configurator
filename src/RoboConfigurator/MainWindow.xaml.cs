@@ -370,6 +370,13 @@ namespace RoboConfigurator
                 ShowMessage(RunMessage, InfoBarSeverity.Error, Lang.T("Failed steps: ", "Étapes en échec : ") + string.Join(", ", _result.Failed),
                     Lang.T("Run the app again to retry them: the settings are kept and successful steps will not be redone.", "Relancez l'application pour les réessayer : la configuration est conservée et les étapes réussies ne seront pas refaites."));
             }
+            else if (_result.NotDone.Any())
+            {
+                RunTitle.Text = Lang.T("Setup finished: some steps are not done", "Configuration terminée : des étapes ne sont pas faites");
+                ShowMessage(RunMessage, InfoBarSeverity.Warning, Lang.T("Not done: ", "Non faites : ") + string.Join(", ", _result.NotDone.Select(s => _items[s].Title)),
+                    string.Join("\n", _result.NotDone.Select(s => _items[s].Title + Lang.T(": ", " : ") + _items[s].Detail)) + "\n" +
+                    Lang.T("Run the app again to retry them: the settings are kept.", "Relancez l'application pour les réessayer : la configuration est conservée."));
+            }
             else if (_result.AfterRestart.Any())
             {
                 RunTitle.Text = Lang.T("Restart needed", "Redémarrage nécessaire");
