@@ -106,7 +106,13 @@ namespace RoboConfigurator
                 }
                 catch (Exception ex)
                 {
-                    ShowMessage(ConfigMessage, InfoBarSeverity.Warning, Lang.T("Previous settings could not be read", "Configuration précédente illisible"), ex.Message);
+                    string aside = null;
+                    try { aside = RunConfig.SetAsideUnreadable(_configFile); } catch (Exception) { }
+                    Log.Warn(Lang.T($"Previous settings could not be read ({ex.Message}); kept as {aside ?? _configFile}",
+                                    $"Configuration précédente illisible ({ex.Message}) ; gardée sous {aside ?? _configFile}"));
+                    ShowMessage(ConfigMessage, InfoBarSeverity.Warning, Lang.T("Previous settings could not be read", "Configuration précédente illisible"),
+                        Lang.T($"The default settings are shown: check them before starting. Completed steps are still skipped. Damaged file: {aside ?? _configFile}",
+                               $"La configuration par défaut est affichée : vérifiez-la avant de démarrer. Les étapes déjà faites restent passées. Fichier abîmé : {aside ?? _configFile}"));
                 }
             }
             config = config ?? new RunConfig

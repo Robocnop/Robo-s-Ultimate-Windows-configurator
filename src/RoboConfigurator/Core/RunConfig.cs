@@ -59,13 +59,34 @@ namespace RoboConfigurator.Core
             }
         }
 
+        /// <summary>
+        /// Écrit d'abord un fichier temporaire, puis le met à la place de l'ancien : une coupure pendant l'écriture
+        /// laisse l'ancienne configuration intacte au lieu d'un fichier tronqué.
+        /// </summary>
         public void Save(string path)
         {
+            string temp = path + ".tmp";
             using (var stream = new MemoryStream())
             {
                 new DataContractJsonSerializer(typeof(RunConfig)).WriteObject(stream, this);
-                File.WriteAllText(path, Encoding.UTF8.GetString(stream.ToArray()), new UTF8Encoding(false));
+                using (var file = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    stream.Position = 0;
+                    stream.CopyTo(file);
+                    file.Flush(true);
+                }
             }
+            if (File.Exists(path)) File.Replace(temp, path, null);
+            else File.Move(temp, path);
+        }
+
+        /// <summary>Met de côté un fichier de configuration illisible (gardé pour comprendre) ; renvoie son nouveau nom.</summary>
+        public static string SetAsideUnreadable(string path)
+        {
+            string aside = path + Lang.T(".unreadable", ".illisible");
+            if (File.Exists(aside)) File.Delete(aside);
+            File.Move(path, aside);
+            return aside;
         }
     }
 
@@ -94,8 +115,14 @@ namespace RoboConfigurator.Core
         private readonly string _file;
         public StepState(string file) { _file = file; }
 
-        public bool IsDone(string step) => File.Exists(_file) && File.ReadAllLines(_file).Contains(step);
-        public void MarkDone(string step) => File.AppendAllLines(_file, new[] { step });
+        // Trim : une ligne écrite à moitié lors d'une coupure ne correspond à aucune étape et est ignorée
+        public bool IsDone(string step) => File.Exists(_file) && File.ReadAllLines(_file).Select(l => l.Trim()).Contains(step);
+        public void MarkDone(string step)
+        {
+            // Après une ligne coupée, l'étape doit commencer une nouvelle ligne pour être reconnue
+            bool newLine = File.Exists(_file) && new FileInfo(_file).Length > 0 && !File.ReadAllText(_file).EndsWith("\n");
+            File.AppendAllText(_file, (newLine ? Environment.NewLine : "") + step + Environment.NewLine);
+        }
     }
 
     public sealed class Options

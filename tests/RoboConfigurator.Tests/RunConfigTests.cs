@@ -55,6 +55,45 @@ namespace RoboConfigurator.Tests
             }
         }
 
+        [Fact]
+        public void Save_ReplacesTheFileAndLeavesNoTemporaryFile()
+        {
+            using (var dir = new TempDir())
+            {
+                new RunConfig { NewName = "AVANT" }.Save(dir.File("c.json"));
+                new RunConfig { NewName = "APRES" }.Save(dir.File("c.json"));
+                Assert.Equal("APRES", RunConfig.Load(dir.File("c.json")).NewName);
+                Assert.False(File.Exists(dir.File("c.json.tmp")));
+            }
+        }
+
+        [Fact]
+        public void SetAsideUnreadable_KeepsTheDamagedFile()
+        {
+            using (var dir = new TempDir())
+            {
+                File.WriteAllText(dir.File("c.json"), "{\"NewName\":");
+                string aside = RunConfig.SetAsideUnreadable(dir.File("c.json"));
+                Assert.False(File.Exists(dir.File("c.json")));
+                Assert.Equal("{\"NewName\":", File.ReadAllText(aside));
+            }
+        }
+
+        [Fact]
+        public void StepState_IgnoresAPartialLine()
+        {
+            using (var dir = new TempDir())
+            {
+                File.WriteAllText(dir.File("s.txt"), "Ninite\r\nEdge \r\nOffi");
+                var state = new StepState(dir.File("s.txt"));
+                Assert.True(state.IsDone(StepNames.Ninite));
+                Assert.True(state.IsDone(StepNames.Edge));
+                Assert.False(state.IsDone(StepNames.Office));
+                state.MarkDone(StepNames.Office);
+                Assert.True(state.IsDone(StepNames.Office));
+            }
+        }
+
         [Theory]
         [InlineData("")]
         [InlineData("{\"NewName\":")]
