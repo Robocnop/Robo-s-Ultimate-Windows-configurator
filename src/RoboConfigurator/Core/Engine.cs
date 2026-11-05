@@ -135,6 +135,7 @@ namespace RoboConfigurator.Core
                 {
                     string warning = _simulation ? SimulateStep(step) : RunStep(step);
                     _state.MarkDone(step);
+                    if (step == StepNames.Activation) ForgetWindowsKey();
                     Set(step, warning == null ? StepStatus.Done : StepStatus.Warning, warning ?? Lang.T("Done", "Terminée"));
                     if (warning != null) Log.Warn(Lang.T($"{step} needs checking: {warning}", $"{step} à vérifier : {warning}"));
                     Log.Ok(Lang.T($"{step} done in {(DateTime.Now - start).TotalSeconds:0} s", $"{step} terminé en {(DateTime.Now - start).TotalSeconds:0} s"));
@@ -172,6 +173,19 @@ namespace RoboConfigurator.Core
             if (!_result.HasUnfinished && !_result.AfterRestart.Any()) File.Delete(_configFile);
             CleanUp();
             _current = null;
+        }
+
+        /// <summary>L'activation est faite : la clé Windows n'a plus rien à faire dans le fichier de reprise.</summary>
+        private void ForgetWindowsKey()
+        {
+            if (_config.WindowsKey.Length == 0 || !File.Exists(_configFile)) return;
+            try
+            {
+                _config.WindowsKey = "";
+                _config.Save(_configFile);
+                Log.Info(Lang.T("Windows key removed from the saved settings", "Clé Windows retirée de la configuration enregistrée"));
+            }
+            catch (Exception ex) { Log.Warn(Lang.T($"Could not remove the Windows key from the saved settings: {ex.Message}", $"Impossible de retirer la clé Windows de la configuration enregistrée : {ex.Message}")); }
         }
 
         private void LogDiagnostics()

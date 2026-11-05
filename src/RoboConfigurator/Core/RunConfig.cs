@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -28,7 +29,12 @@ namespace RoboConfigurator.Core
         [DataMember] public string NewName { get; set; } = "";
         [DataMember] public string[] Steps { get; set; } = StepNames.All.ToArray();
         [DataMember] public bool AllTweaks { get; set; }
-        [DataMember] public string WindowsKey { get; set; } = "";
+        /// <summary>Jamais écrite en clair : le fichier contient seulement <see cref="ProtectedWindowsKey"/>.</summary>
+        public string WindowsKey { get; set; } = "";
+        /// <summary>Clé chiffrée avec DPAPI (portée machine : lisible après un redémarrage, par n'importe quel compte administrateur).</summary>
+        [DataMember(EmitDefaultValue = false)] private string ProtectedWindowsKey { get; set; }
+        /// <summary>Clé en clair des fichiers écrits par les versions précédentes : lue, jamais réécrite.</summary>
+        [DataMember(Name = "WindowsKey", EmitDefaultValue = false)] private string LegacyWindowsKey { get; set; }
         [DataMember] public bool AutoRestart { get; set; } = true;
         [DataMember] public bool CleanUp { get; set; } = true;
         /// <summary>Nettoyer même si une étape a échoué (les étapes en échec ne pourront plus être reprises).</summary>
@@ -50,7 +56,8 @@ namespace RoboConfigurator.Core
             {
                 var config = (RunConfig)new DataContractJsonSerializer(typeof(RunConfig)).ReadObject(stream);
                 config.NewName = config.NewName ?? "";
-                config.WindowsKey = config.WindowsKey ?? "";
+                config.WindowsKey = UnprotectKey(config.ProtectedWindowsKey) ?? config.LegacyWindowsKey ?? "";
+                config.ProtectedWindowsKey = config.LegacyWindowsKey = null;
                 config.Edition = Editions.Normalize(config.Edition) ?? "";
                 config.Steps = StepNames.All.Where(s => (config.Steps ?? new string[0]).Contains(s)).ToArray();
                 // Absent des configurations antérieures à la v2.6.0
@@ -66,9 +73,12 @@ namespace RoboConfigurator.Core
         public void Save(string path)
         {
             string temp = path + ".tmp";
+            ProtectedWindowsKey = string.IsNullOrEmpty(WindowsKey) ? null : ProtectKey(WindowsKey);
+            LegacyWindowsKey = null;
             using (var stream = new MemoryStream())
             {
                 new DataContractJsonSerializer(typeof(RunConfig)).WriteObject(stream, this);
+                ProtectedWindowsKey = null;
                 using (var file = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
                     stream.Position = 0;
@@ -78,6 +88,23 @@ namespace RoboConfigurator.Core
             }
             if (File.Exists(path)) File.Replace(temp, path, null);
             else File.Move(temp, path);
+        }
+
+        private static readonly byte[] KeyEntropy = Encoding.UTF8.GetBytes("RoboConfigurator.WindowsKey");
+
+        private static string ProtectKey(string key) =>
+            Convert.ToBase64String(ProtectedData.Protect(Encoding.UTF8.GetBytes(key), KeyEntropy, DataProtectionScope.LocalMachine));
+
+        /// <summary>null si absente ; vide si elle ne peut pas être déchiffrée (fichier copié depuis un autre PC...).</summary>
+        private static string UnprotectKey(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return null;
+            try { return Encoding.UTF8.GetString(ProtectedData.Unprotect(Convert.FromBase64String(value), KeyEntropy, DataProtectionScope.LocalMachine)); }
+            catch (Exception ex)
+            {
+                Log.Warn(Lang.T($"The saved Windows key cannot be decrypted ({ex.Message}): enter it again", $"La clé Windows enregistrée ne peut pas être déchiffrée ({ex.Message}) : la saisir à nouveau"));
+                return "";
+            }
         }
 
         /// <summary>Met de côté un fichier de configuration illisible (gardé pour comprendre) ; renvoie son nouveau nom.</summary>

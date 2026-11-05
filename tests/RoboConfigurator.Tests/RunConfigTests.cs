@@ -56,6 +56,54 @@ namespace RoboConfigurator.Tests
         }
 
         [Fact]
+        public void Save_NeverWritesTheKeyInClear()
+        {
+            using (var dir = new TempDir())
+            {
+                new RunConfig { WindowsKey = "VK7JG-NPHTM-C97JM-9MPGT-3V66T" }.Save(dir.File("c.json"));
+                string raw = File.ReadAllText(dir.File("c.json"));
+                Assert.DoesNotContain("VK7JG", raw);
+                Assert.DoesNotContain("3V66T", raw);
+                Assert.Contains("ProtectedWindowsKey", raw);
+                Assert.Equal("VK7JG-NPHTM-C97JM-9MPGT-3V66T", RunConfig.Load(dir.File("c.json")).WindowsKey);
+            }
+        }
+
+        [Fact]
+        public void Save_WithoutKey_WritesNoKeyField()
+        {
+            using (var dir = new TempDir())
+            {
+                new RunConfig().Save(dir.File("c.json"));
+                Assert.DoesNotContain("WindowsKey", File.ReadAllText(dir.File("c.json")));
+                Assert.Equal("", RunConfig.Load(dir.File("c.json")).WindowsKey);
+            }
+        }
+
+        [Fact]
+        public void Load_PlainKeyFromAnOlderVersion_IsReadThenEncryptedOnSave()
+        {
+            using (var dir = new TempDir())
+            {
+                File.WriteAllText(dir.File("c.json"), "{\"WindowsKey\":\"VK7JG-NPHTM-C97JM-9MPGT-3V66T\"}");
+                var config = RunConfig.Load(dir.File("c.json"));
+                Assert.Equal("VK7JG-NPHTM-C97JM-9MPGT-3V66T", config.WindowsKey);
+                config.Save(dir.File("c.json"));
+                Assert.DoesNotContain("VK7JG", File.ReadAllText(dir.File("c.json")));
+            }
+        }
+
+        [Fact]
+        public void Load_UndecryptableKey_GivesAnEmptyKey()
+        {
+            using (var dir = new TempDir())
+            {
+                File.WriteAllText(dir.File("c.json"), "{\"ProtectedWindowsKey\":\"AAAA\"}");
+                Assert.Equal("", RunConfig.Load(dir.File("c.json")).WindowsKey);
+            }
+        }
+
+        [Fact]
         public void Save_ReplacesTheFileAndLeavesNoTemporaryFile()
         {
             using (var dir = new TempDir())
