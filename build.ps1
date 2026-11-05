@@ -25,6 +25,10 @@ Copy-Item (Join-Path $PSScriptRoot 'src\RoboConfigurator\bin\Release\net472\Robo
 $exe = Get-Item (Join-Path $dist 'RoboConfigurator.exe')
 Write-Host ("OK : {0} ({1:0.0} Mo)" -f $exe.FullName, ($exe.Length / 1MB)) -ForegroundColor Green
 
+# L'exe fait environ 3 Mo : une dépendance ajoutée par erreur se voit tout de suite (fichiers de payloads\ intégrés non comptés)
+$payloads = (Get-ChildItem (Join-Path $PSScriptRoot 'payloads') -File -Include *.exe, *.zip, *.cmd -Recurse -ErrorAction SilentlyContinue | Measure-Object Length -Sum).Sum
+if (($exe.Length - $payloads) -gt 4MB) { throw ("L'exe dépasse 4 Mo hors fichiers intégrés ({0:0.0} Mo) : dépendance ajoutée ?" -f (($exe.Length - $payloads) / 1MB)) }
+
 if ($Test) {
     & $dotnet test (Join-Path $PSScriptRoot 'tests\RoboConfigurator.Tests\RoboConfigurator.Tests.csproj') -c Release -nologo
     if ($LASTEXITCODE) { throw 'Les tests unitaires ont échoué' }

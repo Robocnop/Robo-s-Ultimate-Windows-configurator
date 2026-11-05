@@ -6,6 +6,9 @@
     <TargetFramework>net472</TargetFramework>
     <UseWPF>true</UseWPF>
     <LangVersion>latest</LangVersion>
+    <!-- Versions exactes de toutes les dépendances (packages.lock.json), imposées en CI -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(CI)' == 'true'">true</RestoreLockedMode>
     <!-- Processus 64 bits sur Windows 64 bits : sinon le registre HKLM\SOFTWARE serait redirigé vers WOW6432Node -->
     <PlatformTarget>AnyCPU</PlatformTarget>
     <Prefer32Bit>false</Prefer32Bit>
