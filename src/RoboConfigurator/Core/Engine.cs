@@ -324,7 +324,7 @@ namespace RoboConfigurator.Core
             Log.Info(Lang.T($"Command: \"{setup}\" {args}", $"Commande : \"{setup}\" {args}"));
             var start = DateTime.Now;
             int code;
-            try { code = SystemInfo.Run(fakeDllhost, $"/c \"\"{setup}\" {args}\"", display: $"setup.exe {args}"); }
+            try { code = SystemInfo.Run(fakeDllhost, $"/c \"\"{setup}\" {args}\"", display: $"setup.exe {args}", timeout: TimeSpan.FromMinutes(10)); }
             finally
             {
                 try { File.Delete(fakeDllhost); } catch { }
@@ -536,7 +536,7 @@ namespace RoboConfigurator.Core
                         File.Delete(lnk);
                     }
                 // La clé Taskband contient l'ordre et les épingles d'applis du Store : exportée en .reg avant suppression
-                SystemInfo.Run("reg.exe", $"export \"HKCU\\{taskband}\" \"{Path.Combine(backup, "Taskband.reg")}\" /y");
+                SystemInfo.Run("reg.exe", $"export \"HKCU\\{taskband}\" \"{Path.Combine(backup, "Taskband.reg")}\" /y", timeout: TimeSpan.FromMinutes(2));
                 Registry.CurrentUser.DeleteSubKeyTree(taskband, false);
                 Log.Info(Lang.T($"Previous pins saved to {backup}, then reset", $"Anciennes épingles sauvegardées dans {backup}, puis effacées"));
             }
@@ -568,7 +568,7 @@ namespace RoboConfigurator.Core
             Detail(StepNames.Office, OfficeInstalling);
             Log.Info(OfficeInstalling);
             var start = DateTime.Now;
-            SystemInfo.RunVisible(Path.Combine(_workDir, Payloads.Office.File));
+            SystemInfo.RunVisible(Path.Combine(_workDir, Payloads.Office.File), "", TimeSpan.FromMinutes(60));
             // Le programme d'installation peut rendre la main avant la fin réelle
             while (!Installed() || Process.GetProcessesByName("OfficeSetup").Any())
             {
@@ -588,7 +588,8 @@ namespace RoboConfigurator.Core
         {
             const string key = StepNames.Activation;
             string slmgr = Path.Combine(Environment.SystemDirectory, "slmgr.vbs");
-            void Slmgr(string args) => SystemInfo.Run("cscript.exe", $"//nologo \"{slmgr}\" {args}");
+            // /ato contacte les serveurs d'activation de Microsoft : plus long que les autres commandes
+            void Slmgr(string args) => SystemInfo.Run("cscript.exe", $"//nologo \"{slmgr}\" {args}", timeout: TimeSpan.FromMinutes(args == "/ato" ? 5 : 2));
 
             // Édition voulue : Famille -> Pro se fait sur place (redémarrage nécessaire), Pro -> Famille demande une réinstallation
             string edition = SystemInfo.EditionId();
@@ -643,10 +644,10 @@ namespace RoboConfigurator.Core
                 string script = Payloads.Ensure(Payloads.Mas, _workDir);
                 Detail(key, Lang.T("Activating Windows (HWID)...", "Activation de Windows (HWID)..."));
                 Log.Info(Lang.T("Starting Windows activation (option 1 - HWID)...", "Lancement de l'activation Windows (option 1 - HWID)..."));
-                SystemInfo.RunVisible("cmd.exe", $"/c \"{script}\" /HWID");
+                SystemInfo.RunVisible("cmd.exe", $"/c \"{script}\" /HWID", TimeSpan.FromMinutes(15));
                 Detail(key, Lang.T("Activating Office (Ohook)...", "Activation d'Office (Ohook)..."));
                 Log.Info(Lang.T("Starting Office activation (option 2 - Ohook)...", "Lancement de l'activation Office (option 2 - Ohook)..."));
-                SystemInfo.RunVisible("cmd.exe", $"/c \"{script}\" /Ohook");
+                SystemInfo.RunVisible("cmd.exe", $"/c \"{script}\" /Ohook", TimeSpan.FromMinutes(15));
             }
             catch (Exception ex)
             {
@@ -679,7 +680,7 @@ namespace RoboConfigurator.Core
                 Log.Info(Lang.T($"Switching from {edition} to Windows Pro with {(generic ? "Microsoft's generic Pro key" : "the key provided")} (changepk.exe)...",
                                 $"Passage de {edition} à Windows Pro avec {(generic ? "la clé générique Pro de Microsoft" : "la clé fournie")} (changepk.exe)..."));
                 if (!File.Exists(changepk)) throw new FileNotFoundException(Lang.T("changepk.exe not found on this Windows", "changepk.exe introuvable sur ce Windows"), changepk);
-                code = SystemInfo.Run(changepk, "/ProductKey " + productKey, display: "changepk.exe /ProductKey <" + Lang.T("key", "clé") + ">");
+                code = SystemInfo.Run(changepk, "/ProductKey " + productKey, display: "changepk.exe /ProductKey <" + Lang.T("key", "clé") + ">", timeout: TimeSpan.FromMinutes(15));
                 Log.Info(Lang.T($"changepk.exe: code {code} (0x{code:X8}), EditionID now {SystemInfo.EditionId()}", $"changepk.exe : code {code} (0x{code:X8}), EditionID maintenant {SystemInfo.EditionId()}"));
                 if (code == 0) break;
             }
