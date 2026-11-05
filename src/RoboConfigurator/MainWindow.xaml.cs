@@ -480,7 +480,7 @@ namespace RoboConfigurator
         private void StartRestartCountdown()
         {
             // shutdown planifie le redémarrage côté Windows : il a lieu même si l'application est fermée
-            if (!_options.Simulation) SystemInfo.Run("shutdown.exe", $"/r /t 60 /c \"{ShutdownComment}\"", timeout: TimeSpan.FromSeconds(30));
+            if (!_options.Simulation) SystemInfo.Run(SystemInfo.SystemExe("shutdown.exe"), $"/r /t 60 /c \"{ShutdownComment}\"", timeout: TimeSpan.FromSeconds(30));
             _restartPending = true;
             CancelRestartButton.Visibility = Visibility.Visible;
 
@@ -501,7 +501,7 @@ namespace RoboConfigurator
 
         private void OnCancelRestartClick(object sender, RoutedEventArgs e)
         {
-            if (!_options.Simulation) SystemInfo.Run("shutdown.exe", "/a", timeout: TimeSpan.FromSeconds(30));
+            if (!_options.Simulation) SystemInfo.Run(SystemInfo.SystemExe("shutdown.exe"), "/a", timeout: TimeSpan.FromSeconds(30));
             _restartPending = false;
             _restartTimer?.Stop();
             Log.Info(Lang.T("Restart cancelled", "Redémarrage annulé"));
@@ -517,11 +517,11 @@ namespace RoboConfigurator
                 RunSubtitle.Text = Lang.T("Simulation mode: the PC is not restarted.", "Mode simulation : le PC n'est pas redémarré.");
                 return;
             }
-            if (_restartPending) SystemInfo.Run("shutdown.exe", "/a", timeout: TimeSpan.FromSeconds(30));
-            SystemInfo.Run("shutdown.exe", $"/r /t 0 /c \"{ShutdownComment}\"", timeout: TimeSpan.FromSeconds(30));
+            if (_restartPending) SystemInfo.Run(SystemInfo.SystemExe("shutdown.exe"), "/a", timeout: TimeSpan.FromSeconds(30));
+            SystemInfo.Run(SystemInfo.SystemExe("shutdown.exe"), $"/r /t 0 /c \"{ShutdownComment}\"", timeout: TimeSpan.FromSeconds(30));
         }
 
-        private void OnOpenFolderClick(object sender, RoutedEventArgs e) => Process.Start("explorer.exe", $"\"{_workDir}\"");
+        private void OnOpenFolderClick(object sender, RoutedEventArgs e) => Process.Start(SystemInfo.WindowsExe("explorer.exe"), $"\"{_workDir}\"");
 
         private void OnOpenReportClick(object sender, RoutedEventArgs e) =>
             Process.Start(new ProcessStartInfo(_result.ReportPath) { UseShellExecute = true });

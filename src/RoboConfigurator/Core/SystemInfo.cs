@@ -30,6 +30,11 @@ namespace RoboConfigurator.Core
 
         public static string Str(object value) => value?.ToString().Trim() ?? "";
 
+        /// <summary>Chemin complet d'un programme de System32 : ne dépend pas du PATH, qu'un autre programme pourrait précéder.</summary>
+        public static string SystemExe(string name) => Path.Combine(Environment.SystemDirectory, name);
+
+        public static string WindowsExe(string name) => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), name);
+
         public static int BuildNumber => Environment.OSVersion.Version.Build;
         public static bool IsWin11 => BuildNumber >= 22000;
 
@@ -194,7 +199,7 @@ namespace RoboConfigurator.Core
         public static int PowerShell(string command, Action<string> onLine = null, TimeSpan? timeout = null)
         {
             string encoded = Convert.ToBase64String(Encoding.Unicode.GetBytes("$ProgressPreference='SilentlyContinue'; " + command));
-            return Run("powershell.exe", $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand {encoded}", onLine,
+            return Run(Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe"), $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand {encoded}", onLine,
                        display: Lang.T($"PowerShell “{command}”", $"PowerShell « {command} »"), timeout: timeout ?? TimeSpan.FromMinutes(5));
         }
     }

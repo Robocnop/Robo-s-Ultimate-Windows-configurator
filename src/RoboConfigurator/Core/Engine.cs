@@ -317,7 +317,7 @@ namespace RoboConfigurator.Core
                 foreach (var p in Process.GetProcessesByName("explorer")) { try { p.Kill(); } catch (Exception) { } }
                 Thread.Sleep(3000);
                 // Windows relance normalement l'explorateur tout seul
-                if (!Process.GetProcessesByName("explorer").Any()) Process.Start("explorer.exe");
+                if (!Process.GetProcessesByName("explorer").Any()) Process.Start(SystemInfo.WindowsExe("explorer.exe"));
             }
             if (errors > 0) throw new Exception(Lang.T($"{errors} CrapFixer item(s) failed (see the log)", $"{errors} élément(s) CrapFixer en échec (voir le journal)"));
             return null;
@@ -651,7 +651,7 @@ namespace RoboConfigurator.Core
                         File.Delete(lnk);
                     }
                 // La clé Taskband contient l'ordre et les épingles d'applis du Store : exportée en .reg avant suppression
-                SystemInfo.Run("reg.exe", $"export \"HKCU\\{taskband}\" \"{Path.Combine(backup, "Taskband.reg")}\" /y", timeout: TimeSpan.FromMinutes(2));
+                SystemInfo.Run(SystemInfo.SystemExe("reg.exe"), $"export \"HKCU\\{taskband}\" \"{Path.Combine(backup, "Taskband.reg")}\" /y", timeout: TimeSpan.FromMinutes(2));
                 Registry.CurrentUser.DeleteSubKeyTree(taskband, false);
                 Log.Info(Lang.T($"Previous pins saved to {backup}, then reset", $"Anciennes épingles sauvegardées dans {backup}, puis effacées"));
             }
@@ -664,7 +664,7 @@ namespace RoboConfigurator.Core
             foreach (var p in Process.GetProcessesByName("explorer")) { try { p.Kill(); p.WaitForExit(5000); } catch (Exception) { } }
             Thread.Sleep(3000);
             // Windows relance normalement l'explorateur tout seul
-            if (!Process.GetProcessesByName("explorer").Any()) Process.Start("explorer.exe");
+            if (!Process.GetProcessesByName("explorer").Any()) Process.Start(SystemInfo.WindowsExe("explorer.exe"));
         }
 
         private static string OfficeInstalling =>
@@ -726,7 +726,7 @@ namespace RoboConfigurator.Core
             const string key = StepNames.Activation;
             string slmgr = Path.Combine(Environment.SystemDirectory, "slmgr.vbs");
             // /ato contacte les serveurs d'activation de Microsoft : plus long que les autres commandes
-            void Slmgr(string args) => SystemInfo.Run("cscript.exe", $"//nologo \"{slmgr}\" {args}", timeout: TimeSpan.FromMinutes(args == "/ato" ? 5 : 2));
+            void Slmgr(string args) => SystemInfo.Run(SystemInfo.SystemExe("cscript.exe"), $"//nologo \"{slmgr}\" {args}", timeout: TimeSpan.FromMinutes(args == "/ato" ? 5 : 2));
 
             // Édition voulue : Famille -> Pro se fait sur place (redémarrage nécessaire), Pro -> Famille demande une réinstallation
             string edition = SystemInfo.EditionId();
@@ -781,10 +781,10 @@ namespace RoboConfigurator.Core
                 string script = Payloads.Ensure(Payloads.Mas, _workDir);
                 Detail(key, Lang.T("Activating Windows (HWID)...", "Activation de Windows (HWID)..."));
                 Log.Info(Lang.T("Starting Windows activation (option 1 - HWID)...", "Lancement de l'activation Windows (option 1 - HWID)..."));
-                SystemInfo.RunVisible("cmd.exe", $"/c \"{script}\" /HWID", TimeSpan.FromMinutes(15));
+                SystemInfo.RunVisible(SystemInfo.SystemExe("cmd.exe"), $"/c \"{script}\" /HWID", TimeSpan.FromMinutes(15));
                 Detail(key, Lang.T("Activating Office (Ohook)...", "Activation d'Office (Ohook)..."));
                 Log.Info(Lang.T("Starting Office activation (option 2 - Ohook)...", "Lancement de l'activation Office (option 2 - Ohook)..."));
-                SystemInfo.RunVisible("cmd.exe", $"/c \"{script}\" /Ohook", TimeSpan.FromMinutes(15));
+                SystemInfo.RunVisible(SystemInfo.SystemExe("cmd.exe"), $"/c \"{script}\" /Ohook", TimeSpan.FromMinutes(15));
             }
             catch (Exception ex)
             {
