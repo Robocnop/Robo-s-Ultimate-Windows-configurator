@@ -32,6 +32,7 @@ namespace RoboConfigurator.Core
     {
         private static readonly object Sync = new object();
         private static string _file;
+        private static bool _writeFailed;
 
         public static event Action<LogEntry> Written;
 
@@ -76,15 +77,24 @@ namespace RoboConfigurator.Core
         private static void Write(LogLevel level, string text)
         {
             var entry = new LogEntry(level, MaskKeys(text));
+            LogEntry failure = null;
             lock (Sync)
             {
                 if (_file != null)
                 {
                     try { File.AppendAllText(_file, entry + Environment.NewLine, new UTF8Encoding(true)); }
-                    catch (IOException) { /* le journal ne doit jamais bloquer la configuration */ }
+                    catch (Exception ex)
+                    {
+                        // Le journal ne doit jamais faire échouer la configuration : signalé une seule fois dans l'interface
+                        if (!_writeFailed)
+                            failure = new LogEntry(LogLevel.Warn, Lang.T($"The log file {_file} cannot be written ({ex.Message}): only this window keeps the log",
+                                                                         $"Le fichier journal {_file} ne peut pas être écrit ({ex.Message}) : seule cette fenêtre garde le journal"));
+                        _writeFailed = true;
+                    }
                 }
             }
             Written?.Invoke(entry);
+            if (failure != null) Written?.Invoke(failure);
         }
     }
 }

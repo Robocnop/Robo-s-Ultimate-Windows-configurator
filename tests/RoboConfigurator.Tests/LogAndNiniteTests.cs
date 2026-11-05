@@ -12,6 +12,27 @@ namespace RoboConfigurator.Tests
         [InlineData("Rien à masquer : 12345-678", "Rien à masquer : 12345-678")]
         [InlineData(null, "")]
         public void MaskKeys(string text, string expected) => Assert.Equal(expected, Log.MaskKeys(text));
+
+        [Fact]
+        public void UnwritableLogFile_NeverThrows()
+        {
+            using (var dir = new TempDir())
+            {
+                // Un dossier à la place du fichier : l'écriture lève UnauthorizedAccessException
+                string path = System.IO.Directory.CreateDirectory(dir.File("journal.txt")).FullName;
+                var seen = new System.Collections.Generic.List<string>();
+                System.Action<LogEntry> handler = e => seen.Add(e.Text);
+                Log.Written += handler;
+                try
+                {
+                    Log.Open(path);
+                    Log.Info("un");
+                    Log.Info("deux");
+                }
+                finally { Log.Written -= handler; Log.Close(); }
+                Assert.Contains("deux", seen);
+            }
+        }
     }
 
     public class NiniteAppsTests
