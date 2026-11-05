@@ -20,6 +20,21 @@ namespace RoboConfigurator.Core
         public const string Activation = "Activation";
 
         public static readonly string[] All = { Ninite, CrapFixer, Edge, Taskbar, Office, Activation };
+
+        /// <summary>Nom affiché de l'étape (interface, journal, rapport) ; les identifiants ci-dessus restent internes.</summary>
+        public static string Display(string step)
+        {
+            switch (step)
+            {
+                case Edge: return Lang.T("Uninstall Microsoft Edge", "Désinstaller Microsoft Edge");
+                case Taskbar: return Lang.T("Taskbar", "Barre des tâches");
+                case Office: return "Microsoft Office";
+                case Activation: return Lang.T("Windows activation", "Activation de Windows");
+                default: return step;
+            }
+        }
+
+        public static string Display(IEnumerable<string> steps) => string.Join(", ", steps.Select(Display));
     }
 
     /// <summary>Choix faits dans l'assistant, enregistrés pour reprendre après une interruption.</summary>

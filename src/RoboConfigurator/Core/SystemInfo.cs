@@ -195,7 +195,7 @@ namespace RoboConfigurator.Core
         {
             string encoded = Convert.ToBase64String(Encoding.Unicode.GetBytes("$ProgressPreference='SilentlyContinue'; " + command));
             return Run("powershell.exe", $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand {encoded}", onLine,
-                       display: $"PowerShell « {command} »", timeout: timeout ?? TimeSpan.FromMinutes(5));
+                       display: Lang.T($"PowerShell “{command}”", $"PowerShell « {command} »"), timeout: timeout ?? TimeSpan.FromMinutes(5));
         }
     }
 }

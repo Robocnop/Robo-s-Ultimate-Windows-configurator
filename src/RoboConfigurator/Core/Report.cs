@@ -72,13 +72,13 @@ namespace RoboConfigurator.Core
             foreach (var m in sticks)
             {
                 object speed = Convert.ToUInt32(m["ConfiguredClockSpeed"] ?? 0) > 0 ? m["ConfiguredClockSpeed"] : m["Speed"];
-                r.Add($"  - {Str(m["DeviceLocator"])} : {Gb(m["Capacity"])} {Lang.T("at", "à")} {speed} MHz ({Str(m["Manufacturer"])} {Str(m["PartNumber"])})");
+                r.Add($"  - {Str(m["DeviceLocator"])}{Lang.T(": ", " : ")}{Gb(m["Capacity"])} {Lang.T("at", "à")} {speed} MHz ({Str(m["Manufacturer"])} {Str(m["PartNumber"])})");
             }
 
             r.Add("");
             r.Add(Lang.T("STORAGE", "STOCKAGE"));
             foreach (var d in Safe(() => Wmi("SELECT * FROM MSFT_PhysicalDisk", @"root\Microsoft\Windows\Storage").OrderBy(x => Str(x["DeviceId"])).ToList(), new List<ManagementObject>()))
-                r.Add($"  - {Str(d["FriendlyName"])} : {Gb(d["Size"])}, {MediaType(d["MediaType"])} {BusType(d["BusType"])}, {Lang.T("health", "santé")} {Health(d["HealthStatus"])}");
+                r.Add($"  - {Str(d["FriendlyName"])}{Lang.T(": ", " : ")}{Gb(d["Size"])}, {MediaType(d["MediaType"])} {BusType(d["BusType"])}, {Lang.T("health", "santé")} {Health(d["HealthStatus"])}");
             foreach (var v in Wmi("SELECT * FROM Win32_LogicalDisk WHERE DriveType = 3").OrderBy(x => Str(x["DeviceID"])))
             {
                 string letter = Str(v["DeviceID"]);
@@ -105,7 +105,7 @@ namespace RoboConfigurator.Core
                     string ip = Safe(() => string.Join(", ", Wmi($"SELECT IPAddress FROM MSFT_NetIPAddress WHERE InterfaceIndex = {n["InterfaceIndex"]} AND AddressFamily = 2", @"root\StandardCimv2").Select(a => Str(a["IPAddress"]))), "-");
                     state = Lang.T($"connected {LinkSpeed(n["Speed"])}, IP {ip}", $"connecté {LinkSpeed(n["Speed"])}, IP {ip}");
                 }
-                r.Add($"  - {Str(n["InterfaceDescription"])} : MAC {Mac(Str(n["PermanentAddress"]))}, {state}");
+                r.Add($"  - {Str(n["InterfaceDescription"])}{Lang.T(": ", " : ")}MAC {Mac(Str(n["PermanentAddress"]))}, {state}");
             }
 
             r.Add("");

@@ -62,10 +62,10 @@ namespace RoboConfigurator
             {
                 new StepItem(StepNames.Ninite, "Ninite", Lang.T("Installs 7-Zip, Chrome, Firefox, Foxit Reader and Notepad++. Click “Close” at the end.", "Installe 7-Zip, Chrome, Firefox, Foxit Reader et Notepad++. Cliquer sur « Close » à la fin."), SymbolRegular.AppsAddIn24),
                 new StepItem(StepNames.CrapFixer, "CrapFixer", Lang.T("Applies the recommended tweaks and dark theme, removes bloatware (Candy Crush, Bing News...).", "Applique les tweaks recommandés et le thème sombre, supprime les applis inutiles (Candy Crush, Bing News...)."), SymbolRegular.Broom24),
-                new StepItem(StepNames.Edge, Lang.T("Uninstall Microsoft Edge", "Désinstaller Microsoft Edge"), Lang.T("Edge's official uninstaller, started so that Windows 11 24H2 does not block it. WebView2 is kept.", "Désinstalleur officiel d'Edge, lancé de façon à ne pas être bloqué par Windows 11 24H2. WebView2 est conservé."), SymbolRegular.Globe24),
-                new StepItem(StepNames.Taskbar, Lang.T("Taskbar", "Barre des tâches"), Lang.T("Pins, in this order: File Explorer, Firefox, Terminal, PowerShell, Settings, Control Panel (replaces the Windows pins). Applied at next sign-in.", "Épingle dans cet ordre : Explorateur, Firefox, Terminal, PowerShell, Paramètres, Panneau de configuration (remplace les épingles de Windows). Appliqué à la prochaine ouverture de session."), SymbolRegular.Pin24),
-                new StepItem(StepNames.Office, "Microsoft Office", Lang.T("Installs Office and waits for the installation to finish.", "Installe Office et attend la fin de l'installation."), SymbolRegular.Document24),
-                new StepItem(StepNames.Activation, Lang.T("Windows activation", "Activation de Windows"), Lang.T("If Windows is not activated: the key entered, otherwise the BIOS OEM key, otherwise the activation script.", "Si Windows n'est pas activé : clé saisie, sinon clé OEM du BIOS, sinon script d'activation."), SymbolRegular.ShieldCheckmark24),
+                new StepItem(StepNames.Edge, StepNames.Display(StepNames.Edge), Lang.T("Edge's official uninstaller, started so that Windows 11 24H2 does not block it. WebView2 is kept.", "Désinstalleur officiel d'Edge, lancé de façon à ne pas être bloqué par Windows 11 24H2. WebView2 est conservé."), SymbolRegular.Globe24),
+                new StepItem(StepNames.Taskbar, StepNames.Display(StepNames.Taskbar), Lang.T("Pins, in this order: File Explorer, Firefox, Terminal, PowerShell, Settings, Control Panel (replaces the Windows pins). Applied at next sign-in.", "Épingle dans cet ordre : Explorateur, Firefox, Terminal, PowerShell, Paramètres, Panneau de configuration (remplace les épingles de Windows). Appliqué à la prochaine ouverture de session."), SymbolRegular.Pin24),
+                new StepItem(StepNames.Office, StepNames.Display(StepNames.Office), Lang.T("Installs Office and waits for the installation to finish.", "Installe Office et attend la fin de l'installation."), SymbolRegular.Document24),
+                new StepItem(StepNames.Activation, StepNames.Display(StepNames.Activation), Lang.T("If Windows is not activated: the key entered, otherwise the BIOS OEM key, otherwise the activation script.", "Si Windows n'est pas activé : clé saisie, sinon clé OEM du BIOS, sinon script d'activation."), SymbolRegular.ShieldCheckmark24),
             };
             _runItems = _steps.Concat(new[]
             {
@@ -425,7 +425,7 @@ namespace RoboConfigurator
             else if (_result.Failed.Any())
             {
                 RunTitle.Text = Lang.T("Setup finished with errors", "Configuration terminée avec des erreurs");
-                ShowMessage(RunMessage, InfoBarSeverity.Error, Lang.T("Failed steps: ", "Étapes en échec : ") + string.Join(", ", _result.Failed),
+                ShowMessage(RunMessage, InfoBarSeverity.Error, Lang.T("Failed steps: ", "Étapes en échec : ") + StepNames.Display(_result.Failed),
                     Lang.T("Run the app again to retry them: the settings are kept and successful steps will not be redone.", "Relancez l'application pour les réessayer : la configuration est conservée et les étapes réussies ne seront pas refaites."));
             }
             else if (_result.NotDone.Any())
@@ -438,7 +438,7 @@ namespace RoboConfigurator
             else if (_result.AfterRestart.Any())
             {
                 RunTitle.Text = Lang.T("Restart needed", "Redémarrage nécessaire");
-                ShowMessage(RunMessage, InfoBarSeverity.Warning, Lang.T("To finish after restarting: ", "À terminer après le redémarrage : ") + string.Join(", ", _result.AfterRestart),
+                ShowMessage(RunMessage, InfoBarSeverity.Warning, Lang.T("To finish after restarting: ", "À terminer après le redémarrage : ") + StepNames.Display(_result.AfterRestart),
                     Lang.T("After the restart, run the app again: the settings are kept and it will pick up where it stopped.",
                            "Après le redémarrage, relancez l’application : la configuration est conservée et elle reprendra là où elle s’est arrêtée."));
             }

@@ -35,6 +35,23 @@ namespace RoboConfigurator.Tests
         }
     }
 
+    public class StepNamesTests
+    {
+        [Fact]
+        public void Display_TranslatesTheInternalNames()
+        {
+            try
+            {
+                Lang.Set("fr");
+                Assert.Equal("Barre des tâches, Activation de Windows", StepNames.Display(new[] { StepNames.Taskbar, StepNames.Activation }));
+                Lang.Set("en");
+                Assert.Equal("Taskbar, Windows activation", StepNames.Display(new[] { StepNames.Taskbar, StepNames.Activation }));
+                Assert.Equal("Ninite", StepNames.Display(StepNames.Ninite));
+            }
+            finally { Lang.Set("en"); }
+        }
+    }
+
     public class NiniteAppsTests
     {
         [Fact]

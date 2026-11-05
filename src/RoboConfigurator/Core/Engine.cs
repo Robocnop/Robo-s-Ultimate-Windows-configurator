@@ -156,7 +156,7 @@ namespace RoboConfigurator.Core
             {
                 if (StopBefore(step)) continue;
                 _current = step;
-                Log.Title(step);
+                Log.Title(StepNames.Display(step));
                 Set(step, StepStatus.Running, "");
                 var start = DateTime.Now;
                 try
@@ -165,35 +165,35 @@ namespace RoboConfigurator.Core
                     _state.MarkDone(step);
                     if (step == StepNames.Activation) ForgetWindowsKey();
                     Set(step, warning == null ? StepStatus.Done : StepStatus.Warning, warning ?? Lang.T("Done", "Terminée"));
-                    if (warning != null) Log.Warn(Lang.T($"{step} needs checking: {warning}", $"{step} à vérifier : {warning}"));
-                    Log.Ok(Lang.T($"{step} done in {(DateTime.Now - start).TotalSeconds:0} s", $"{step} terminé en {(DateTime.Now - start).TotalSeconds:0} s"));
+                    if (warning != null) Log.Warn(Lang.T($"{StepNames.Display(step)} needs checking: {warning}", $"{StepNames.Display(step)} à vérifier : {warning}"));
+                    Log.Ok(Lang.T($"{StepNames.Display(step)} done in {(DateTime.Now - start).TotalSeconds:0} s", $"{StepNames.Display(step)} terminé en {(DateTime.Now - start).TotalSeconds:0} s"));
                 }
                 catch (RestartRequiredException ex)
                 {
                     // Pas marquée comme faite : elle sera reprise au prochain lancement, après le redémarrage
                     _result.AfterRestart.Add(step);
                     Set(step, StepStatus.Warning, ex.Message);
-                    Log.Warn(Lang.T($"{step} will finish after restarting: {ex.Message}", $"{step} se terminera après le redémarrage : {ex.Message}"));
+                    Log.Warn(Lang.T($"{StepNames.Display(step)} will finish after restarting: {ex.Message}", $"{StepNames.Display(step)} se terminera après le redémarrage : {ex.Message}"));
                 }
                 catch (StepNotDoneException ex)
                 {
                     // Pas marquée comme faite : elle sera réessayée au prochain lancement
                     _result.NotDone.Add(step);
                     Set(step, StepStatus.Warning, ex.Message);
-                    Log.Warn(Lang.T($"{step} not done after {(DateTime.Now - start).TotalSeconds:0} s, it will be retried at the next launch: {ex.Message}",
-                                    $"{step} non faite après {(DateTime.Now - start).TotalSeconds:0} s, elle sera réessayée au prochain lancement : {ex.Message}"));
+                    Log.Warn(Lang.T($"{StepNames.Display(step)} not done after {(DateTime.Now - start).TotalSeconds:0} s, it will be retried at the next launch: {ex.Message}",
+                                    $"{StepNames.Display(step)} non faite après {(DateTime.Now - start).TotalSeconds:0} s, elle sera réessayée au prochain lancement : {ex.Message}"));
                 }
                 catch (Exception ex) { Fail(step, ex, DateTime.Now - start); }
             }
 
             _current = null;
             Log.Title(Lang.T("Summary", "Résumé"));
-            if (_result.Failed.Any()) Log.Warn(Lang.T($"Failed steps: {string.Join(", ", _result.Failed)}. Run the app again to retry them.", $"Étapes en échec : {string.Join(", ", _result.Failed)}. Relancer l'application pour les réessayer."));
-            if (_result.NotDone.Any()) Log.Warn(Lang.T($"Steps not done: {string.Join(", ", _result.NotDone)}. Run the app again to retry them.", $"Étapes non faites : {string.Join(", ", _result.NotDone)}. Relancer l'application pour les réessayer."));
-            if (_result.AfterRestart.Any()) Log.Warn(Lang.T($"To finish after restarting: {string.Join(", ", _result.AfterRestart)}. Run the app again after the restart.", $"À terminer après le redémarrage : {string.Join(", ", _result.AfterRestart)}. Relancer l'application après le redémarrage."));
+            if (_result.Failed.Any()) Log.Warn(Lang.T($"Failed steps: {StepNames.Display(_result.Failed)}. Run the app again to retry them.", $"Étapes en échec : {StepNames.Display(_result.Failed)}. Relancer l'application pour les réessayer."));
+            if (_result.NotDone.Any()) Log.Warn(Lang.T($"Steps not done: {StepNames.Display(_result.NotDone)}. Run the app again to retry them.", $"Étapes non faites : {StepNames.Display(_result.NotDone)}. Relancer l'application pour les réessayer."));
+            if (_result.AfterRestart.Any()) Log.Warn(Lang.T($"To finish after restarting: {StepNames.Display(_result.AfterRestart)}. Run the app again after the restart.", $"À terminer après le redémarrage : {StepNames.Display(_result.AfterRestart)}. Relancer l'application après le redémarrage."));
             // Les étapes avec un téléchargement sont arrêtées en premier : remises dans l'ordre d'affichage
             _result.Stopped.Sort((a, b) => Array.IndexOf(StepNames.All, a).CompareTo(Array.IndexOf(StepNames.All, b)));
-            if (_result.Stopped.Any()) Log.Warn(Lang.T($"Stopped at your request. Not started: {string.Join(", ", _result.Stopped)}. Run the app again to continue.", $"Arrêt demandé. Non lancées : {string.Join(", ", _result.Stopped)}. Relancer l'application pour continuer."));
+            if (_result.Stopped.Any()) Log.Warn(Lang.T($"Stopped at your request. Not started: {StepNames.Display(_result.Stopped)}. Run the app again to continue.", $"Arrêt demandé. Non lancées : {StepNames.Display(_result.Stopped)}. Relancer l'application pour continuer."));
             if (!_result.HasUnfinished && !_result.AfterRestart.Any()) Log.Ok(Lang.T("All done.", "Tout est terminé."));
 
             RenamePc();
@@ -225,7 +225,7 @@ namespace RoboConfigurator.Core
             string B(bool value) => value ? Lang.T("yes", "oui") : Lang.T("no", "non");
             var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
             Log.Info(Lang.T($"App: version {version}", $"Application : version {version}"));
-            Log.Info($"Windows : {Try(SystemInfo.WindowsCaption)} (build {SystemInfo.BuildNumber}, EditionID {Try(SystemInfo.EditionId)}, {(Environment.Is64BitOperatingSystem ? "64" : "32")} bits)");
+            Log.Info($"Windows{Lang.T(": ", " : ")}{Try(SystemInfo.WindowsCaption)} (build {SystemInfo.BuildNumber}, EditionID {Try(SystemInfo.EditionId)}, {(Environment.Is64BitOperatingSystem ? "64" : "32")} bits)");
             Log.Info(Lang.T($"User: {Environment.UserDomainName}\\{Environment.UserName}, administrator: {(SystemInfo.IsAdministrator() ? "yes" : "no")}",
                             $"Utilisateur : {Environment.UserDomainName}\\{Environment.UserName}, administrateur : {(SystemInfo.IsAdministrator() ? "oui" : "non")}"));
             Log.Info(Lang.T($"Language: {System.Globalization.CultureInfo.CurrentUICulture.Name}, region: {System.Globalization.RegionInfo.CurrentRegion.Name}",
@@ -242,7 +242,7 @@ namespace RoboConfigurator.Core
         private void Fail(string step, Exception ex, TimeSpan? elapsed = null)
         {
             string after = elapsed == null ? "" : Lang.T($" after {elapsed.Value.TotalSeconds:0} s", $" après {elapsed.Value.TotalSeconds:0} s");
-            Log.Error(Lang.T($"{step} failed{after}", $"{step} en échec{after}"), ex);
+            Log.Error(Lang.T($"{StepNames.Display(step)} failed{after}", $"{StepNames.Display(step)} en échec{after}"), ex);
             _result.Failed.Add(step);
             Set(step, StepStatus.Failed, ex.GetBaseException().Message);
         }
@@ -623,9 +623,10 @@ namespace RoboConfigurator.Core
             string firefox = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu), @"Programs\Firefox.lnk");
             string powershell = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Windows\Start Menu\Programs\Windows PowerShell\Windows PowerShell.lnk");
             string terminal = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Microsoft\WindowsApps\wt.exe");
-            Log.Info($"  Firefox : {firefox} ({Exists(firefox)})");
-            Log.Info($"  PowerShell : {powershell} ({Exists(powershell)})");
-            Log.Info($"  Terminal : {terminal} ({Exists(terminal)})");
+            string sep = Lang.T(": ", " : ");
+            Log.Info($"  Firefox{sep}{firefox} ({Exists(firefox)})");
+            Log.Info($"  PowerShell{sep}{powershell} ({Exists(powershell)})");
+            Log.Info($"  Terminal{sep}{terminal} ({Exists(terminal)})");
             string controlPanel = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Windows\Start Menu\Programs\System Tools\Control Panel.lnk");
             Log.Info(Lang.T($"  Control Panel : {controlPanel} ({Exists(controlPanel)})", $"  Panneau de configuration : {controlPanel} ({Exists(controlPanel)})"));
         }
@@ -937,7 +938,7 @@ namespace RoboConfigurator.Core
             if (_result.HasUnfinished)
             {
                 // Nettoyage forcé : le journal part avec le dossier, une copie reste sur le Bureau pour comprendre l'échec
-                string unfinished = string.Join(", ", _result.Failed.Concat(_result.NotDone));
+                string unfinished = StepNames.Display(_result.Failed.Concat(_result.NotDone));
                 Log.Warn(Lang.T($"Clean-up forced despite unfinished steps ({unfinished}): they cannot be resumed",
                                 $"Nettoyage forcé malgré des étapes non terminées ({unfinished}) : elles ne pourront pas être reprises"));
                 CopyLogToDesktop();
@@ -1008,7 +1009,7 @@ namespace RoboConfigurator.Core
                         Lang.T("Checking the activation...", "Vérification de l'activation..."),
                     };
                     break;
-                default: actions = new[] { Lang.T($"{step}: simulation...", $"{step} : simulation...") }; break;
+                default: actions = new[] { Lang.T($"{StepNames.Display(step)}: simulation...", $"{StepNames.Display(step)} : simulation...") }; break;
             }
             foreach (string a in actions) { Detail(step, a); Log.Info(a + " (simulation)"); Thread.Sleep(900); }
             return step == StepNames.Activation ? Lang.T("Sample warning: check the activation manually.", "Exemple d'avertissement : vérifier l'activation manuellement.") : null;
