@@ -236,7 +236,8 @@ namespace RoboConfigurator
 
         private static void OpenUrl(string url)
         {
-            if (!string.IsNullOrEmpty(url)) Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            if (Updates.IsTrustedUrl(url)) Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            else Log.Warn(Lang.T($"Update link ignored (not on github.com): {url}", $"Lien de mise à jour ignoré (pas sur github.com) : {url}"));
         }
 
         // Même ordre que les choix de EditionBox
