@@ -1,12 +1,12 @@
 # État d'avancement
 
-Dernière mise à jour : 19/10/2026. Dernière version publiée : [v2.6.1](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v2.6.1) ; dernière version du script PowerShell : [v1.3.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.3.0).
+Dernière mise à jour : 05/11/2026. Dernière version publiée : [v2.6.2](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v2.6.2) ; dernière version du script PowerShell : [v1.3.0](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v1.3.0).
 
 ## État des étapes
 
 | Étape | État | Testé en VM | Notes |
 |---|---|---|---|
-| Téléchargements | ✅ Fonctionne | Oui (v1.0.0) | Liens Nextcloud valides, 3 essais par fichier |
+| Téléchargements | ✅ Fonctionne | Oui (v1.0.0) | Liens Nextcloud valides (nextcloud.robocnop.be depuis la v2.6.2), Ninite depuis ninite.com, 3 essais par fichier |
 | Ninite | ✅ Fonctionne | Oui (v1.0.0) | Cliquer sur **Close** à la fin |
 | CrapFixer | ✅ Fonctionne | Oui (v1.0.0) | 47 tweaks recommandés (46 sur Win10) + thème sombre, 13 applis supprimées |
 | Edge | ❌ Bloqué en v2.4.0 | Oui (PC réel, v2.4.0) | Code 532 sur Edge 155, même depuis les Paramètres. Contournement dans la v2.5.0, à valider |
@@ -59,6 +59,9 @@ Dernière mise à jour : 19/10/2026. Dernière version publiée : [v2.6.1](https
   - Page Applications : le logo de chaque appli est affiché à gauche de son nom. Les 84 icônes viennent de ninite.com et sont intégrées à l'exe (`Assets/AppIcons`), elles s'affichent donc hors ligne.
   - Commentaires du code relus : ceux qui paraphrasaient le code sont retirés, celui de la méthode Edge est corrigé.
   - Documentation et vidéos de présentation mises à jour pour la v2.6.
+- **v2.6.2** :
+  - Le Nextcloud a changé d'adresse : CrapFixer, Office et MAS sont téléchargés depuis `nextcloud.robocnop.be` (à la place de `nextcloud.robocnop.freeddns.org:4444`).
+  - Ninite n'est plus hébergé sur le Nextcloud : la sélection par défaut est aussi téléchargée sur ninite.com, comme les autres sélections. Un `Ninite.exe` déposé dans `payloads\` reste intégré à l'exe.
 
 ## Problèmes connus
 

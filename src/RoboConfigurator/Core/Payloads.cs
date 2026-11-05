@@ -16,20 +16,20 @@ namespace RoboConfigurator.Core
 
     /// <summary>
     /// Fichiers nécessaires aux étapes. Ils sont pris dans l'exe s'ils y ont été intégrés au moment de la
-    /// compilation (dossier payloads\), sinon téléchargés depuis le Nextcloud.
+    /// compilation (dossier payloads\), sinon téléchargés depuis le Nextcloud (Ninite depuis ninite.com).
     /// </summary>
     public static class Payloads
     {
-        public static readonly Payload Ninite    = new Payload("Ninite.exe",      "https://nextcloud.robocnop.freeddns.org:4444/s/Cg9d7m58fWtJY8n/download");
-        public static readonly Payload CrapFixer = new Payload("CrapFixer.zip",   "https://nextcloud.robocnop.freeddns.org:4444/s/Czayj7x7AmdAsJj/download");
-        public static readonly Payload Office    = new Payload("OfficeSetup.exe", "https://nextcloud.robocnop.freeddns.org:4444/s/AabmSfHFBTR6e6J/download");
-        public static readonly Payload Mas       = new Payload("MAS_AIO.cmd",     "https://nextcloud.robocnop.freeddns.org:4444/s/mZQFfJ5YzBX5JeR/download");
+        public static readonly Payload Ninite    = new Payload("Ninite.exe",      NiniteApps.Url(NiniteApps.Default));
+        public static readonly Payload CrapFixer = new Payload("CrapFixer.zip",   "https://nextcloud.robocnop.be/s/Czayj7x7AmdAsJj/download");
+        public static readonly Payload Office    = new Payload("OfficeSetup.exe", "https://nextcloud.robocnop.be/s/AabmSfHFBTR6e6J/download");
+        public static readonly Payload Mas       = new Payload("MAS_AIO.cmd",     "https://nextcloud.robocnop.be/s/mZQFfJ5YzBX5JeR/download");
 
         public static Payload ForStep(string step, RunConfig config)
         {
             switch (step)
             {
-                // Seule la sélection par défaut existe en Ninite.exe intégré ou sur le Nextcloud
+                // Seule la sélection par défaut peut être intégrée à l'exe en Ninite.exe
                 case StepNames.Ninite:
                     return NiniteApps.IsDefault(config.NiniteApps) ? Ninite
                          : new Payload(NiniteApps.FileName(config.NiniteApps), NiniteApps.Url(config.NiniteApps));
