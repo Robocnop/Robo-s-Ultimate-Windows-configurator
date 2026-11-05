@@ -63,9 +63,9 @@ Dernière mise à jour : 05/11/2026. Dernière version publiée : [v2.6.2](https
   - Le Nextcloud a changé d'adresse : CrapFixer, Office et MAS sont téléchargés depuis `nextcloud.robocnop.be` (à la place de `nextcloud.robocnop.freeddns.org:4444`).
   - Ninite n'est plus hébergé sur le Nextcloud : la sélection par défaut est aussi téléchargée sur ninite.com, comme les autres sélections. Un `Ninite.exe` déposé dans `payloads\` reste intégré à l'exe.
 
-## Améliorations après l'audit (non publiées, branche `audit-improvements`)
+## Améliorations après l'audit (v2.7.0-beta.1, pré-version)
 
-Audit du code dans [AUDIT.md](AUDIT.md), puis corrections, un sujet par commit. La version reste 2.6.2 : rien n'est publié.
+Audit du code dans [AUDIT.md](AUDIT.md), puis corrections, un sujet par commit. Publiées en pré-version [v2.7.0-beta.1](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v2.7.0-beta.1) pour test, non validées sur un vrai poste.
 
 - **Tests** : projet xUnit `tests\RoboConfigurator.Tests` (121 tests : .ini CrapFixer, configuration, options, versions, masquage des clés, téléchargements, nettoyage, déroulement complet en simulation sans fenêtre). `build.ps1 -Test` lance aussi le test de fumée ; la CI lance les deux. L'exe ne change pas de taille (3,0 Mo) et la compilation échoue au-delà de 4 Mo.
 - **Sécurité** : `C:\RoboConfigurator` réservé aux administrateurs et à SYSTEM ; le nettoyage ne suit plus les jonctions ; signature numérique de Ninite et d'Office vérifiée, format de CrapFixer et de MAS vérifié ; clé Windows chiffrée (DPAPI) dans le fichier de reprise et retirée après l'activation ; programmes Windows lancés par leur chemin complet ; liens de mise à jour limités à github.com.
