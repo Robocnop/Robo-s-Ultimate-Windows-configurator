@@ -311,13 +311,8 @@ namespace RoboConfigurator.Core
 
             if (restartExplorer)
             {
-                string restarting = Lang.T("Restarting File Explorer...", "Redémarrage de l'explorateur...");
-                Detail(key, restarting);
-                Log.Info(restarting);
-                foreach (var p in Process.GetProcessesByName("explorer")) { try { p.Kill(); } catch (Exception) { } }
-                Thread.Sleep(3000);
-                // Windows relance normalement l'explorateur tout seul
-                if (!Process.GetProcessesByName("explorer").Any()) Process.Start(SystemInfo.WindowsExe("explorer.exe"));
+                Detail(key, Lang.T("Restarting File Explorer...", "Redémarrage de l'explorateur..."));
+                RestartExplorer();
             }
             if (errors > 0) throw new Exception(Lang.T($"{errors} CrapFixer item(s) failed (see the log)", $"{errors} élément(s) CrapFixer en échec (voir le journal)"));
             return null;

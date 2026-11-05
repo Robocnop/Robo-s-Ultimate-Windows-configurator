@@ -87,7 +87,13 @@ namespace RoboConfigurator.Core
             }
             if (name == "(Default)") name = "";
 
-            if (value == "<delete>") { root.DeleteSubKeyTree(subKey, false); return; }
+            if (value == "<delete>")
+            {
+                // Jamais une ruche entière : seulement une clé sous la ruche
+                if (subKey.Trim('\\').Length == 0) throw new Exception(Lang.T($"Refused: deleting the whole hive {hive}", $"Refusé : suppression de la ruche entière {hive}"));
+                root.DeleteSubKeyTree(subKey, false);
+                return;
+            }
             if (value == "<deletevalue>")
             {
                 using (var key = root.OpenSubKey(subKey, true)) key?.DeleteValue(name ?? "", false);

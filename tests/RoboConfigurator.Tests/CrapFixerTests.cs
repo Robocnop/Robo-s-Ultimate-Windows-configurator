@@ -82,6 +82,15 @@ namespace RoboConfigurator.Tests
         [Fact]
         public void ParseNumber_InvalidThrows() => Assert.ThrowsAny<FormatException>(() => CrapFixer.ParseNumber("abc"));
 
+        [Fact]
+        public void ApplyTweak_RefusesToDeleteAWholeHive()
+        {
+            // HKCU est de toute façon protégée par .NET : le test ne peut rien supprimer, même si le contrôle disparaissait
+            var tweak = CrapFixer.ReadIni(new[] { "[Bad]", @"Path=HKCU\", "RecommendedValue=<delete>" })[0];
+            var ex = Assert.ThrowsAny<Exception>(() => CrapFixer.ApplyTweak(tweak));
+            Assert.Contains("HKCU", ex.Message);
+        }
+
         [Theory]
         [InlineData("Microsoft.BingNews", "Microsoft.BingNews", true)]
         [InlineData("microsoft.bingnews", "Microsoft.BingNews", true)]
