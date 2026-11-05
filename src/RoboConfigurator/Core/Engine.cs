@@ -192,7 +192,11 @@ namespace RoboConfigurator.Core
         {
             Detail(StepNames.Ninite, Lang.T("Click “Close” in Ninite when it shows “Done”.", "Cliquez sur « Close » dans Ninite quand il affiche « Done »."));
             Log.Info(Lang.T($"Ninite installs: {NiniteApps.Names(_config.NiniteApps)}", $"Ninite installe : {NiniteApps.Names(_config.NiniteApps)}"));
-            SystemInfo.RunVisible(Path.Combine(_workDir, Payloads.ForStep(StepNames.Ninite, _config).File));
+            int code = SystemInfo.RunVisible(Path.Combine(_workDir, Payloads.ForStep(StepNames.Ninite, _config).File));
+            // Fenêtre fermée avant la fin, erreur de téléchargement de Ninite... : l'étape sera refaite au prochain lancement
+            if (code != 0)
+                throw new StepNotDoneException(Lang.T($"Ninite closed with code {code} (0x{code:X8}): check that the apps are installed",
+                                                      $"Ninite s'est fermé avec le code {code} (0x{code:X8}) : vérifier que les applis sont installées"));
             return null;
         }
 
@@ -592,6 +596,11 @@ namespace RoboConfigurator.Core
         private static string OfficeInstalling =>
             Lang.T("Installing Office (this may take a while)...", "Installation d'Office (cela peut prendre un moment)...");
 
+        private const string ClickToRunKey = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Office\ClickToRun\Configuration";
+
+        // OfficeSetup.exe rend parfois la main avant la fin : Click-to-Run continue avec OfficeC2RClient
+        private static readonly string[] OfficeInstallerProcesses = { "OfficeSetup", "OfficeC2RClient" };
+
         private string Office()
         {
             var word = new[]
@@ -599,22 +608,39 @@ namespace RoboConfigurator.Core
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"Microsoft Office\root\Office16\WINWORD.EXE"),
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Microsoft Office\root\Office16\WINWORD.EXE"),
             };
-            bool Installed() => word.Any(File.Exists);
-            if (Installed()) { Log.Ok(Lang.T("Office is already installed", "Office est déjà installé")); return null; }
+            bool Installed() => word.Any(File.Exists) && Registry.GetValue(ClickToRunKey, "VersionToReport", null) != null;
+            string[] Running() => OfficeInstallerProcesses.Where(n => Process.GetProcessesByName(n).Any()).ToArray();
+            string State() => Lang.T($"Word {(word.Any(File.Exists) ? "present" : "missing")}, Click-to-Run version {Registry.GetValue(ClickToRunKey, "VersionToReport", null) ?? "missing"}, installer processes: {(Running().Any() ? string.Join(", ", Running()) : "none")}",
+                                     $"Word {(word.Any(File.Exists) ? "présent" : "absent")}, version Click-to-Run {Registry.GetValue(ClickToRunKey, "VersionToReport", null) ?? "absente"}, processus d'installation : {(Running().Any() ? string.Join(", ", Running()) : "aucun")}");
+            if (Installed()) { Log.Ok(Lang.T($"Office is already installed ({State()})", $"Office est déjà installé ({State()})")); return null; }
 
             Detail(StepNames.Office, OfficeInstalling);
             Log.Info(OfficeInstalling);
             var start = DateTime.Now;
-            SystemInfo.RunVisible(Path.Combine(_workDir, Payloads.Office.File), "", TimeSpan.FromMinutes(60));
-            // Le programme d'installation peut rendre la main avant la fin réelle
-            while (!Installed() || Process.GetProcessesByName("OfficeSetup").Any())
+            var limit = TimeSpan.FromMinutes(60);
+            int code = SystemInfo.RunVisible(Path.Combine(_workDir, Payloads.Office.File), "", limit);
+            Log.Info(State());
+            // Échec immédiat de l'installateur : inutile d'attendre une heure
+            if (code != 0 && !Installed() && !Running().Any())
+                throw new Exception(Lang.T($"OfficeSetup.exe stopped with code {code} (0x{code:X8}) and Office is not installed",
+                                           $"OfficeSetup.exe s'est arrêté avec le code {code} (0x{code:X8}) et Office n'est pas installé"));
+
+            var lastLog = DateTime.Now;
+            while (!Installed() || Running().Any())
             {
                 var elapsed = DateTime.Now - start;
-                if (elapsed.TotalMinutes > 60) throw new Exception(Lang.T("Office does not seem installed after 60 minutes", "Office ne semble pas installé après 60 minutes"));
+                if (elapsed > limit)
+                {
+                    Log.Warn(State());
+                    if (!Installed()) throw new Exception(Lang.T("Office does not seem installed after 60 minutes", "Office ne semble pas installé après 60 minutes"));
+                    // Installé, mais Click-to-Run travaille encore (mise à jour lancée juste après l'installation ?)
+                    return Lang.T("Office is installed but its installer was still running after 60 minutes", "Office est installé mais son installateur tournait encore après 60 minutes");
+                }
+                if (DateTime.Now - lastLog > TimeSpan.FromMinutes(5)) { Log.Info(Lang.T($"Waiting for Office ({(int)elapsed.TotalMinutes} min): ", $"Attente d'Office ({(int)elapsed.TotalMinutes} min) : ") + State()); lastLog = DateTime.Now; }
                 Detail(StepNames.Office, Lang.T($"Installing Office ({(int)elapsed.TotalMinutes} min)...", $"Installation d'Office en cours ({(int)elapsed.TotalMinutes} min)..."));
                 Thread.Sleep(15000);
             }
-            Log.Ok(Lang.T("Office installed", "Office installé"));
+            Log.Ok(Lang.T($"Office installed ({State()})", $"Office installé ({State()})"));
             return null;
         }
 
