@@ -27,7 +27,16 @@ namespace RoboConfigurator
         private readonly List<AppItem> _apps;
         private UpdateInfo _update;
 
-        private string LogFile => Path.Combine(_workDir, Lang.T("log.txt", "journal.txt"));
+        /// <summary>log.txt ou journal.txt selon la langue ; une reprise dans l'autre langue continue le journal existant.</summary>
+        private string LogFile
+        {
+            get
+            {
+                string wanted = Path.Combine(_workDir, Lang.T("log.txt", "journal.txt"));
+                string other = Path.Combine(_workDir, Lang.T("journal.txt", "log.txt"));
+                return !File.Exists(wanted) && File.Exists(other) ? other : wanted;
+            }
+        }
 
         private OemKey _oemKey;
         private bool _running;
