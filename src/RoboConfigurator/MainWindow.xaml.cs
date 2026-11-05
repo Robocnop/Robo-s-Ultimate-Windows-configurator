@@ -253,6 +253,7 @@ namespace RoboConfigurator
                 Windows = Try(SystemInfo.WindowsCaption),
                 Activated = TryBool(SystemInfo.IsWindowsActivated),
                 Oem = SystemInfo.GetOemKey(),
+                SessionUser = Try(SystemInfo.SessionUser),
             });
             // Un service WMI abîmé peut ne jamais répondre : le bouton Démarrer ne doit pas rester grisé pour autant
             if (await Task.WhenAny(load, Task.Delay(TimeSpan.FromSeconds(20))) != load)
@@ -276,6 +277,17 @@ namespace RoboConfigurator
             if (_oemKey != null)
                 KeyHint.Text = Lang.T($"BIOS key detected ({_oemKey.Description}): used automatically if no key is entered.",
                                       $"Clé du BIOS détectée ({_oemKey.Description}) : utilisée automatiquement si aucune clé n'est saisie.");
+
+            // Lancée avec le compte administrateur d'un autre utilisateur (UAC) : HKCU, la barre des tâches et le Bureau
+            // seraient ceux de ce compte, pas ceux de la personne connectée
+            if (!string.IsNullOrEmpty(info.SessionUser) && !info.SessionUser.Equals(SystemInfo.ProcessUser, StringComparison.OrdinalIgnoreCase))
+            {
+                string warning = Lang.T($"The app runs as {SystemInfo.ProcessUser} but the open session is {info.SessionUser}: the tweaks for the user, the taskbar and the desktop report will apply to {SystemInfo.ProcessUser}. Sign in with the account to set up, then run the app again.",
+                                        $"L'application tourne avec {SystemInfo.ProcessUser} mais la session ouverte est celle de {info.SessionUser} : les réglages de l'utilisateur, la barre des tâches et le rapport du Bureau s'appliqueront à {SystemInfo.ProcessUser}. Ouvrez la session du compte à configurer, puis relancez l'application.");
+                Log.Warn(warning);
+                if (!ConfigMessage.IsOpen || ConfigMessage.Severity != InfoBarSeverity.Error)
+                    ShowMessage(ConfigMessage, InfoBarSeverity.Warning, Lang.T("Different account", "Compte différent"), warning);
+            }
             StartButton.IsEnabled = true;
         }
 

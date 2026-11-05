@@ -239,6 +239,7 @@ namespace RoboConfigurator.Core
             Log.Info($"Windows{Lang.T(": ", " : ")}{Try(SystemInfo.WindowsCaption)} (build {SystemInfo.BuildNumber}, EditionID {Try(SystemInfo.EditionId)}, {(Environment.Is64BitOperatingSystem ? "64" : "32")} bits)");
             Log.Info(Lang.T($"User: {Environment.UserDomainName}\\{Environment.UserName}, administrator: {(SystemInfo.IsAdministrator() ? "yes" : "no")}",
                             $"Utilisateur : {Environment.UserDomainName}\\{Environment.UserName}, administrateur : {(SystemInfo.IsAdministrator() ? "oui" : "non")}"));
+            Log.Info(Lang.T($"Open session: {Try(SystemInfo.SessionUser) ?? "unknown"}", $"Session ouverte : {Try(SystemInfo.SessionUser) ?? "inconnue"}"));
             Log.Info(Lang.T($"Language: {System.Globalization.CultureInfo.CurrentUICulture.Name}, region: {System.Globalization.RegionInfo.CurrentRegion.Name}",
                             $"Langue : {System.Globalization.CultureInfo.CurrentUICulture.Name}, région : {System.Globalization.RegionInfo.CurrentRegion.Name}"));
             Log.Info(Try(() =>

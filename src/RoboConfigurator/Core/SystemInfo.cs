@@ -104,6 +104,20 @@ namespace RoboConfigurator.Core
         public static string EditionId() =>
             Str(Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "EditionID", ""));
 
+        /// <summary>Compte de la session ouverte (propriétaire de explorer.exe), « DOMAINE\nom », ou null si introuvable.</summary>
+        public static string SessionUser()
+        {
+            foreach (var p in Wmi("SELECT Handle FROM Win32_Process WHERE Name = 'explorer.exe'"))
+            {
+                var owner = new object[2];
+                if (Convert.ToUInt32(p.InvokeMethod("GetOwner", owner)) == 0 && owner[0] != null) return $"{owner[1]}\\{owner[0]}";
+            }
+            return null;
+        }
+
+        /// <summary>Compte qui fait tourner l'application, « DOMAINE\nom ».</summary>
+        public static string ProcessUser => $"{Environment.UserDomainName}\\{Environment.UserName}";
+
         public static bool IsAdministrator() =>
             new System.Security.Principal.WindowsPrincipal(System.Security.Principal.WindowsIdentity.GetCurrent())
                 .IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
