@@ -37,28 +37,14 @@ jobs:
             throw "Le tag $env:GITHUB_REF_NAME ne correspond pas à la version du projet ($expected)"
           }
 
+      - name: Tests unitaires
+        shell: pwsh
+        run: dotnet test tests/RoboConfigurator.Tests/RoboConfigurator.Tests.csproj -c Release -nologo
+
       # Charge l'exe sans ouvrir de fenêtre : options de lancement et traductions
       - name: Test de fumée
         shell: powershell
-        run: |
-          $asm = [Reflection.Assembly]::LoadFile((Resolve-Path dist/RoboConfigurator.exe).Path)
-          $lang = $asm.GetType('RoboConfigurator.Core.Lang')
-          $options = $asm.GetType('RoboConfigurator.Core.Options')
-          $fr = 'Termin' + [char]0xE9 + 'e'   # « Terminée » sans caractère accentué dans le script
-          $o = $options::Parse([string[]]@('-Lang', 'fr', '-Skip', 'Office,Taskbar', '-Simulation'))
-          if ($o.Errors.Count) { throw "Options refusées : $($o.Errors -join '; ')" }
-          if (-not $lang::French) { throw '-Lang fr ignoré' }
-          if (($o.Skip -join ',') -ne 'Office,Taskbar') { throw "Skip inattendu : $($o.Skip -join ',')" }
-          if ($lang::T('Done', $fr) -ne $fr) { throw 'Traduction française incorrecte' }
-          $o = $options::Parse([string[]]@('-Lang', 'en'))
-          if ($lang::T('Done', $fr) -ne 'Done') { throw 'Traduction anglaise incorrecte' }
-          $o = $options::Parse([string[]]@('-Inconnue'))
-          if ($o.Errors.Count -ne 1) { throw 'Une option inconnue doit être signalée' }
-          $o = $options::Parse([string[]]@('-Apps', 'VLC,7zip,inconnue'))
-          if (($o.Apps -join ',') -ne 'vlc,7zip' -or $o.Errors.Count -ne 1) { throw "-Apps inattendu : $($o.Apps -join ',') / $($o.Errors.Count) erreur(s)" }
-          $updates = $asm.GetType('RoboConfigurator.Core.Updates')
-          if (-not $updates::IsNewer('2.6.0', '2.6.0-beta.1') -or $updates::IsNewer('2.5.0', '2.6.0')) { throw 'Comparaison de versions incorrecte' }
-          Write-Host 'Test de fumée OK'
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File tests/smoke.ps1 -Exe dist/RoboConfigurator.exe
 
       - uses: actions/upload-artifact@v4
         with:

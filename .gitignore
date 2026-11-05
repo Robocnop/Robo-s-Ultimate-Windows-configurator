@@ -11,3 +11,7 @@ src/RoboConfigurator/obj/
 dist/
 payloads/*
 !payloads/README.md
+
+# Tests
+tests/*/bin/
+tests/*/obj/

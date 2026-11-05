@@ -15,6 +15,15 @@ namespace RoboConfigurator.Core
         public List<string> Failed { get; } = new List<string>();
         /// <summary>Étapes à terminer après un redémarrage (changement d'édition de Windows...).</summary>
         public List<string> AfterRestart { get; } = new List<string>();
+        /// <summary>Étapes déroulées sans atteindre leur but (Windows non activé...) : réessayées au prochain lancement.</summary>
+        public List<string> NotDone { get; } = new List<string>();
+        /// <summary>Étapes non lancées parce que l'arrêt a été demandé (bouton « Arrêter après cette étape »).</summary>
+        public List<string> Stopped { get; } = new List<string>();
+        public bool StopRequested { get; set; }
+        /// <summary>Étapes en échec, non faites ou non lancées : la configuration et les fichiers sont gardés pour les reprendre.</summary>
+        public bool HasUnfinished => Failed.Any() || NotDone.Any() || Stopped.Any();
+        /// <summary>Erreur inattendue qui a arrêté la configuration (hors des étapes), ou null.</summary>
+        public string UnexpectedError { get; set; }
         public string ReportPath { get; set; }
         public string PendingName { get; set; }
         /// <summary>Copie du journal sur le Bureau quand le dossier de travail est nettoyé malgré une erreur.</summary>
@@ -25,6 +34,15 @@ namespace RoboConfigurator.Core
     public sealed class RestartRequiredException : Exception
     {
         public RestartRequiredException(string message) : base(message) { }
+    }
+
+    /// <summary>
+    /// L'étape s'est déroulée mais n'a pas atteint son but (Windows non activé...) : affichée « À vérifier »,
+    /// elle n'est pas marquée faite et sera réessayée au prochain lancement.
+    /// </summary>
+    public sealed class StepNotDoneException : Exception
+    {
+        public StepNotDoneException(string message) : base(message) { }
     }
 
     public sealed class Engine
@@ -57,7 +75,61 @@ namespace RoboConfigurator.Core
 
         private void Detail(string key, string detail) => _items[key].Detail = detail;
 
+        /// <summary>Étape en cours, pour savoir laquelle marquer en échec si une erreur inattendue arrête tout.</summary>
+        private string _current;
+
+        private volatile bool _stop;
+
+        /// <summary>Mode simulation : étapes à faire échouer exprès (option -SimulateFail), pour voir les écrans d'erreur sans rien toucher.</summary>
+        public IDictionary<string, string> SimulatedFailures { get; set; } = new Dictionary<string, string>();
+
+        /// <summary>Mode simulation : vérifie aussi que chaque lien de téléchargement répond (lecture seule, aucun fichier téléchargé).</summary>
+        public bool CheckLinksInSimulation { get; set; }
+
+        private string SimulatedFailure(string step) => _simulation && SimulatedFailures.TryGetValue(step, out var mode) ? mode : null;
+
+        /// <summary>
+        /// Demandé depuis l'interface : l'étape en cours se termine normalement, les suivantes ne sont pas lancées.
+        /// Pas d'arrêt au milieu d'une étape (Edge, barre des tâches...) : elle laisserait le PC dans un état intermédiaire.
+        /// </summary>
+        public void RequestStop()
+        {
+            if (_stop) return;
+            _stop = true;
+            Log.Warn(Lang.T("Stop requested: the current step finishes, the next ones will not be started",
+                            "Arrêt demandé : l'étape en cours se termine, les suivantes ne seront pas lancées"));
+        }
+
+        /// <summary>Si l'arrêt est demandé, marque l'étape comme non lancée et renvoie true.</summary>
+        private bool StopBefore(string step)
+        {
+            if (!_stop) return false;
+            if (!_result.Stopped.Contains(step)) _result.Stopped.Add(step);
+            Set(step, StepStatus.Skipped, Lang.T("Not started: stop requested", "Non lancée : arrêt demandé"));
+            return true;
+        }
+
+        /// <summary>Ne lève jamais d'exception : une erreur inattendue est journalisée et rendue dans <see cref="RunResult.UnexpectedError"/>.</summary>
         public RunResult Run()
+        {
+            try { RunAll(); }
+            catch (Exception ex)
+            {
+                Log.Error(Lang.T("Unexpected error: the setup stopped", "Erreur inattendue : la configuration s'est arrêtée"), ex);
+                _result.UnexpectedError = ex.GetBaseException().Message;
+                if (_current != null && !_result.Failed.Contains(_current))
+                {
+                    _result.Failed.Add(_current);
+                    Set(_current, StepStatus.Failed, _result.UnexpectedError);
+                }
+                // Le rapport reste utile pour comprendre ; la configuration et les fichiers sont gardés pour reprendre
+                if (_result.ReportPath == null) try { WriteReport(); } catch (Exception) { }
+            }
+            _result.StopRequested = _stop;
+            return _result;
+        }
+
+        private void RunAll()
         {
             Log.Info(Lang.T($"Windows {(SystemInfo.IsWin11 ? "11" : "10")} - working folder: {_workDir}", $"Windows {(SystemInfo.IsWin11 ? "11" : "10")} - dossier de travail : {_workDir}"));
             LogDiagnostics();
@@ -75,10 +147,14 @@ namespace RoboConfigurator.Core
             foreach (string step in todo)
             {
                 var payload = Payloads.ForStep(step, _config);
-                if (payload == null) continue;
+                if (payload == null || StopBefore(step)) continue;
+                _current = step;
                 Set(step, StepStatus.Downloading, Lang.T($"Preparing {payload.File}...", $"Préparation de {payload.File}..."));
                 try
                 {
+                    if (_simulation && SimulatedFailure(step) == "download")
+                        throw new Exception(Lang.T($"Could not download {payload.File}: simulated failure (-SimulateFail)", $"Impossible de télécharger {payload.File} : échec simulé (-SimulateFail)"));
+                    if (_simulation && CheckLinksInSimulation) Log.Ok(Payloads.CheckLink(payload));
                     if (_simulation) Simulate(step, Lang.T($"{payload.File} ready (simulation)", $"{payload.File} prêt (simulation)"));
                     else Payloads.Ensure(payload, _workDir, p => Detail(step, p >= 0 ? Lang.T($"Downloading {payload.File}: {p}%", $"Téléchargement de {payload.File} : {p} %")
                                                                                       : Lang.T($"Downloading {payload.File}...", $"Téléchargement de {payload.File}...")));
@@ -89,39 +165,69 @@ namespace RoboConfigurator.Core
 
             foreach (string step in todo.Where(s => !_result.Failed.Contains(s)))
             {
-                Log.Title(step);
+                if (StopBefore(step)) continue;
+                _current = step;
+                Log.Title(StepNames.Display(step));
                 Set(step, StepStatus.Running, "");
                 var start = DateTime.Now;
                 try
                 {
                     string warning = _simulation ? SimulateStep(step) : RunStep(step);
                     _state.MarkDone(step);
+                    if (step == StepNames.Activation) ForgetWindowsKey();
                     Set(step, warning == null ? StepStatus.Done : StepStatus.Warning, warning ?? Lang.T("Done", "Terminée"));
-                    if (warning != null) Log.Warn(Lang.T($"{step} needs checking: {warning}", $"{step} à vérifier : {warning}"));
-                    Log.Ok(Lang.T($"{step} done in {(DateTime.Now - start).TotalSeconds:0} s", $"{step} terminé en {(DateTime.Now - start).TotalSeconds:0} s"));
+                    if (warning != null) Log.Warn(Lang.T($"{StepNames.Display(step)} needs checking: {warning}", $"{StepNames.Display(step)} à vérifier : {warning}"));
+                    Log.Ok(Lang.T($"{StepNames.Display(step)} done in {(DateTime.Now - start).TotalSeconds:0} s", $"{StepNames.Display(step)} terminé en {(DateTime.Now - start).TotalSeconds:0} s"));
                 }
                 catch (RestartRequiredException ex)
                 {
                     // Pas marquée comme faite : elle sera reprise au prochain lancement, après le redémarrage
                     _result.AfterRestart.Add(step);
                     Set(step, StepStatus.Warning, ex.Message);
-                    Log.Warn(Lang.T($"{step} will finish after restarting: {ex.Message}", $"{step} se terminera après le redémarrage : {ex.Message}"));
+                    Log.Warn(Lang.T($"{StepNames.Display(step)} will finish after restarting: {ex.Message}", $"{StepNames.Display(step)} se terminera après le redémarrage : {ex.Message}"));
+                }
+                catch (StepNotDoneException ex)
+                {
+                    // Pas marquée comme faite : elle sera réessayée au prochain lancement
+                    _result.NotDone.Add(step);
+                    Set(step, StepStatus.Warning, ex.Message);
+                    Log.Warn(Lang.T($"{StepNames.Display(step)} not done after {(DateTime.Now - start).TotalSeconds:0} s, it will be retried at the next launch: {ex.Message}",
+                                    $"{StepNames.Display(step)} non faite après {(DateTime.Now - start).TotalSeconds:0} s, elle sera réessayée au prochain lancement : {ex.Message}"));
                 }
                 catch (Exception ex) { Fail(step, ex, DateTime.Now - start); }
             }
 
+            _current = null;
             Log.Title(Lang.T("Summary", "Résumé"));
-            if (_result.Failed.Any()) Log.Warn(Lang.T($"Failed steps: {string.Join(", ", _result.Failed)}. Run the app again to retry them.", $"Étapes en échec : {string.Join(", ", _result.Failed)}. Relancer l'application pour les réessayer."));
-            if (_result.AfterRestart.Any()) Log.Warn(Lang.T($"To finish after restarting: {string.Join(", ", _result.AfterRestart)}. Run the app again after the restart.", $"À terminer après le redémarrage : {string.Join(", ", _result.AfterRestart)}. Relancer l'application après le redémarrage."));
-            if (!_result.Failed.Any() && !_result.AfterRestart.Any()) Log.Ok(Lang.T("All done.", "Tout est terminé."));
+            if (_result.Failed.Any()) Log.Warn(Lang.T($"Failed steps: {StepNames.Display(_result.Failed)}. Run the app again to retry them.", $"Étapes en échec : {StepNames.Display(_result.Failed)}. Relancer l'application pour les réessayer."));
+            if (_result.NotDone.Any()) Log.Warn(Lang.T($"Steps not done: {StepNames.Display(_result.NotDone)}. Run the app again to retry them.", $"Étapes non faites : {StepNames.Display(_result.NotDone)}. Relancer l'application pour les réessayer."));
+            if (_result.AfterRestart.Any()) Log.Warn(Lang.T($"To finish after restarting: {StepNames.Display(_result.AfterRestart)}. Run the app again after the restart.", $"À terminer après le redémarrage : {StepNames.Display(_result.AfterRestart)}. Relancer l'application après le redémarrage."));
+            // Les étapes avec un téléchargement sont arrêtées en premier : remises dans l'ordre d'affichage
+            _result.Stopped.Sort((a, b) => Array.IndexOf(StepNames.All, a).CompareTo(Array.IndexOf(StepNames.All, b)));
+            if (_result.Stopped.Any()) Log.Warn(Lang.T($"Stopped at your request. Not started: {StepNames.Display(_result.Stopped)}. Run the app again to continue.", $"Arrêt demandé. Non lancées : {StepNames.Display(_result.Stopped)}. Relancer l'application pour continuer."));
+            if (!_result.HasUnfinished && !_result.AfterRestart.Any()) Log.Ok(Lang.T("All done.", "Tout est terminé."));
 
             RenamePc();
             WriteReport();
 
+            _current = null;
             // Tout est fait : la configuration n'est plus utile (elle peut contenir la clé Windows)
-            if (!_result.Failed.Any() && !_result.AfterRestart.Any()) File.Delete(_configFile);
+            if (!_result.HasUnfinished && !_result.AfterRestart.Any()) File.Delete(_configFile);
             CleanUp();
-            return _result;
+            _current = null;
+        }
+
+        /// <summary>L'activation est faite : la clé Windows n'a plus rien à faire dans le fichier de reprise.</summary>
+        private void ForgetWindowsKey()
+        {
+            if (_config.WindowsKey.Length == 0 || !File.Exists(_configFile)) return;
+            try
+            {
+                _config.WindowsKey = "";
+                _config.Save(_configFile);
+                Log.Info(Lang.T("Windows key removed from the saved settings", "Clé Windows retirée de la configuration enregistrée"));
+            }
+            catch (Exception ex) { Log.Warn(Lang.T($"Could not remove the Windows key from the saved settings: {ex.Message}", $"Impossible de retirer la clé Windows de la configuration enregistrée : {ex.Message}")); }
         }
 
         private void LogDiagnostics()
@@ -130,9 +236,10 @@ namespace RoboConfigurator.Core
             string B(bool value) => value ? Lang.T("yes", "oui") : Lang.T("no", "non");
             var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
             Log.Info(Lang.T($"App: version {version}", $"Application : version {version}"));
-            Log.Info($"Windows : {Try(SystemInfo.WindowsCaption)} (build {SystemInfo.BuildNumber}, EditionID {Try(SystemInfo.EditionId)}, {(Environment.Is64BitOperatingSystem ? "64" : "32")} bits)");
+            Log.Info($"Windows{Lang.T(": ", " : ")}{Try(SystemInfo.WindowsCaption)} (build {SystemInfo.BuildNumber}, EditionID {Try(SystemInfo.EditionId)}, {(Environment.Is64BitOperatingSystem ? "64" : "32")} bits)");
             Log.Info(Lang.T($"User: {Environment.UserDomainName}\\{Environment.UserName}, administrator: {(SystemInfo.IsAdministrator() ? "yes" : "no")}",
                             $"Utilisateur : {Environment.UserDomainName}\\{Environment.UserName}, administrateur : {(SystemInfo.IsAdministrator() ? "oui" : "non")}"));
+            Log.Info(Lang.T($"Open session: {Try(SystemInfo.SessionUser) ?? "unknown"}", $"Session ouverte : {Try(SystemInfo.SessionUser) ?? "inconnue"}"));
             Log.Info(Lang.T($"Language: {System.Globalization.CultureInfo.CurrentUICulture.Name}, region: {System.Globalization.RegionInfo.CurrentRegion.Name}",
                             $"Langue : {System.Globalization.CultureInfo.CurrentUICulture.Name}, région : {System.Globalization.RegionInfo.CurrentRegion.Name}"));
             Log.Info(Try(() =>
@@ -147,7 +254,7 @@ namespace RoboConfigurator.Core
         private void Fail(string step, Exception ex, TimeSpan? elapsed = null)
         {
             string after = elapsed == null ? "" : Lang.T($" after {elapsed.Value.TotalSeconds:0} s", $" après {elapsed.Value.TotalSeconds:0} s");
-            Log.Error(Lang.T($"{step} failed{after}", $"{step} en échec{after}"), ex);
+            Log.Error(Lang.T($"{StepNames.Display(step)} failed{after}", $"{StepNames.Display(step)} en échec{after}"), ex);
             _result.Failed.Add(step);
             Set(step, StepStatus.Failed, ex.GetBaseException().Message);
         }
@@ -170,7 +277,11 @@ namespace RoboConfigurator.Core
         {
             Detail(StepNames.Ninite, Lang.T("Click “Close” in Ninite when it shows “Done”.", "Cliquez sur « Close » dans Ninite quand il affiche « Done »."));
             Log.Info(Lang.T($"Ninite installs: {NiniteApps.Names(_config.NiniteApps)}", $"Ninite installe : {NiniteApps.Names(_config.NiniteApps)}"));
-            SystemInfo.RunVisible(Path.Combine(_workDir, Payloads.ForStep(StepNames.Ninite, _config).File));
+            int code = SystemInfo.RunVisible(Path.Combine(_workDir, Payloads.ForStep(StepNames.Ninite, _config).File));
+            // Fenêtre fermée avant la fin, erreur de téléchargement de Ninite... : l'étape sera refaite au prochain lancement
+            if (code != 0)
+                throw new StepNotDoneException(Lang.T($"Ninite closed with code {code} (0x{code:X8}): check that the apps are installed",
+                                                      $"Ninite s'est fermé avec le code {code} (0x{code:X8}) : vérifier que les applis sont installées"));
             return null;
         }
 
@@ -202,8 +313,17 @@ namespace RoboConfigurator.Core
 
             Detail(key, Lang.T("Looking for bloatware...", "Recherche des applications inutiles..."));
             var installed = CrapFixer.InstalledAppxNames();
+            var provisioned = CrapFixer.ProvisionedAppx();
+            Log.Info(Lang.T($"Apps: {installed.Count} installed for this account, {provisioned.Count} provisioned for new accounts",
+                            $"Applis : {installed.Count} installées pour ce compte, {provisioned.Count} provisionnées pour les nouveaux comptes"));
             foreach (var app in CrapFixer.ReadIni(appIni).Where(a => a.DefaultSelected && a.Has("PackageName")))
             {
+                // Paquet provisionné : retiré aussi, sinon l'appli revient pour chaque nouveau compte (sans faire échouer l'étape)
+                foreach (var prov in provisioned.Where(p => CrapFixer.MatchesPackage(app["PackageName"], p.Key)))
+                {
+                    try { CrapFixer.RemoveProvisioned(prov.Value); Log.Ok(Lang.T($"Removed for new accounts: {app.Name} ({prov.Value})", $"Retirée pour les nouveaux comptes : {app.Name} ({prov.Value})")); }
+                    catch (Exception ex) { Log.Warn(Lang.T($"Could not remove {app.Name} for new accounts ({prov.Value}): {ex.Message}", $"Impossible de retirer {app.Name} pour les nouveaux comptes ({prov.Value}) : {ex.Message}")); }
+                }
                 if (!installed.Any(n => CrapFixer.MatchesPackage(app["PackageName"], n))) continue;
                 Detail(key, Lang.T($"Removing: {app.Name}", $"Suppression : {app.Name}"));
                 try { CrapFixer.RemoveAppx(app["PackageName"]); Log.Ok(Lang.T($"App removed: {app.Name}", $"Appli supprimée : {app.Name}")); }
@@ -212,13 +332,8 @@ namespace RoboConfigurator.Core
 
             if (restartExplorer)
             {
-                string restarting = Lang.T("Restarting File Explorer...", "Redémarrage de l'explorateur...");
-                Detail(key, restarting);
-                Log.Info(restarting);
-                foreach (var p in Process.GetProcessesByName("explorer")) { try { p.Kill(); } catch (Exception) { } }
-                Thread.Sleep(3000);
-                // Windows relance normalement l'explorateur tout seul
-                if (!Process.GetProcessesByName("explorer").Any()) Process.Start("explorer.exe");
+                Detail(key, Lang.T("Restarting File Explorer...", "Redémarrage de l'explorateur..."));
+                RestartExplorer();
             }
             if (errors > 0) throw new Exception(Lang.T($"{errors} CrapFixer item(s) failed (see the log)", $"{errors} élément(s) CrapFixer en échec (voir le journal)"));
             return null;
@@ -227,19 +342,9 @@ namespace RoboConfigurator.Core
         private string Edge()
         {
             // Méthode WinUtil : un faux MicrosoftEdge.exe dans SystemApps débloque le désinstalleur officiel. WebView2 est conservé.
-            string edgeDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Microsoft\Edge\Application");
-            Log.Info(Lang.T($"Edge folder: {edgeDir} ({(Directory.Exists(edgeDir) ? "present" : "missing")})", $"Dossier d'Edge : {edgeDir} ({(Directory.Exists(edgeDir) ? "présent" : "absent")})"));
-            var setups = !Directory.Exists(edgeDir) ? new List<string>() : Directory.GetDirectories(edgeDir)
-                .Select(d => Path.Combine(d, @"Installer\setup.exe"))
-                .Where(File.Exists)
-                .OrderBy(f => Version.TryParse(Path.GetFileName(Path.GetDirectoryName(Path.GetDirectoryName(f))), out var v) ? v : new Version())
-                .ToList();
-            foreach (string s in setups) Log.Info(Lang.T($"Uninstaller found: {s}", $"Désinstalleur trouvé : {s}"));
-            string setup = setups.LastOrDefault();
+            string setup = FindEdgeUninstaller(out string edgeDir);
             if (setup == null)
             {
-                if (File.Exists(Path.Combine(edgeDir, "msedge.exe")))
-                    throw new Exception(Lang.T($"msedge.exe is present but no Installer\\setup.exe was found in {edgeDir}", $"msedge.exe est présent mais aucun Installer\\setup.exe n'a été trouvé dans {edgeDir}"));
                 Log.Ok(Lang.T("Edge is not installed", "Edge n'est pas installé"));
                 return null;
             }
@@ -255,58 +360,62 @@ namespace RoboConfigurator.Core
             int left = Process.GetProcessesByName("msedge").Length;
             if (left > 0) Log.Warn(Lang.T($"{left} msedge process(es) still running before uninstalling", $"{left} processus msedge toujours actif(s) avant la désinstallation"));
 
-            string fake = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), @"SystemApps\Microsoft.MicrosoftEdge_8wekyb3d8bbwe\MicrosoftEdge.exe");
+            RemoveEdgeLeftovers();
+            string fake = FakeEdgeExe;
             Directory.CreateDirectory(Path.GetDirectoryName(fake));
             File.WriteAllBytes(fake, new byte[0]);
             Log.Info(Lang.T($"Dummy MicrosoftEdge.exe created: {fake}", $"Faux MicrosoftEdge.exe créé : {fake}"));
-
-            // EdgeUpdate est 32 bits : la valeur est écrite dans les deux vues du registre
-            foreach (var view in new[] { RegistryView.Registry64, RegistryView.Registry32 })
-            {
-                try
-                {
-                    using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view))
-                    using (var key = hklm.CreateSubKey(@"SOFTWARE\Microsoft\EdgeUpdateDev"))
-                        key.SetValue("AllowUninstall", 1, RegistryValueKind.DWord);
-                    Log.Info(Lang.T($"EdgeUpdateDev\\AllowUninstall set to 1 ({view})", $"EdgeUpdateDev\\AllowUninstall mis à 1 ({view})"));
-                }
-                catch (Exception ex) { Log.Warn(Lang.T($"Could not set EdgeUpdateDev\\AllowUninstall ({view}): {ex.Message}", $"Impossible de créer EdgeUpdateDev\\AllowUninstall ({view}) : {ex.Message}")); }
-            }
-
-            // Les étiquettes d'expérimentation d'EdgeUpdate peuvent désactiver la désinstallation
+            string fakeDllhost = null;
+            int code;
+            var start = DateTime.Now;
+            // Les deux faux fichiers sont supprimés quoi qu'il arrive (et au lancement suivant si l'application est coupée)
             try
             {
-                using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32))
-                using (var key = hklm.OpenSubKey(@"SOFTWARE\Microsoft\EdgeUpdate\ClientState\{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062}", true))
+                // EdgeUpdate est 32 bits : la valeur est écrite dans les deux vues du registre
+                foreach (var view in new[] { RegistryView.Registry64, RegistryView.Registry32 })
                 {
-                    if (key?.GetValue("experiment_control_labels") != null)
+                    try
                     {
-                        key.DeleteValue("experiment_control_labels");
-                        Log.Info(Lang.T("EdgeUpdate experiment_control_labels removed", "experiment_control_labels d'EdgeUpdate supprimé"));
+                        using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view))
+                        using (var key = hklm.CreateSubKey(@"SOFTWARE\Microsoft\EdgeUpdateDev"))
+                            key.SetValue("AllowUninstall", 1, RegistryValueKind.DWord);
+                        Log.Info(Lang.T($"EdgeUpdateDev\\AllowUninstall set to 1 ({view})", $"EdgeUpdateDev\\AllowUninstall mis à 1 ({view})"));
+                    }
+                    catch (Exception ex) { Log.Warn(Lang.T($"Could not set EdgeUpdateDev\\AllowUninstall ({view}): {ex.Message}", $"Impossible de créer EdgeUpdateDev\\AllowUninstall ({view}) : {ex.Message}")); }
+                }
+
+                // Les étiquettes d'expérimentation d'EdgeUpdate peuvent désactiver la désinstallation
+                try
+                {
+                    using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32))
+                    using (var key = hklm.OpenSubKey(@"SOFTWARE\Microsoft\EdgeUpdate\ClientState\{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062}", true))
+                    {
+                        if (key?.GetValue("experiment_control_labels") != null)
+                        {
+                            key.DeleteValue("experiment_control_labels");
+                            Log.Info(Lang.T("EdgeUpdate experiment_control_labels removed", "experiment_control_labels d'EdgeUpdate supprimé"));
+                        }
                     }
                 }
+                catch (Exception ex) { Log.Warn(Lang.T($"Could not remove experiment_control_labels: {ex.Message}", $"Impossible de supprimer experiment_control_labels : {ex.Message}")); }
+
+                // Depuis Windows 11 24H2, setup.exe refuse la désinstallation (code 532) si son processus parent
+                // n'est pas dans une liste autorisée. Même méthode qu'ave9858 : une copie de cmd.exe nommée
+                // dllhost.exe lance le désinstalleur.
+                fakeDllhost = FakeDllhostPaths.FirstOrDefault(f => Directory.Exists(Path.GetDirectoryName(f)));
+                File.Copy(Path.Combine(Environment.SystemDirectory, "cmd.exe"), fakeDllhost, true);
+                Log.Info(Lang.T($"Uninstaller launcher: {fakeDllhost} (copy of cmd.exe)", $"Lanceur du désinstalleur : {fakeDllhost} (copie de cmd.exe)"));
+
+                Detail(StepNames.Edge, Lang.T("Uninstalling Microsoft Edge...", "Désinstallation de Microsoft Edge..."));
+                const string args = "--uninstall --msedge --channel=stable --system-level --verbose-logging --force-uninstall --delete-profile";
+                Log.Info(Lang.T($"Command: \"{setup}\" {args}", $"Commande : \"{setup}\" {args}"));
+                start = DateTime.Now;
+                code = SystemInfo.Run(fakeDllhost, $"/c \"\"{setup}\" {args}\"", display: $"setup.exe {args}", timeout: TimeSpan.FromMinutes(10));
             }
-            catch (Exception ex) { Log.Warn(Lang.T($"Could not remove experiment_control_labels: {ex.Message}", $"Impossible de supprimer experiment_control_labels : {ex.Message}")); }
-
-            // Depuis Windows 11 24H2, setup.exe refuse la désinstallation (code 532) si son processus parent
-            // n'est pas dans une liste autorisée. Même méthode qu'ave9858 : une copie de cmd.exe nommée
-            // dllhost.exe lance le désinstalleur.
-            string tempDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "SystemTemp");
-            if (!Directory.Exists(tempDir)) tempDir = Path.GetTempPath();
-            string fakeDllhost = Path.Combine(tempDir, "dllhost.exe");
-            File.Copy(Path.Combine(Environment.SystemDirectory, "cmd.exe"), fakeDllhost, true);
-            Log.Info(Lang.T($"Uninstaller launcher: {fakeDllhost} (copy of cmd.exe)", $"Lanceur du désinstalleur : {fakeDllhost} (copie de cmd.exe)"));
-
-            Detail(StepNames.Edge, Lang.T("Uninstalling Microsoft Edge...", "Désinstallation de Microsoft Edge..."));
-            const string args = "--uninstall --msedge --channel=stable --system-level --verbose-logging --force-uninstall --delete-profile";
-            Log.Info(Lang.T($"Command: \"{setup}\" {args}", $"Commande : \"{setup}\" {args}"));
-            var start = DateTime.Now;
-            int code;
-            try { code = SystemInfo.Run(fakeDllhost, $"/c \"\"{setup}\" {args}\"", display: $"setup.exe {args}"); }
             finally
             {
-                try { File.Delete(fakeDllhost); } catch { }
-                try { File.Delete(fake); } catch { }
+                if (fakeDllhost != null) try { File.Delete(fakeDllhost); } catch (Exception) { }
+                try { File.Delete(fake); } catch (Exception) { }
             }
             Log.Info(Lang.T($"The uninstaller returned after {(DateTime.Now - start).TotalSeconds:0} s with code {code}{EdgeExitCode(code)}", $"Le désinstalleur a rendu la main en {(DateTime.Now - start).TotalSeconds:0} s avec le code {code}{EdgeExitCode(code)}"));
             CopyEdgeInstallerLog(start);
@@ -322,6 +431,60 @@ namespace RoboConfigurator.Core
             }
             Log.Ok(Lang.T("Edge uninstalled", "Edge désinstallé"));
             return null;
+        }
+
+        private static string EdgeDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Microsoft\Edge\Application");
+
+        /// <summary>Désinstalleur de la version d'Edge la plus récente, ou null si Edge n'est pas installé (lecture seule).</summary>
+        private static string FindEdgeUninstaller(out string edgeDir)
+        {
+            edgeDir = EdgeDir;
+            Log.Info(Lang.T($"Edge folder: {edgeDir} ({(Directory.Exists(edgeDir) ? "present" : "missing")})", $"Dossier d'Edge : {edgeDir} ({(Directory.Exists(edgeDir) ? "présent" : "absent")})"));
+            var setups = !Directory.Exists(edgeDir) ? new List<string>() : Directory.GetDirectories(edgeDir)
+                .Select(d => Path.Combine(d, @"Installer\setup.exe"))
+                .Where(File.Exists)
+                .OrderBy(f => Version.TryParse(Path.GetFileName(Path.GetDirectoryName(Path.GetDirectoryName(f))), out var v) ? v : new Version())
+                .ToList();
+            foreach (string s in setups) Log.Info(Lang.T($"Uninstaller found: {s}", $"Désinstalleur trouvé : {s}"));
+            string setup = setups.LastOrDefault();
+            if (setup == null && File.Exists(Path.Combine(edgeDir, "msedge.exe")))
+                throw new Exception(Lang.T($"msedge.exe is present but no Installer\\setup.exe was found in {edgeDir}", $"msedge.exe est présent mais aucun Installer\\setup.exe n'a été trouvé dans {edgeDir}"));
+            return setup;
+        }
+
+        private static string TaskbarPinsFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar");
+
+        private static string FakeEdgeExe => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), @"SystemApps\Microsoft.MicrosoftEdge_8wekyb3d8bbwe\MicrosoftEdge.exe");
+
+        /// <summary>Emplacements possibles de la copie de cmd.exe nommée dllhost.exe, dans l'ordre de préférence.</summary>
+        private static string[] FakeDllhostPaths => new[]
+        {
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), @"SystemTemp\dllhost.exe"),
+            Path.Combine(Path.GetTempPath(), "dllhost.exe"),
+        };
+
+        /// <summary>
+        /// Supprime les faux fichiers d'une désinstallation d'Edge interrompue (application fermée, coupure de courant) :
+        /// un MicrosoftEdge.exe vide dans SystemApps et une copie exacte de cmd.exe nommée dllhost.exe. Rien d'autre n'est touché.
+        /// </summary>
+        public static void RemoveEdgeLeftovers()
+        {
+            try
+            {
+                if (File.Exists(FakeEdgeExe) && new FileInfo(FakeEdgeExe).Length == 0)
+                {
+                    File.Delete(FakeEdgeExe);
+                    Log.Info(Lang.T($"Leftover of an interrupted run removed: {FakeEdgeExe}", $"Reste d'un lancement interrompu supprimé : {FakeEdgeExe}"));
+                }
+                byte[] cmd = File.ReadAllBytes(Path.Combine(Environment.SystemDirectory, "cmd.exe"));
+                foreach (string copy in FakeDllhostPaths.Where(File.Exists))
+                {
+                    if (new FileInfo(copy).Length != cmd.Length || !File.ReadAllBytes(copy).SequenceEqual(cmd)) continue;
+                    File.Delete(copy);
+                    Log.Info(Lang.T($"Leftover of an interrupted run removed: {copy} (copy of cmd.exe)", $"Reste d'un lancement interrompu supprimé : {copy} (copie de cmd.exe)"));
+                }
+            }
+            catch (Exception ex) { Log.Warn(Lang.T($"Could not remove the leftovers of the Edge step: {ex.Message}", $"Impossible de supprimer les restes de l'étape Edge : {ex.Message}")); }
         }
 
         /// <summary>Codes de retour du désinstalleur Chromium/Edge les plus courants (util_constants.h).</summary>
@@ -455,7 +618,7 @@ namespace RoboConfigurator.Core
 
             // Un profil existant garde ses épingles malgré la stratégie : elles sont sauvegardées puis effacées
             Detail(StepNames.Taskbar, Lang.T("Applying the layout to this session...", "Application de la disposition à cette session..."));
-            string pinned = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar");
+            string pinned = TaskbarPinsFolder;
             Log.Info(Lang.T("Pins before: ", "Épingles avant : ") + PinnedList(pinned));
             ResetTaskbarPins(pinned, Path.Combine(dir, "Sauvegarde-barre-des-taches"));
             RestartExplorer();
@@ -487,9 +650,10 @@ namespace RoboConfigurator.Core
             string firefox = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu), @"Programs\Firefox.lnk");
             string powershell = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Windows\Start Menu\Programs\Windows PowerShell\Windows PowerShell.lnk");
             string terminal = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Microsoft\WindowsApps\wt.exe");
-            Log.Info($"  Firefox : {firefox} ({Exists(firefox)})");
-            Log.Info($"  PowerShell : {powershell} ({Exists(powershell)})");
-            Log.Info($"  Terminal : {terminal} ({Exists(terminal)})");
+            string sep = Lang.T(": ", " : ");
+            Log.Info($"  Firefox{sep}{firefox} ({Exists(firefox)})");
+            Log.Info($"  PowerShell{sep}{powershell} ({Exists(powershell)})");
+            Log.Info($"  Terminal{sep}{terminal} ({Exists(terminal)})");
             string controlPanel = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Windows\Start Menu\Programs\System Tools\Control Panel.lnk");
             Log.Info(Lang.T($"  Control Panel : {controlPanel} ({Exists(controlPanel)})", $"  Panneau de configuration : {controlPanel} ({Exists(controlPanel)})"));
         }
@@ -514,7 +678,7 @@ namespace RoboConfigurator.Core
                         File.Delete(lnk);
                     }
                 // La clé Taskband contient l'ordre et les épingles d'applis du Store : exportée en .reg avant suppression
-                SystemInfo.Run("reg.exe", $"export \"HKCU\\{taskband}\" \"{Path.Combine(backup, "Taskband.reg")}\" /y");
+                SystemInfo.Run(SystemInfo.SystemExe("reg.exe"), $"export \"HKCU\\{taskband}\" \"{Path.Combine(backup, "Taskband.reg")}\" /y", timeout: TimeSpan.FromMinutes(2));
                 Registry.CurrentUser.DeleteSubKeyTree(taskband, false);
                 Log.Info(Lang.T($"Previous pins saved to {backup}, then reset", $"Anciennes épingles sauvegardées dans {backup}, puis effacées"));
             }
@@ -527,11 +691,16 @@ namespace RoboConfigurator.Core
             foreach (var p in Process.GetProcessesByName("explorer")) { try { p.Kill(); p.WaitForExit(5000); } catch (Exception) { } }
             Thread.Sleep(3000);
             // Windows relance normalement l'explorateur tout seul
-            if (!Process.GetProcessesByName("explorer").Any()) Process.Start("explorer.exe");
+            if (!Process.GetProcessesByName("explorer").Any()) Process.Start(SystemInfo.WindowsExe("explorer.exe"));
         }
 
         private static string OfficeInstalling =>
             Lang.T("Installing Office (this may take a while)...", "Installation d'Office (cela peut prendre un moment)...");
+
+        private const string ClickToRunKey = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Office\ClickToRun\Configuration";
+
+        // OfficeSetup.exe rend parfois la main avant la fin : Click-to-Run continue avec OfficeC2RClient
+        private static readonly string[] OfficeInstallerProcesses = { "OfficeSetup", "OfficeC2RClient" };
 
         private string Office()
         {
@@ -540,22 +709,39 @@ namespace RoboConfigurator.Core
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"Microsoft Office\root\Office16\WINWORD.EXE"),
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Microsoft Office\root\Office16\WINWORD.EXE"),
             };
-            bool Installed() => word.Any(File.Exists);
-            if (Installed()) { Log.Ok(Lang.T("Office is already installed", "Office est déjà installé")); return null; }
+            bool Installed() => word.Any(File.Exists) && Registry.GetValue(ClickToRunKey, "VersionToReport", null) != null;
+            string[] Running() => OfficeInstallerProcesses.Where(n => Process.GetProcessesByName(n).Any()).ToArray();
+            string State() => Lang.T($"Word {(word.Any(File.Exists) ? "present" : "missing")}, Click-to-Run version {Registry.GetValue(ClickToRunKey, "VersionToReport", null) ?? "missing"}, installer processes: {(Running().Any() ? string.Join(", ", Running()) : "none")}",
+                                     $"Word {(word.Any(File.Exists) ? "présent" : "absent")}, version Click-to-Run {Registry.GetValue(ClickToRunKey, "VersionToReport", null) ?? "absente"}, processus d'installation : {(Running().Any() ? string.Join(", ", Running()) : "aucun")}");
+            if (Installed()) { Log.Ok(Lang.T($"Office is already installed ({State()})", $"Office est déjà installé ({State()})")); return null; }
 
             Detail(StepNames.Office, OfficeInstalling);
             Log.Info(OfficeInstalling);
             var start = DateTime.Now;
-            SystemInfo.RunVisible(Path.Combine(_workDir, Payloads.Office.File));
-            // Le programme d'installation peut rendre la main avant la fin réelle
-            while (!Installed() || Process.GetProcessesByName("OfficeSetup").Any())
+            var limit = TimeSpan.FromMinutes(60);
+            int code = SystemInfo.RunVisible(Path.Combine(_workDir, Payloads.Office.File), "", limit);
+            Log.Info(State());
+            // Échec immédiat de l'installateur : inutile d'attendre une heure
+            if (code != 0 && !Installed() && !Running().Any())
+                throw new Exception(Lang.T($"OfficeSetup.exe stopped with code {code} (0x{code:X8}) and Office is not installed",
+                                           $"OfficeSetup.exe s'est arrêté avec le code {code} (0x{code:X8}) et Office n'est pas installé"));
+
+            var lastLog = DateTime.Now;
+            while (!Installed() || Running().Any())
             {
                 var elapsed = DateTime.Now - start;
-                if (elapsed.TotalMinutes > 60) throw new Exception(Lang.T("Office does not seem installed after 60 minutes", "Office ne semble pas installé après 60 minutes"));
+                if (elapsed > limit)
+                {
+                    Log.Warn(State());
+                    if (!Installed()) throw new Exception(Lang.T("Office does not seem installed after 60 minutes", "Office ne semble pas installé après 60 minutes"));
+                    // Installé, mais Click-to-Run travaille encore (mise à jour lancée juste après l'installation ?)
+                    return Lang.T("Office is installed but its installer was still running after 60 minutes", "Office est installé mais son installateur tournait encore après 60 minutes");
+                }
+                if (DateTime.Now - lastLog > TimeSpan.FromMinutes(5)) { Log.Info(Lang.T($"Waiting for Office ({(int)elapsed.TotalMinutes} min): ", $"Attente d'Office ({(int)elapsed.TotalMinutes} min) : ") + State()); lastLog = DateTime.Now; }
                 Detail(StepNames.Office, Lang.T($"Installing Office ({(int)elapsed.TotalMinutes} min)...", $"Installation d'Office en cours ({(int)elapsed.TotalMinutes} min)..."));
                 Thread.Sleep(15000);
             }
-            Log.Ok(Lang.T("Office installed", "Office installé"));
+            Log.Ok(Lang.T($"Office installed ({State()})", $"Office installé ({State()})"));
             return null;
         }
 
@@ -566,7 +752,8 @@ namespace RoboConfigurator.Core
         {
             const string key = StepNames.Activation;
             string slmgr = Path.Combine(Environment.SystemDirectory, "slmgr.vbs");
-            void Slmgr(string args) => SystemInfo.Run("cscript.exe", $"//nologo \"{slmgr}\" {args}");
+            // /ato contacte les serveurs d'activation de Microsoft : plus long que les autres commandes
+            void Slmgr(string args) => SystemInfo.Run(SystemInfo.SystemExe("cscript.exe"), $"//nologo \"{slmgr}\" {args}", timeout: TimeSpan.FromMinutes(args == "/ato" ? 5 : 2));
 
             // Édition voulue : Famille -> Pro se fait sur place (redémarrage nécessaire), Pro -> Famille demande une réinstallation
             string edition = SystemInfo.EditionId();
@@ -621,22 +808,25 @@ namespace RoboConfigurator.Core
                 string script = Payloads.Ensure(Payloads.Mas, _workDir);
                 Detail(key, Lang.T("Activating Windows (HWID)...", "Activation de Windows (HWID)..."));
                 Log.Info(Lang.T("Starting Windows activation (option 1 - HWID)...", "Lancement de l'activation Windows (option 1 - HWID)..."));
-                SystemInfo.RunVisible("cmd.exe", $"/c \"{script}\" /HWID");
+                SystemInfo.RunVisible(SystemInfo.SystemExe("cmd.exe"), $"/c \"{script}\" /HWID", TimeSpan.FromMinutes(15));
                 Detail(key, Lang.T("Activating Office (Ohook)...", "Activation d'Office (Ohook)..."));
                 Log.Info(Lang.T("Starting Office activation (option 2 - Ohook)...", "Lancement de l'activation Office (option 2 - Ohook)..."));
-                SystemInfo.RunVisible("cmd.exe", $"/c \"{script}\" /Ohook");
+                SystemInfo.RunVisible(SystemInfo.SystemExe("cmd.exe"), $"/c \"{script}\" /Ohook", TimeSpan.FromMinutes(15));
             }
             catch (Exception ex)
             {
                 Log.Error(Lang.T("Could not download or run the activation script", "Impossible de télécharger ou lancer le script d'activation"), ex);
-                return Lang.T("Activation script unavailable: activate Windows manually.", "Script d'activation indisponible : activer Windows manuellement.");
+                throw new StepNotDoneException(WithEditionWarning(Lang.T("Activation script unavailable: Windows is not activated.", "Script d'activation indisponible : Windows n'est pas activé."), editionWarning));
             }
 
             if (SystemInfo.IsWindowsActivated()) { Log.Ok(Lang.T("Windows activated successfully", "Windows est activé avec succès")); return editionWarning; }
             Log.Warn(Lang.T("The script ran but Windows does not seem activated. Licence status:", "Le script s'est exécuté mais Windows ne semble pas activé. État de la licence :"));
             Slmgr("/dli");
-            return Lang.T("Windows does not seem activated: check manually.", "Windows ne semble pas activé : vérifier manuellement.");
+            throw new StepNotDoneException(WithEditionWarning(Lang.T("Windows does not seem activated.", "Windows ne semble pas activé."), editionWarning));
         }
+
+        private static string WithEditionWarning(string message, string editionWarning) =>
+            editionWarning == null ? message : message + " " + editionWarning;
 
         /// <summary>
         /// Passe Windows Famille à Pro avec changepk.exe (clé fournie, sinon clé générique Pro de Microsoft).
@@ -654,7 +844,7 @@ namespace RoboConfigurator.Core
                 Log.Info(Lang.T($"Switching from {edition} to Windows Pro with {(generic ? "Microsoft's generic Pro key" : "the key provided")} (changepk.exe)...",
                                 $"Passage de {edition} à Windows Pro avec {(generic ? "la clé générique Pro de Microsoft" : "la clé fournie")} (changepk.exe)..."));
                 if (!File.Exists(changepk)) throw new FileNotFoundException(Lang.T("changepk.exe not found on this Windows", "changepk.exe introuvable sur ce Windows"), changepk);
-                code = SystemInfo.Run(changepk, "/ProductKey " + productKey, display: "changepk.exe /ProductKey <" + Lang.T("key", "clé") + ">");
+                code = SystemInfo.Run(changepk, "/ProductKey " + productKey, display: "changepk.exe /ProductKey <" + Lang.T("key", "clé") + ">", timeout: TimeSpan.FromMinutes(15));
                 Log.Info(Lang.T($"changepk.exe: code {code} (0x{code:X8}), EditionID now {SystemInfo.EditionId()}", $"changepk.exe : code {code} (0x{code:X8}), EditionID maintenant {SystemInfo.EditionId()}"));
                 if (code == 0) break;
             }
@@ -667,6 +857,11 @@ namespace RoboConfigurator.Core
 
         private void RenamePc()
         {
+            if (_stop)
+            {
+                Set(RenameKey, StepStatus.Skipped, Lang.T("Not applied: stop requested", "Non appliqué : arrêt demandé"));
+                return;
+            }
             string name = _config.NewName;
             if (string.IsNullOrEmpty(name) || name.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase))
             {
@@ -674,6 +869,7 @@ namespace RoboConfigurator.Core
                 return;
             }
             Log.Title(Lang.T("PC name", "Nom du PC"));
+            _current = RenameKey;
             Set(RenameKey, StepStatus.Running, $"{Environment.MachineName} -> {name}");
             try
             {
@@ -693,18 +889,11 @@ namespace RoboConfigurator.Core
         private void WriteReport()
         {
             Log.Title(Lang.T("PC report", "Rapport du poste"));
+            _current = ReportKey;
             Set(ReportKey, StepStatus.Running, Lang.T("Collecting PC information...", "Collecte des informations du poste..."));
             try
             {
-                var status = StepNames.All.Select(s =>
-                {
-                    string state = !_config.Has(s) ? Lang.T("skipped", "ignorée")
-                                 : _result.Failed.Contains(s) ? Lang.T("FAILED", "EN ÉCHEC")
-                                 : _result.AfterRestart.Contains(s) ? Lang.T("to finish after restarting", "à terminer après le redémarrage")
-                                 : _state.IsDone(s) ? "OK"
-                                 : Lang.T("not done", "non faite");
-                    return $"{s,-15}{Lang.T(": ", " : ")}{state}";
-                });
+                var status = ReportStatus();
                 var lines = Report.Build(_result.PendingName, _oemKey, status);
                 string file = Lang.T($"Report-{_result.PendingName ?? Environment.MachineName}-{DateTime.Now:yyyy-MM-dd}.txt", $"Rapport-{_result.PendingName ?? Environment.MachineName}-{DateTime.Now:yyyy-MM-dd}.txt");
                 string path = Path.Combine(_workDir, file);
@@ -723,32 +912,66 @@ namespace RoboConfigurator.Core
             }
         }
 
+        /// <summary>État de chaque étape pour le rapport : le même que dans l'application, avec son détail.</summary>
+        private List<string> ReportStatus()
+        {
+            var lines = new List<string>();
+            void Add(string key, string state)
+            {
+                string detail = _items[key].Detail;
+                lines.Add($"{_items[key].Title,-26}{Lang.T(": ", " : ")}{state}{(string.IsNullOrEmpty(detail) ? "" : " - " + detail)}");
+            }
+            foreach (string s in StepNames.All)
+            {
+                switch (_items[s].Status)
+                {
+                    case StepStatus.Skipped: Add(s, Lang.T("skipped", "ignorée")); break;
+                    case StepStatus.AlreadyDone: Add(s, Lang.T("OK (previous run)", "OK (lancement précédent)")); break;
+                    case StepStatus.Done: Add(s, "OK"); break;
+                    case StepStatus.Failed: Add(s, Lang.T("FAILED", "EN ÉCHEC")); break;
+                    case StepStatus.Warning:
+                        Add(s, _result.NotDone.Contains(s) ? Lang.T("NOT DONE (retried at the next launch)", "NON FAITE (réessayée au prochain lancement)")
+                             : _result.AfterRestart.Contains(s) ? Lang.T("TO FINISH after restarting", "À TERMINER après le redémarrage")
+                             : Lang.T("OK, TO CHECK", "OK, À VÉRIFIER"));
+                        break;
+                    default: Add(s, Lang.T("not done", "non faite")); break;
+                }
+            }
+            Add(RenameKey, _items[RenameKey].Status == StepStatus.Failed ? Lang.T("FAILED", "EN ÉCHEC") : _items[RenameKey].Status == StepStatus.Done ? "OK" : Lang.T("unchanged", "inchangé"));
+            string keep = CleanUpSkipReason();
+            lines.Add($"{_items[CleanUpKey].Title,-26}{Lang.T(": ", " : ")}{keep ?? Lang.T($"{_workDir} deleted after this report", $"{_workDir} supprimé après ce rapport")}");
+            return lines;
+        }
+
+        /// <summary>Raison de garder le dossier de travail, ou null s'il doit être supprimé.</summary>
+        private string CleanUpSkipReason()
+        {
+            if (!_config.CleanUp) return Lang.T($"Files kept in {_workDir}", $"Fichiers conservés dans {_workDir}");
+            if (_stop) return Lang.T("Files kept: the setup was stopped and can be continued", "Fichiers conservés : la configuration a été arrêtée et pourra être poursuivie");
+            // Une étape à finir après le redémarrage a besoin de la configuration : jamais de nettoyage dans ce cas
+            if (_result.AfterRestart.Any()) return Lang.T("Files kept to finish the setup after restarting", "Fichiers conservés pour finir la configuration après le redémarrage");
+            if (_result.HasUnfinished && !_config.CleanUpOnError) return Lang.T("Files kept so the unfinished steps can be resumed", "Fichiers conservés pour pouvoir reprendre les étapes non terminées");
+            return null;
+        }
+
         private void CleanUp()
         {
-            if (!_config.CleanUp)
+            string keep = CleanUpSkipReason();
+            if (keep != null)
             {
-                Set(CleanUpKey, StepStatus.Skipped, Lang.T($"Files kept in {_workDir}", $"Fichiers conservés dans {_workDir}"));
+                Set(CleanUpKey, StepStatus.Skipped, keep);
                 return;
             }
-            // Une étape à finir après le redémarrage a besoin de la configuration : jamais de nettoyage dans ce cas
-            if (_result.AfterRestart.Any())
-            {
-                Set(CleanUpKey, StepStatus.Skipped, Lang.T("Files kept to finish the setup after restarting", "Fichiers conservés pour finir la configuration après le redémarrage"));
-                return;
-            }
-            if (_result.Failed.Any() && !_config.CleanUpOnError)
-            {
-                Set(CleanUpKey, StepStatus.Skipped, Lang.T("Files kept so the failed steps can be resumed", "Fichiers conservés pour pouvoir reprendre les étapes en échec"));
-                return;
-            }
-            if (_result.Failed.Any())
+            if (_result.HasUnfinished)
             {
                 // Nettoyage forcé : le journal part avec le dossier, une copie reste sur le Bureau pour comprendre l'échec
-                Log.Warn(Lang.T($"Clean-up forced despite failed steps ({string.Join(", ", _result.Failed)}): they cannot be resumed",
-                                $"Nettoyage forcé malgré des étapes en échec ({string.Join(", ", _result.Failed)}) : elles ne pourront pas être reprises"));
+                string unfinished = StepNames.Display(_result.Failed.Concat(_result.NotDone));
+                Log.Warn(Lang.T($"Clean-up forced despite unfinished steps ({unfinished}): they cannot be resumed",
+                                $"Nettoyage forcé malgré des étapes non terminées ({unfinished}) : elles ne pourront pas être reprises"));
                 CopyLogToDesktop();
             }
             Log.Title(Lang.T("Clean-up", "Nettoyage"));
+            _current = CleanUpKey;
             Set(CleanUpKey, StepStatus.Running, Lang.T($"Deleting {_workDir}...", $"Suppression de {_workDir}..."));
             if (_simulation)
             {
@@ -760,7 +983,7 @@ namespace RoboConfigurator.Core
             Log.Close();
             try
             {
-                int pending = DeleteFolder(_workDir);
+                int pending = WorkFolder.Delete(_workDir);
                 string detail = pending == 0 ? Lang.T($"Folder {_workDir} deleted", $"Dossier {_workDir} supprimé")
                               : Lang.T($"Folder {_workDir} deleted ({pending} file(s) in use will be deleted on restart)",
                                        $"Dossier {_workDir} supprimé ({pending} fichier(s) en cours d'utilisation supprimé(s) au redémarrage)");
@@ -789,25 +1012,6 @@ namespace RoboConfigurator.Core
             catch (Exception ex) { Log.Error(Lang.T("Copying the log to the desktop", "Copie du journal sur le Bureau"), ex); }
         }
 
-        /// <summary>Supprime le dossier ; ce qui est verrouillé (exe lancé depuis ce dossier...) part au redémarrage.</summary>
-        private static int DeleteFolder(string dir)
-        {
-            int pending = 0;
-            foreach (string file in Directory.GetFiles(dir, "*", SearchOption.AllDirectories))
-            {
-                try { File.SetAttributes(file, FileAttributes.Normal); File.Delete(file); }
-                catch (Exception) { SystemInfo.DeleteAtReboot(file); pending++; }
-            }
-            // Dossiers du plus profond au dossier de travail lui-même, après leurs fichiers
-            var dirs = Directory.GetDirectories(dir, "*", SearchOption.AllDirectories).OrderByDescending(d => d.Length).Concat(new[] { dir });
-            foreach (string d in dirs)
-            {
-                try { Directory.Delete(d); }
-                catch (Exception) { SystemInfo.DeleteAtReboot(d); }
-            }
-            return pending;
-        }
-
         private void Simulate(string key, string message)
         {
             for (int p = 0; p <= 100; p += 20) { Detail(key, $"{message.Split(' ')[0]} : {p} %"); Thread.Sleep(150); }
@@ -822,6 +1026,24 @@ namespace RoboConfigurator.Core
                 case StepNames.Ninite: actions = new[] { Lang.T("Click “Close” in Ninite when it shows “Done”.", "Cliquez sur « Close » dans Ninite quand il affiche « Done ».") }; break;
                 case StepNames.CrapFixer: actions = Enumerable.Range(1, 6).Select(i => Math.Min(i * 8, 47)).Select(n => Lang.T($"Tweak {n}/47", $"Réglage {n}/47")).ToArray(); break;
                 case StepNames.Office: actions = new[] { OfficeInstalling }; break;
+                case StepNames.Edge:
+                    string setup = FindEdgeUninstaller(out _);
+                    actions = setup == null
+                        ? new[] { Lang.T("Edge is not installed: nothing would be done", "Edge n'est pas installé : rien ne serait fait") }
+                        : new[]
+                        {
+                            Lang.T($"Would uninstall Edge {FileVersionInfo.GetVersionInfo(setup).FileVersion} with {setup}", $"Désinstallerait Edge {FileVersionInfo.GetVersionInfo(setup).FileVersion} avec {setup}"),
+                            Lang.T($"Would create {FakeEdgeExe} and {FakeDllhostPaths[0]} (copy of cmd.exe), then delete them", $"Créerait {FakeEdgeExe} et {FakeDllhostPaths[0]} (copie de cmd.exe), puis les supprimerait"),
+                        };
+                    break;
+                case StepNames.Taskbar:
+                    LogTaskbarSources();
+                    actions = new[]
+                    {
+                        Lang.T("Current pins: ", "Épingles actuelles : ") + PinnedList(TaskbarPinsFolder),
+                        Lang.T("Would write the layout, save then clear the current pins, and restart File Explorer", "Écrirait la disposition, sauvegarderait puis effacerait les épingles actuelles, et relancerait l'explorateur"),
+                    };
+                    break;
                 case StepNames.Activation:
                     string edition = SystemInfo.EditionId();
                     actions = new[]
@@ -831,10 +1053,22 @@ namespace RoboConfigurator.Core
                         : Lang.T($"Edition {edition} kept", $"Édition {edition} conservée"),
                         Lang.T("Checking the activation...", "Vérification de l'activation..."),
                     };
+                    // Le script d'activation n'est téléchargé que si Windows n'est pas activé : son lien est vérifié sans bloquer
+                    if (CheckLinksInSimulation)
+                    {
+                        try { Log.Ok(Payloads.CheckLink(Payloads.Mas)); }
+                        catch (Exception ex) { Log.Warn(ex.Message); }
+                    }
                     break;
-                default: actions = new[] { Lang.T($"{step}: simulation...", $"{step} : simulation...") }; break;
+                default: actions = new[] { Lang.T($"{StepNames.Display(step)}: simulation...", $"{StepNames.Display(step)} : simulation...") }; break;
             }
             foreach (string a in actions) { Detail(step, a); Log.Info(a + " (simulation)"); Thread.Sleep(900); }
+            switch (SimulatedFailure(step))
+            {
+                case "fail": throw new Exception(Lang.T("Simulated failure (-SimulateFail)", "Échec simulé (-SimulateFail)"));
+                case "restart": throw new RestartRequiredException(Lang.T("Simulated: restart, then run the app again (-SimulateFail)", "Simulé : redémarrer, puis relancer l'application (-SimulateFail)"));
+                case "notdone": throw new StepNotDoneException(Lang.T("Simulated: step not done, retried at the next launch (-SimulateFail)", "Simulé : étape non faite, réessayée au prochain lancement (-SimulateFail)"));
+            }
             return step == StepNames.Activation ? Lang.T("Sample warning: check the activation manually.", "Exemple d'avertissement : vérifier l'activation manuellement.") : null;
         }
     }

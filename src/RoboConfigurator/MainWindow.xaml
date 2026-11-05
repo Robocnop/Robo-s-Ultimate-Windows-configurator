@@ -576,6 +576,13 @@
                         Icon="{ui:SymbolIcon Folder24}" />
                     <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
                         <ui:Button
+                            x:Name="StopButton"
+                            Margin="0,0,8,0"
+                            Click="OnStopClick"
+                            Content="{local:T 'Stop after this step', 'Arrêter après cette étape'}"
+                            Icon="{ui:SymbolIcon RecordStop24}"
+                            ToolTip="{local:T 'The current step finishes, the next ones are not started. Run the app again later to continue.', 'L’étape en cours se termine, les suivantes ne sont pas lancées. Relancez l’application plus tard pour continuer.'}" />
+                        <ui:Button
                             x:Name="OpenReportButton"
                             Margin="0,0,8,0"
                             Click="OnOpenReportClick"

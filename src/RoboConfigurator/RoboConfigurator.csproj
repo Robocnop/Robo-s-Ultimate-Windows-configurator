@@ -6,6 +6,9 @@
     <TargetFramework>net472</TargetFramework>
     <UseWPF>true</UseWPF>
     <LangVersion>latest</LangVersion>
+    <!-- Versions exactes de toutes les dépendances (packages.lock.json), imposées en CI -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(CI)' == 'true'">true</RestoreLockedMode>
     <!-- Processus 64 bits sur Windows 64 bits : sinon le registre HKLM\SOFTWARE serait redirigé vers WOW6432Node -->
     <PlatformTarget>AnyCPU</PlatformTarget>
     <Prefer32Bit>false</Prefer32Bit>
@@ -13,7 +16,7 @@
     <RootNamespace>RoboConfigurator</RootNamespace>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>2.6.2</Version>
+    <Version>2.7.0-beta.1</Version>
     <Product>Robo's Ultimate Windows Configurator</Product>
     <AssemblyTitle>Robo's Ultimate Windows Configurator</AssemblyTitle>
     <Company>Robocnop</Company>
@@ -29,9 +32,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Explicite : le SDK ne l'ajoute que sur les PC sans pack de ciblage .NET 4.7.2, ce qui rendait packages.lock.json
+         différent selon la machine. Assemblies de référence pour la compilation seulement, rien dans l'exe. -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
     <PackageReference Include="WPF-UI" Version="4.3.0" />
     <PackageReference Include="Costura.Fody" Version="6.2.0" PrivateAssets="all" />
     <PackageReference Include="Fody" Version="6.9.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="RoboConfigurator.Tests" />
   </ItemGroup>
 
   <ItemGroup>
@@ -40,6 +50,7 @@
     <Reference Include="System.Management" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Security" />
   </ItemGroup>
 
   <ItemGroup>

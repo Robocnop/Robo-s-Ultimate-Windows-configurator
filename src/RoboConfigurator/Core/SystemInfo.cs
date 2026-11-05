@@ -30,6 +30,11 @@ namespace RoboConfigurator.Core
 
         public static string Str(object value) => value?.ToString().Trim() ?? "";
 
+        /// <summary>Chemin complet d'un programme de System32 : ne dépend pas du PATH, qu'un autre programme pourrait précéder.</summary>
+        public static string SystemExe(string name) => Path.Combine(Environment.SystemDirectory, name);
+
+        public static string WindowsExe(string name) => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), name);
+
         public static int BuildNumber => Environment.OSVersion.Version.Build;
         public static bool IsWin11 => BuildNumber >= 22000;
 
@@ -99,6 +104,20 @@ namespace RoboConfigurator.Core
         public static string EditionId() =>
             Str(Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "EditionID", ""));
 
+        /// <summary>Compte de la session ouverte (propriétaire de explorer.exe), « DOMAINE\nom », ou null si introuvable.</summary>
+        public static string SessionUser()
+        {
+            foreach (var p in Wmi("SELECT Handle FROM Win32_Process WHERE Name = 'explorer.exe'"))
+            {
+                var owner = new object[2];
+                if (Convert.ToUInt32(p.InvokeMethod("GetOwner", owner)) == 0 && owner[0] != null) return $"{owner[1]}\\{owner[0]}";
+            }
+            return null;
+        }
+
+        /// <summary>Compte qui fait tourner l'application, « DOMAINE\nom ».</summary>
+        public static string ProcessUser => $"{Environment.UserDomainName}\\{Environment.UserName}";
+
         public static bool IsAdministrator() =>
             new System.Security.Principal.WindowsPrincipal(System.Security.Principal.WindowsIdentity.GetCurrent())
                 .IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
@@ -106,17 +125,21 @@ namespace RoboConfigurator.Core
         public static bool IsHomeEdition(string editionId) => editionId.StartsWith("Core", StringComparison.OrdinalIgnoreCase);
         public static bool IsProEdition(string editionId) => editionId.StartsWith("Professional", StringComparison.OrdinalIgnoreCase);
 
-        /// <summary>Lance un programme sans fenêtre ; sa sortie et un code de retour non nul vont au journal.</summary>
-        public static int Run(string file, string arguments, Action<string> onLine = null, string display = null)
+        /// <summary>
+        /// Lance un programme sans fenêtre ; sa sortie et un code de retour non nul vont au journal.
+        /// Au-delà de <paramref name="timeout"/>, le programme et ses enfants sont arrêtés et une <see cref="TimeoutException"/> est levée.
+        /// </summary>
+        public static int Run(string file, string arguments, Action<string> onLine = null, string display = null, TimeSpan? timeout = null)
         {
-            int code = RunCore(file, arguments, onLine, out TimeSpan elapsed);
+            display = display ?? $"{Path.GetFileName(file)} {arguments}";
+            int code = RunCore(file, arguments, onLine, display, timeout, out TimeSpan elapsed);
             if (code != 0)
-                Log.Info(Lang.T($"{display ?? $"{Path.GetFileName(file)} {arguments}"} returned code {code} (0x{code:X8}) after {elapsed.TotalSeconds:0.#} s",
-                                $"{display ?? $"{Path.GetFileName(file)} {arguments}"} a renvoyé le code {code} (0x{code:X8}) après {elapsed.TotalSeconds:0.#} s"));
+                Log.Info(Lang.T($"{display} returned code {code} (0x{code:X8}) after {elapsed.TotalSeconds:0.#} s",
+                                $"{display} a renvoyé le code {code} (0x{code:X8}) après {elapsed.TotalSeconds:0.#} s"));
             return code;
         }
 
-        private static int RunCore(string file, string arguments, Action<string> onLine, out TimeSpan elapsed)
+        private static int RunCore(string file, string arguments, Action<string> onLine, string display, TimeSpan? timeout, out TimeSpan elapsed)
         {
             var start = DateTime.Now;
             var oem = Encoding.GetEncoding(CultureInfo.CurrentCulture.TextInfo.OEMCodePage);
@@ -140,31 +163,58 @@ namespace RoboConfigurator.Core
                 p.Start();
                 p.BeginOutputReadLine();
                 p.BeginErrorReadLine();
+                WaitOrKill(p, display, timeout);
+                // Sans argument : attend aussi la fin de la lecture de la sortie
                 p.WaitForExit();
                 elapsed = DateTime.Now - start;
                 return p.ExitCode;
             }
         }
 
-        public static int RunVisible(string file, string arguments = "")
+        /// <summary>Lance un programme avec sa fenêtre (installateur, script) et attend sa fermeture.</summary>
+        public static int RunVisible(string file, string arguments = "", TimeSpan? timeout = null)
         {
             var start = DateTime.Now;
+            string name = Path.GetFileName(file);
             using (var p = Process.Start(new ProcessStartInfo(file, arguments) { UseShellExecute = true }))
             {
-                p.WaitForExit();
-                string name = Path.GetFileName(file);
+                WaitOrKill(p, name, timeout);
                 Log.Info(Lang.T($"{name} closed with code {p.ExitCode} (0x{p.ExitCode:X8}) after {(DateTime.Now - start).TotalSeconds:0} s",
                                 $"{name} s'est fermé avec le code {p.ExitCode} (0x{p.ExitCode:X8}) après {(DateTime.Now - start).TotalSeconds:0} s"));
                 return p.ExitCode;
             }
         }
 
+        private static void WaitOrKill(Process p, string display, TimeSpan? timeout)
+        {
+            if (timeout == null) { p.WaitForExit(); return; }
+            if (p.WaitForExit((int)Math.Min(int.MaxValue, timeout.Value.TotalMilliseconds))) return;
+            string minutes = $"{timeout.Value.TotalMinutes:0.#}";
+            Log.Error(Lang.T($"{display}: still running after {minutes} min, it is stopped (with the programs it started)",
+                             $"{display} : toujours en cours après {minutes} min, il est arrêté (avec les programmes qu'il a lancés)"));
+            KillTree(p);
+            throw new TimeoutException(Lang.T($"{display} did not finish within {minutes} min", $"{display} ne s'est pas terminé en {minutes} min"));
+        }
+
+        /// <summary>Arrête le processus et ses enfants (taskkill /T) ; .NET Framework ne sait arrêter que le processus lui-même.</summary>
+        private static void KillTree(Process p)
+        {
+            try
+            {
+                var psi = new ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "taskkill.exe"), $"/PID {p.Id} /T /F") { UseShellExecute = false, CreateNoWindow = true };
+                using (var kill = Process.Start(psi)) kill.WaitForExit(30000);
+            }
+            catch (Exception) { }
+            try { if (!p.HasExited) p.Kill(); } catch (Exception) { }
+            p.WaitForExit(10000);
+        }
+
         /// <summary>Exécute une commande Windows PowerShell 5.1 (toujours présent) sans fenêtre.</summary>
-        public static int PowerShell(string command, Action<string> onLine = null)
+        public static int PowerShell(string command, Action<string> onLine = null, TimeSpan? timeout = null)
         {
             string encoded = Convert.ToBase64String(Encoding.Unicode.GetBytes("$ProgressPreference='SilentlyContinue'; " + command));
-            return Run("powershell.exe", $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand {encoded}", onLine,
-                       display: $"PowerShell « {command} »");
+            return Run(Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe"), $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand {encoded}", onLine,
+                       display: Lang.T($"PowerShell “{command}”", $"PowerShell « {command} »"), timeout: timeout ?? TimeSpan.FromMinutes(5));
         }
     }
 }

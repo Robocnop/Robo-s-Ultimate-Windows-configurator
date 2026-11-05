@@ -151,15 +151,20 @@ RoboConfigurator.exe -Edition Pro              :: édition de Windows voulue pou
 RoboConfigurator.exe -ForceCleanUp             :: nettoyer le dossier de travail même si une étape échoue
 RoboConfigurator.exe -Reset                    :: oublier la configuration et les étapes faites, tout refaire
 RoboConfigurator.exe -Simulation               :: parcourir l'application sans rien modifier sur le PC
+RoboConfigurator.exe -Simulation -SimulateFail Edge,Activation:notdone   :: faire échouer des étapes exprès (fail, download, restart, notdone)
 ```
+
+En simulation, les liens de téléchargement sont vérifiés (rien n'est téléchargé) et les étapes Edge et Barre des
+tâches affichent ce qu'elles feraient sur ce PC.
 
 ## Compiler
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File build.ps1
+powershell -ExecutionPolicy Bypass -File build.ps1          # compilation seule
+powershell -ExecutionPolicy Bypass -File build.ps1 -Test    # compilation, tests unitaires et test de fumée
 ```
 
-Le script produit `dist\RoboConfigurator.exe`. Il utilise le SDK .NET installé, ou en installe une copie
+Le script produit `dist\RoboConfigurator.exe` et s'arrête s'il dépasse 4 Mo. Il utilise le SDK .NET installé, ou en installe une copie
 locale dans `%USERPROFILE%\.dotnet` (sans droits administrateur) s'il n'y en a pas.
 
 - Code source : `src\RoboConfigurator` (C# / WPF, interface [WPF-UI](https://github.com/lepoco/wpfui),

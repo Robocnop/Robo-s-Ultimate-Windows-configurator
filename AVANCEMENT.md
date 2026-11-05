@@ -63,6 +63,36 @@ Dernière mise à jour : 05/11/2026. Dernière version publiée : [v2.6.2](https
   - Le Nextcloud a changé d'adresse : CrapFixer, Office et MAS sont téléchargés depuis `nextcloud.robocnop.be` (à la place de `nextcloud.robocnop.freeddns.org:4444`).
   - Ninite n'est plus hébergé sur le Nextcloud : la sélection par défaut est aussi téléchargée sur ninite.com, comme les autres sélections. Un `Ninite.exe` déposé dans `payloads\` reste intégré à l'exe.
 
+## Améliorations après l'audit (v2.7.0-beta.1, pré-version)
+
+Audit du code dans [AUDIT.md](AUDIT.md), puis corrections, un sujet par commit. Publiées en pré-version [v2.7.0-beta.1](https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator/releases/tag/v2.7.0-beta.1) pour test, non validées sur un vrai poste.
+
+- **Tests** : projet xUnit `tests\RoboConfigurator.Tests` (121 tests : .ini CrapFixer, configuration, options, versions, masquage des clés, téléchargements, nettoyage, déroulement complet en simulation sans fenêtre). `build.ps1 -Test` lance aussi le test de fumée ; la CI lance les deux. L'exe ne change pas de taille (3,0 Mo) et la compilation échoue au-delà de 4 Mo.
+- **Sécurité** : `C:\RoboConfigurator` réservé aux administrateurs et à SYSTEM ; le nettoyage ne suit plus les jonctions ; signature numérique de Ninite et d'Office vérifiée, format de CrapFixer et de MAS vérifié ; clé Windows chiffrée (DPAPI) dans le fichier de reprise et retirée après l'activation ; programmes Windows lancés par leur chemin complet ; liens de mise à jour limités à github.com.
+- **Reprise et robustesse** : une étape « à vérifier » qui n'a pas atteint son but (Windows non activé, Ninite fermé avec une erreur) n'est plus marquée faite ; délai maximum sur chaque programme lancé ; faux fichiers d'Edge supprimés après une coupure ; fichier de reprise écrit de façon sûre ; échec immédiat d'OfficeSetup détecté ; une erreur inattendue mène toujours à l'écran de fin.
+- **Téléchargements** : attente de 5 s puis 15 s, taille reçue vérifiée, messages clairs (pas d'Internet, lien introuvable...).
+- **Interface** : bouton « Arrêter après cette étape », une seule instance à la fois, fenêtre adaptée aux petits écrans, bouton Démarrer jamais bloqué par WMI, avertissement si le compte de l'application n'est pas celui de la session.
+- **Rapport et journal** : état réel de chaque étape avec son détail ; noms d'étapes traduits ; journal unique même en changeant de langue.
+- **Simulation** : `-SimulateFail` pour voir les écrans d'erreur ; liens de téléchargement vérifiés ; Edge et barre des tâches détaillés.
+
+Vérifié ici, sur le PC de développement : compilation, 121 tests, test de fumée, passages en `-Simulation` dans la fenêtre (démarrage, arrêt demandé, échecs simulés, une seule instance), liens de téléchargement actuels (HTTP 200), signatures des fichiers actuels de Ninite et d'Office.
+
+### À valider à la main (jamais testé sur un vrai PC à configurer)
+
+1. **Droits de `C:\RoboConfigurator`** : après un lancement réel, `icacls C:\RoboConfigurator` ne doit montrer que les administrateurs et SYSTEM. Vérifier que Ninite, Office et MAS se lancent toujours depuis ce dossier, et que le bouton « Ouvrir le dossier » fonctionne (l'explorateur peut demander une confirmation).
+2. **Nettoyage** : dossier supprimé à la fin, fichiers verrouillés supprimés au redémarrage.
+3. **Signatures** : téléchargement réel de Ninite (sélection par défaut et sélection personnalisée) et d'OfficeSetup acceptés ; un fichier remplacé doit être refusé puis retéléchargé.
+4. **Délais maximum** : désinstallation d'Edge, `slmgr /ato`, `changepk`, MAS et OfficeSetup doivent finir sous leur limite sur un PC normal (10, 5, 15, 15 et 60 min).
+5. **Codes de retour** : Ninite renvoie-t-il bien 0 quand tout est installé ? OfficeSetup renvoie-t-il 0 ? Sinon, l'étape repasserait à chaque lancement.
+6. **Fin de l'installation d'Office** : `VersionToReport` de Click-to-Run présent, et `OfficeC2RClient` qui se termine à la fin de l'installation.
+7. **Activation** : clé chiffrée relue après le redémarrage Famille → Pro ; clé retirée du fichier après l'activation ; étape réessayée au lancement suivant si Windows n'est pas activé.
+8. **Arrêter après cette étape** pendant une vraie étape longue (Office).
+9. **Paquets provisionnés** : `Get-AppxProvisionedPackage` nécessite les droits administrateur (non testable ici) ; vérifier qu'un nouveau compte ne récupère plus les applis supprimées.
+10. **Compte différent** : lancer l'application avec les identifiants d'un autre administrateur et vérifier l'avertissement.
+11. **Petit écran** : 1366 × 768 et 1024 × 768 (pilote graphique de base), bouton Démarrer visible.
+12. **Barre des tâches** : effet réel de `LockedStartLayout = 1` (l'utilisateur peut-il encore épingler ?). Les noms des épingles relevées sont en partie traduits (« Interpréteur de commandes Windows ») : la vérification « Firefox, PowerShell, Control Panel » peut donner un faux « à vérifier » sur un Windows français.
+13. Tout ce qui figure déjà dans « État des étapes » ci-dessus (Edge sur 24H2, Office, Activation, renommage, redémarrage).
+
 ## Problèmes connus
 
 ### Écran bleu WHEA_UNCORRECTABLE_ERROR dans la VM pendant l'installation d'Office

@@ -77,6 +77,11 @@ namespace RoboConfigurator.Core
             }
         }
 
+        /// <summary>Seules les pages et fichiers de github.com sont ouverts : Process.Start lancerait aussi un chemin local.</summary>
+        public static bool IsTrustedUrl(string url) =>
+            Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps &&
+            uri.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase);
+
         /// <summary>À numéro égal, la version finale est plus récente que la pré-version.</summary>
         public static bool IsNewer(string candidate, string current)
         {
