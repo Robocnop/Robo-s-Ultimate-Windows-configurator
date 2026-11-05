@@ -144,5 +144,30 @@ namespace RoboConfigurator.Core
             int code = SystemInfo.PowerShell($"Get-AppxPackage -Name '{quoted}' | Remove-AppxPackage -ErrorAction Stop", errors.Add);
             if (code != 0) throw new Exception(errors.FirstOrDefault() ?? $"code {code}");
         }
+
+        /// <summary>
+        /// Paquets « provisionnés » : installés automatiquement pour chaque nouveau compte du PC.
+        /// Renvoie les couples (DisplayName, PackageName) ; liste vide si la commande échoue.
+        /// </summary>
+        public static List<KeyValuePair<string, string>> ProvisionedAppx()
+        {
+            var lines = new List<string>();
+            int code = SystemInfo.PowerShell("Get-AppxProvisionedPackage -Online | ForEach-Object { $_.DisplayName + '|' + $_.PackageName }", lines.Add);
+            if (code != 0) return new List<KeyValuePair<string, string>>();
+            return ParseProvisioned(lines);
+        }
+
+        internal static List<KeyValuePair<string, string>> ParseProvisioned(IEnumerable<string> lines) =>
+            lines.Select(l => l.Split('|')).Where(p => p.Length == 2 && p[0].Trim().Length > 0 && p[1].Trim().Length > 0)
+                 .Select(p => new KeyValuePair<string, string>(p[0].Trim(), p[1].Trim())).ToList();
+
+        /// <summary>Retire un paquet provisionné (PackageName complet) : l'appli ne revient plus pour les nouveaux comptes.</summary>
+        public static void RemoveProvisioned(string fullPackageName)
+        {
+            string quoted = fullPackageName.Replace("'", "''");
+            var errors = new List<string>();
+            int code = SystemInfo.PowerShell($"Remove-AppxProvisionedPackage -Online -PackageName '{quoted}' -ErrorAction Stop | Out-Null", errors.Add);
+            if (code != 0) throw new Exception(errors.FirstOrDefault() ?? $"code {code}");
+        }
     }
 }

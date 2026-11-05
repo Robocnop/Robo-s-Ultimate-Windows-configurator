@@ -313,8 +313,17 @@ namespace RoboConfigurator.Core
 
             Detail(key, Lang.T("Looking for bloatware...", "Recherche des applications inutiles..."));
             var installed = CrapFixer.InstalledAppxNames();
+            var provisioned = CrapFixer.ProvisionedAppx();
+            Log.Info(Lang.T($"Apps: {installed.Count} installed for this account, {provisioned.Count} provisioned for new accounts",
+                            $"Applis : {installed.Count} installées pour ce compte, {provisioned.Count} provisionnées pour les nouveaux comptes"));
             foreach (var app in CrapFixer.ReadIni(appIni).Where(a => a.DefaultSelected && a.Has("PackageName")))
             {
+                // Paquet provisionné : retiré aussi, sinon l'appli revient pour chaque nouveau compte (sans faire échouer l'étape)
+                foreach (var prov in provisioned.Where(p => CrapFixer.MatchesPackage(app["PackageName"], p.Key)))
+                {
+                    try { CrapFixer.RemoveProvisioned(prov.Value); Log.Ok(Lang.T($"Removed for new accounts: {app.Name} ({prov.Value})", $"Retirée pour les nouveaux comptes : {app.Name} ({prov.Value})")); }
+                    catch (Exception ex) { Log.Warn(Lang.T($"Could not remove {app.Name} for new accounts ({prov.Value}): {ex.Message}", $"Impossible de retirer {app.Name} pour les nouveaux comptes ({prov.Value}) : {ex.Message}")); }
+                }
                 if (!installed.Any(n => CrapFixer.MatchesPackage(app["PackageName"], n))) continue;
                 Detail(key, Lang.T($"Removing: {app.Name}", $"Suppression : {app.Name}"));
                 try { CrapFixer.RemoveAppx(app["PackageName"]); Log.Ok(Lang.T($"App removed: {app.Name}", $"Appli supprimée : {app.Name}")); }

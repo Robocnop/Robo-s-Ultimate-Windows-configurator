@@ -83,6 +83,23 @@ namespace RoboConfigurator.Tests
         public void ParseNumber_InvalidThrows() => Assert.ThrowsAny<FormatException>(() => CrapFixer.ParseNumber("abc"));
 
         [Fact]
+        public void ParseProvisioned_KeepsValidLines()
+        {
+            var list = CrapFixer.ParseProvisioned(new[]
+            {
+                "Microsoft.BingNews|Microsoft.BingNews_4.55.62231.0_neutral_~_8wekyb3d8bbwe",
+                "",
+                "sans séparateur",
+                "|vide",
+                " Clipchamp.Clipchamp | Clipchamp.Clipchamp_3.0.10220.0_neutral_~_yxz26nhyzhsrt ",
+            });
+            Assert.Equal(2, list.Count);
+            Assert.Equal("Clipchamp.Clipchamp", list[1].Key);
+            Assert.Equal("Clipchamp.Clipchamp_3.0.10220.0_neutral_~_yxz26nhyzhsrt", list[1].Value);
+            Assert.True(CrapFixer.MatchesPackage("Microsoft.BingNews", list[0].Key));
+        }
+
+        [Fact]
         public void ApplyTweak_RefusesToDeleteAWholeHive()
         {
             // HKCU est de toute façon protégée par .NET : le test ne peut rien supprimer, même si le contrôle disparaissait
