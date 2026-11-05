@@ -58,6 +58,17 @@ namespace RoboConfigurator.Core
                 config.NewName = config.NewName ?? "";
                 config.WindowsKey = UnprotectKey(config.ProtectedWindowsKey) ?? config.LegacyWindowsKey ?? "";
                 config.ProtectedWindowsKey = config.LegacyWindowsKey = null;
+                // Le fichier peut avoir été modifié à la main : mêmes contrôles que dans l'interface avant d'appeler WMI ou slmgr
+                if (config.NewName.Length > 0 && !IsValidPcName(config.NewName))
+                {
+                    Log.Warn(Lang.T($"Invalid PC name in the saved settings, ignored: “{config.NewName}”", $"Nom du PC invalide dans la configuration enregistrée, ignoré : « {config.NewName} »"));
+                    config.NewName = "";
+                }
+                if (config.WindowsKey.Length > 0 && !IsValidKey(config.WindowsKey))
+                {
+                    Log.Warn(Lang.T("Invalid Windows key in the saved settings, ignored", "Clé Windows invalide dans la configuration enregistrée, ignorée"));
+                    config.WindowsKey = "";
+                }
                 config.Edition = Editions.Normalize(config.Edition) ?? "";
                 config.Steps = StepNames.All.Where(s => (config.Steps ?? new string[0]).Contains(s)).ToArray();
                 // Absent des configurations antérieures à la v2.6.0
@@ -190,7 +201,12 @@ namespace RoboConfigurator.Core
                         o.Apps = NiniteApps.Normalize(apps);
                         break;
                     case "alltweaks": o.AllTweaks = true; break;
-                    case "windowskey": o.WindowsKey = Next().Trim().ToUpperInvariant(); break;
+                    case "windowskey":
+                        string key = Next().Trim().ToUpperInvariant();
+                        if (key.Length == 0 || RunConfig.IsValidKey(key)) o.WindowsKey = key;
+                        else o.Errors.Add(Lang.T("Invalid key for -WindowsKey. Expected format: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
+                                                 "Clé invalide pour -WindowsKey. Format attendu : XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"));
+                        break;
                     case "reset": o.Reset = true; break;
                     case "simulation": o.Simulation = true; break;
                     case "forcecleanup": o.ForceCleanUp = true; break;

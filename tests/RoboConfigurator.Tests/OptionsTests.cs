@@ -58,6 +58,16 @@ namespace RoboConfigurator.Tests
         }
 
         [Fact]
+        public void InvalidWindowsKeyIsReportedAndIgnored()
+        {
+            var o = Options.Parse(new[] { "-WindowsKey", "PAS-UNE-CLE" });
+            Assert.Single(o.Errors);
+            Assert.Equal("", o.WindowsKey);
+            // Le message ne répète pas la valeur : elle peut être une vraie clé mal tapée
+            Assert.DoesNotContain("PAS-UNE-CLE", o.Errors[0]);
+        }
+
+        [Fact]
         public void MissingValueAtTheEnd()
         {
             var o = Options.Parse(new[] { "-Skip" });

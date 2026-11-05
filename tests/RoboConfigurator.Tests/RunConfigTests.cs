@@ -94,6 +94,18 @@ namespace RoboConfigurator.Tests
         }
 
         [Fact]
+        public void Load_InvalidValuesWrittenByHand_AreIgnored()
+        {
+            using (var dir = new TempDir())
+            {
+                File.WriteAllText(dir.File("c.json"), "{\"NewName\":\"PC & calc\",\"WindowsKey\":\"/ipk X & calc\"}");
+                var config = RunConfig.Load(dir.File("c.json"));
+                Assert.Equal("", config.NewName);
+                Assert.Equal("", config.WindowsKey);
+            }
+        }
+
+        [Fact]
         public void Load_UndecryptableKey_GivesAnEmptyKey()
         {
             using (var dir = new TempDir())
