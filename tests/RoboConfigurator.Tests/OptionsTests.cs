@@ -68,6 +68,26 @@ namespace RoboConfigurator.Tests
         }
 
         [Fact]
+        public void SimulateFail_ParsesStepsAndModes()
+        {
+            var o = Options.Parse(new[] { "-Simulation", "-SimulateFail", "edge, Activation:Restart,ninite:download" });
+            Assert.Empty(o.Errors);
+            Assert.Equal("fail", o.SimulateFail[StepNames.Edge]);
+            Assert.Equal("restart", o.SimulateFail[StepNames.Activation]);
+            Assert.Equal("download", o.SimulateFail[StepNames.Ninite]);
+        }
+
+        [Fact]
+        public void SimulateFail_RefusedWithoutSimulationOrWithUnknownValues()
+        {
+            var o = Options.Parse(new[] { "-SimulateFail", "Edge" });
+            Assert.Single(o.Errors);
+            Assert.Empty(o.SimulateFail);
+            o = Options.Parse(new[] { "-Simulation", "-SimulateFail", "Nope,Edge:explode" });
+            Assert.Equal(2, o.Errors.Count);
+        }
+
+        [Fact]
         public void MissingValueAtTheEnd()
         {
             var o = Options.Parse(new[] { "-Skip" });

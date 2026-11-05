@@ -80,6 +80,11 @@ namespace RoboConfigurator.Core
 
         private volatile bool _stop;
 
+        /// <summary>Mode simulation : étapes à faire échouer exprès (option -SimulateFail), pour voir les écrans d'erreur sans rien toucher.</summary>
+        public IDictionary<string, string> SimulatedFailures { get; set; } = new Dictionary<string, string>();
+
+        private string SimulatedFailure(string step) => _simulation && SimulatedFailures.TryGetValue(step, out var mode) ? mode : null;
+
         /// <summary>
         /// Demandé depuis l'interface : l'étape en cours se termine normalement, les suivantes ne sont pas lancées.
         /// Pas d'arrêt au milieu d'une étape (Edge, barre des tâches...) : elle laisserait le PC dans un état intermédiaire.
@@ -144,6 +149,8 @@ namespace RoboConfigurator.Core
                 Set(step, StepStatus.Downloading, Lang.T($"Preparing {payload.File}...", $"Préparation de {payload.File}..."));
                 try
                 {
+                    if (_simulation && SimulatedFailure(step) == "download")
+                        throw new Exception(Lang.T($"Could not download {payload.File}: simulated failure (-SimulateFail)", $"Impossible de télécharger {payload.File} : échec simulé (-SimulateFail)"));
                     if (_simulation) Simulate(step, Lang.T($"{payload.File} ready (simulation)", $"{payload.File} prêt (simulation)"));
                     else Payloads.Ensure(payload, _workDir, p => Detail(step, p >= 0 ? Lang.T($"Downloading {payload.File}: {p}%", $"Téléchargement de {payload.File} : {p} %")
                                                                                       : Lang.T($"Downloading {payload.File}...", $"Téléchargement de {payload.File}...")));
@@ -1007,6 +1014,12 @@ namespace RoboConfigurator.Core
                 default: actions = new[] { Lang.T($"{StepNames.Display(step)}: simulation...", $"{StepNames.Display(step)} : simulation...") }; break;
             }
             foreach (string a in actions) { Detail(step, a); Log.Info(a + " (simulation)"); Thread.Sleep(900); }
+            switch (SimulatedFailure(step))
+            {
+                case "fail": throw new Exception(Lang.T("Simulated failure (-SimulateFail)", "Échec simulé (-SimulateFail)"));
+                case "restart": throw new RestartRequiredException(Lang.T("Simulated: restart, then run the app again (-SimulateFail)", "Simulé : redémarrer, puis relancer l'application (-SimulateFail)"));
+                case "notdone": throw new StepNotDoneException(Lang.T("Simulated: step not done, retried at the next launch (-SimulateFail)", "Simulé : étape non faite, réessayée au prochain lancement (-SimulateFail)"));
+            }
             return step == StepNames.Activation ? Lang.T("Sample warning: check the activation manually.", "Exemple d'avertissement : vérifier l'activation manuellement.") : null;
         }
     }

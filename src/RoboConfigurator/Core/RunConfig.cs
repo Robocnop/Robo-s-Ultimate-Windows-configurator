@@ -188,6 +188,8 @@ namespace RoboConfigurator.Core
         public bool ForceCleanUp { get; private set; }
         public string Edition { get; private set; } = Editions.Keep;
         public string[] Apps { get; private set; } = NiniteApps.Default.ToArray();
+        /// <summary>-SimulateFail : étape -> façon d'échouer (fail, download, restart, notdone), en mode simulation seulement.</summary>
+        public Dictionary<string, string> SimulateFail { get; } = new Dictionary<string, string>();
         public List<string> Errors { get; } = new List<string>();
 
         public static Options Parse(string[] args)
@@ -225,6 +227,18 @@ namespace RoboConfigurator.Core
                     case "reset": o.Reset = true; break;
                     case "simulation": o.Simulation = true; break;
                     case "forcecleanup": o.ForceCleanUp = true; break;
+                    case "simulatefail":
+                        // Edge,Office : échec ; Ninite:download : échec du téléchargement ; Activation:restart / Activation:notdone
+                        foreach (var item in Next().Split(',').Select(s => s.Trim()).Where(s => s.Length > 0))
+                        {
+                            string[] parts = item.Split(':');
+                            var step = StepNames.All.FirstOrDefault(n => n.Equals(parts[0].Trim(), StringComparison.OrdinalIgnoreCase));
+                            string mode = parts.Length > 1 ? parts[1].Trim().ToLowerInvariant() : "fail";
+                            if (step != null && SimulatedFailures.Contains(mode)) o.SimulateFail[step] = mode;
+                            else o.Errors.Add(Lang.T($"Unknown value for -SimulateFail: “{item}”. Expected: step[:{string.Join("|", SimulatedFailures)}], e.g. Edge or Activation:restart",
+                                                     $"Valeur inconnue pour -SimulateFail : « {item} ». Attendu : étape[:{string.Join("|", SimulatedFailures)}], par exemple Edge ou Activation:restart"));
+                        }
+                        break;
                     case "edition":
                         string edition = Next();
                         o.Edition = Editions.Normalize(edition) ?? Editions.Keep;
@@ -240,7 +254,14 @@ namespace RoboConfigurator.Core
                     default: o.Errors.Add(Lang.T($"Unknown option: “{args[i]}”", $"Option inconnue : « {args[i]} »")); break;
                 }
             }
+            if (o.SimulateFail.Any() && !o.Simulation)
+            {
+                o.Errors.Add(Lang.T("-SimulateFail only works with -Simulation: ignored", "-SimulateFail ne fonctionne qu'avec -Simulation : ignorée"));
+                o.SimulateFail.Clear();
+            }
             return o;
         }
+
+        public static readonly string[] SimulatedFailures = { "fail", "download", "restart", "notdone" };
     }
 }

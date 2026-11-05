@@ -43,6 +43,39 @@ namespace RoboConfigurator.Tests
         }
 
         [Fact]
+        public void SimulatedFailures_EachOutcomeIsReportedAndOnlySuccessIsRecorded()
+        {
+            using (var dir = new TempDir())
+            {
+                Lang.Set("en");
+                var config = new RunConfig { Steps = new[] { StepNames.Ninite, StepNames.CrapFixer, StepNames.Edge, StepNames.Office, StepNames.Activation } };
+                config.Save(dir.File("configuration.json"));
+                var items = Items();
+                var state = new StepState(dir.File("etapes-terminees.txt"));
+                var engine = new Engine(config, dir.Path, dir.File("configuration.json"), state, null, true, items)
+                {
+                    SimulatedFailures = Options.Parse(new[] { "-Simulation", "-SimulateFail", "Ninite:download,Edge,Office:restart,Activation:notdone" }).SimulateFail,
+                };
+
+                var result = engine.Run();
+
+                Assert.Equal(new[] { StepNames.Ninite, StepNames.Edge }, result.Failed);
+                Assert.Equal(new[] { StepNames.Office }, result.AfterRestart);
+                Assert.Equal(new[] { StepNames.Activation }, result.NotDone);
+                // Seule l'étape réussie est mémorisée : les autres seront refaites au prochain lancement
+                Assert.True(state.IsDone(StepNames.CrapFixer));
+                Assert.All(new[] { StepNames.Ninite, StepNames.Edge, StepNames.Office, StepNames.Activation }, s => Assert.False(state.IsDone(s)));
+                // Configuration gardée pour la reprise, pas de nettoyage
+                Assert.True(File.Exists(dir.File("configuration.json")));
+                Assert.Equal(StepStatus.Skipped, items[Engine.CleanUpKey].Status);
+                string report = File.ReadAllText(result.ReportPath);
+                Assert.Contains("FAILED", report);
+                Assert.Contains("NOT DONE", report);
+                Assert.Contains("TO FINISH after restarting", report);
+            }
+        }
+
+        [Fact]
         public void StopRequested_NoStepStarted_SettingsKept()
         {
             using (var dir = new TempDir())
