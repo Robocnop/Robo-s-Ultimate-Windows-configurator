@@ -333,6 +333,12 @@ namespace RoboConfigurator
             var engine = new Engine(config, _workDir, _configFile, _state, _oemKey, _options.Simulation, _items);
             _running = true;
             try { _result = await Task.Run(engine.Run); }
+            catch (Exception ex)
+            {
+                // Engine.Run ne lève pas d'exception : filet de sécurité pour toujours afficher l'écran de fin
+                Log.Error(Lang.T("Unexpected error", "Erreur inattendue"), ex);
+                _result = new RunResult { UnexpectedError = ex.GetBaseException().Message };
+            }
             finally { _running = false; }
             ShowSummary(config);
         }
@@ -365,7 +371,14 @@ namespace RoboConfigurator
         {
             OverallProgress.Value = OverallProgress.Maximum;
             var warnings = _runItems.Where(s => s.Status == StepStatus.Warning).ToList();
-            if (_result.Failed.Any())
+            if (_result.UnexpectedError != null)
+            {
+                RunTitle.Text = Lang.T("The setup stopped", "La configuration s'est arrêtée");
+                ShowMessage(RunMessage, InfoBarSeverity.Error, Lang.T("Unexpected error: ", "Erreur inattendue : ") + _result.UnexpectedError,
+                    Lang.T("The details are in the log. Run the app again to resume: the settings are kept and successful steps will not be redone.",
+                           "Le détail est dans le journal. Relancez l'application pour reprendre : la configuration est conservée et les étapes réussies ne seront pas refaites."));
+            }
+            else if (_result.Failed.Any())
             {
                 RunTitle.Text = Lang.T("Setup finished with errors", "Configuration terminée avec des erreurs");
                 ShowMessage(RunMessage, InfoBarSeverity.Error, Lang.T("Failed steps: ", "Étapes en échec : ") + string.Join(", ", _result.Failed),

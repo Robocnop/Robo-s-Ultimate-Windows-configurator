@@ -41,5 +41,22 @@ namespace RoboConfigurator.Tests
                 Assert.True(Directory.Exists(dir.Path));
             }
         }
+
+        [Fact]
+        public void UnexpectedErrorOutsideSteps_IsReturnedNotThrown()
+        {
+            using (var dir = new TempDir())
+            {
+                // Un dossier à la place du fichier de configuration : sa suppression en fin de déroulement échoue
+                string configFile = Directory.CreateDirectory(dir.File("configuration.json")).FullName;
+                var config = new RunConfig { Steps = new string[0], CleanUp = false };
+                var items = Items();
+
+                var result = new Engine(config, dir.Path, configFile, new StepState(dir.File("s.txt")), null, true, items).Run();
+
+                Assert.NotNull(result.UnexpectedError);
+                Assert.NotNull(result.ReportPath);
+            }
+        }
     }
 }

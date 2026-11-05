@@ -11,6 +11,14 @@ namespace RoboConfigurator
         {
             base.OnStartup(e);
             DispatcherUnhandledException += OnUnhandledException;
+            // Erreur sur un autre thread que l'interface : l'application va s'arrêter, la cause reste au moins dans le journal
+            System.AppDomain.CurrentDomain.UnhandledException += (s, args) =>
+                Log.Error(Lang.T($"Fatal error: {args.ExceptionObject}", $"Erreur fatale : {args.ExceptionObject}"));
+            System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (s, args) =>
+            {
+                Log.Error(Lang.T($"Unexpected error in a background task: {args.Exception}", $"Erreur inattendue dans une tâche de fond : {args.Exception}"));
+                args.SetObserved();
+            };
             ApplicationThemeManager.ApplySystemTheme(true);
 
             MainWindow = new MainWindow(Options.Parse(e.Args));

@@ -19,6 +19,8 @@ namespace RoboConfigurator.Core
         public List<string> NotDone { get; } = new List<string>();
         /// <summary>Étapes en échec ou non faites : la configuration et les fichiers sont gardés pour les reprendre.</summary>
         public bool HasUnfinished => Failed.Any() || NotDone.Any();
+        /// <summary>Erreur inattendue qui a arrêté la configuration (hors des étapes), ou null.</summary>
+        public string UnexpectedError { get; set; }
         public string ReportPath { get; set; }
         public string PendingName { get; set; }
         /// <summary>Copie du journal sur le Bureau quand le dossier de travail est nettoyé malgré une erreur.</summary>
@@ -70,7 +72,29 @@ namespace RoboConfigurator.Core
 
         private void Detail(string key, string detail) => _items[key].Detail = detail;
 
+        /// <summary>Étape en cours, pour savoir laquelle marquer en échec si une erreur inattendue arrête tout.</summary>
+        private string _current;
+
+        /// <summary>Ne lève jamais d'exception : une erreur inattendue est journalisée et rendue dans <see cref="RunResult.UnexpectedError"/>.</summary>
         public RunResult Run()
+        {
+            try { RunAll(); }
+            catch (Exception ex)
+            {
+                Log.Error(Lang.T("Unexpected error: the setup stopped", "Erreur inattendue : la configuration s'est arrêtée"), ex);
+                _result.UnexpectedError = ex.GetBaseException().Message;
+                if (_current != null && !_result.Failed.Contains(_current))
+                {
+                    _result.Failed.Add(_current);
+                    Set(_current, StepStatus.Failed, _result.UnexpectedError);
+                }
+                // Le rapport reste utile pour comprendre ; la configuration et les fichiers sont gardés pour reprendre
+                if (_result.ReportPath == null) try { WriteReport(); } catch (Exception) { }
+            }
+            return _result;
+        }
+
+        private void RunAll()
         {
             Log.Info(Lang.T($"Windows {(SystemInfo.IsWin11 ? "11" : "10")} - working folder: {_workDir}", $"Windows {(SystemInfo.IsWin11 ? "11" : "10")} - dossier de travail : {_workDir}"));
             LogDiagnostics();
@@ -89,6 +113,7 @@ namespace RoboConfigurator.Core
             {
                 var payload = Payloads.ForStep(step, _config);
                 if (payload == null) continue;
+                _current = step;
                 Set(step, StepStatus.Downloading, Lang.T($"Preparing {payload.File}...", $"Préparation de {payload.File}..."));
                 try
                 {
@@ -102,6 +127,7 @@ namespace RoboConfigurator.Core
 
             foreach (string step in todo.Where(s => !_result.Failed.Contains(s)))
             {
+                _current = step;
                 Log.Title(step);
                 Set(step, StepStatus.Running, "");
                 var start = DateTime.Now;
@@ -131,6 +157,7 @@ namespace RoboConfigurator.Core
                 catch (Exception ex) { Fail(step, ex, DateTime.Now - start); }
             }
 
+            _current = null;
             Log.Title(Lang.T("Summary", "Résumé"));
             if (_result.Failed.Any()) Log.Warn(Lang.T($"Failed steps: {string.Join(", ", _result.Failed)}. Run the app again to retry them.", $"Étapes en échec : {string.Join(", ", _result.Failed)}. Relancer l'application pour les réessayer."));
             if (_result.NotDone.Any()) Log.Warn(Lang.T($"Steps not done: {string.Join(", ", _result.NotDone)}. Run the app again to retry them.", $"Étapes non faites : {string.Join(", ", _result.NotDone)}. Relancer l'application pour les réessayer."));
@@ -140,10 +167,11 @@ namespace RoboConfigurator.Core
             RenamePc();
             WriteReport();
 
+            _current = null;
             // Tout est fait : la configuration n'est plus utile (elle peut contenir la clé Windows)
             if (!_result.HasUnfinished && !_result.AfterRestart.Any()) File.Delete(_configFile);
             CleanUp();
-            return _result;
+            _current = null;
         }
 
         private void LogDiagnostics()
@@ -763,6 +791,7 @@ namespace RoboConfigurator.Core
                 return;
             }
             Log.Title(Lang.T("PC name", "Nom du PC"));
+            _current = RenameKey;
             Set(RenameKey, StepStatus.Running, $"{Environment.MachineName} -> {name}");
             try
             {
@@ -782,6 +811,7 @@ namespace RoboConfigurator.Core
         private void WriteReport()
         {
             Log.Title(Lang.T("PC report", "Rapport du poste"));
+            _current = ReportKey;
             Set(ReportKey, StepStatus.Running, Lang.T("Collecting PC information...", "Collecte des informations du poste..."));
             try
             {
@@ -862,6 +892,7 @@ namespace RoboConfigurator.Core
                 CopyLogToDesktop();
             }
             Log.Title(Lang.T("Clean-up", "Nettoyage"));
+            _current = CleanUpKey;
             Set(CleanUpKey, StepStatus.Running, Lang.T($"Deleting {_workDir}...", $"Suppression de {_workDir}..."));
             if (_simulation)
             {
