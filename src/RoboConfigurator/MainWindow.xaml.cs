@@ -435,8 +435,11 @@ namespace RoboConfigurator
             else if (_result.Failed.Any())
             {
                 RunTitle.Text = Lang.T("Setup finished with errors", "Configuration terminée avec des erreurs");
+                // Les autres étapes à reprendre sont citées aussi : sinon seule l'erreur la plus grave apparaît
+                string others = (_result.NotDone.Any() ? Lang.T("Not done: ", "Non faites : ") + StepNames.Display(_result.NotDone) + "\n" : "")
+                              + (_result.AfterRestart.Any() ? Lang.T("To finish after restarting: ", "À terminer après le redémarrage : ") + StepNames.Display(_result.AfterRestart) + "\n" : "");
                 ShowMessage(RunMessage, InfoBarSeverity.Error, Lang.T("Failed steps: ", "Étapes en échec : ") + StepNames.Display(_result.Failed),
-                    Lang.T("Run the app again to retry them: the settings are kept and successful steps will not be redone.", "Relancez l'application pour les réessayer : la configuration est conservée et les étapes réussies ne seront pas refaites."));
+                    others + Lang.T("Run the app again to retry them: the settings are kept and successful steps will not be redone.", "Relancez l'application pour les réessayer : la configuration est conservée et les étapes réussies ne seront pas refaites."));
             }
             else if (_result.NotDone.Any())
             {
