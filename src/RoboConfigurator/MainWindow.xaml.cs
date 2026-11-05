@@ -40,6 +40,7 @@ namespace RoboConfigurator
             _options = options;
             InitializeComponent();
             SystemThemeWatcher.Watch(this);
+            FitToScreen();
 
             _workDir = options.Simulation
                 ? Path.Combine(Path.GetTempPath(), "RoboConfigurator-simulation")
@@ -91,6 +92,21 @@ namespace RoboConfigurator
 
             Loaded += async (s, e) => await Task.WhenAll(LoadSystemInfoAsync(), CheckForUpdateAsync());
             Closing += OnClosing;
+        }
+
+        /// <summary>
+        /// La fenêtre fait 980 × 820 : en 1366 × 768, ou en 1024 × 768 avec le pilote graphique de base juste après l'installation
+        /// de Windows, la barre du bas (bouton Démarrer) sortirait de l'écran. Elle est alors ajustée à la zone de travail et agrandie.
+        /// </summary>
+        private void FitToScreen()
+        {
+            var area = SystemParameters.WorkArea;
+            if (Width <= area.Width && Height <= area.Height) return;
+            MinWidth = Math.Min(MinWidth, area.Width);
+            MinHeight = Math.Min(MinHeight, area.Height);
+            Width = Math.Min(Width, area.Width);
+            Height = Math.Min(Height, area.Height);
+            WindowState = WindowState.Maximized;
         }
 
         private void LoadConfig()
