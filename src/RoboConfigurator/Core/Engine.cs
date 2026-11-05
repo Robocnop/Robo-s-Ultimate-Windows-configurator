@@ -83,6 +83,9 @@ namespace RoboConfigurator.Core
         /// <summary>Mode simulation : étapes à faire échouer exprès (option -SimulateFail), pour voir les écrans d'erreur sans rien toucher.</summary>
         public IDictionary<string, string> SimulatedFailures { get; set; } = new Dictionary<string, string>();
 
+        /// <summary>Mode simulation : vérifie aussi que chaque lien de téléchargement répond (lecture seule, aucun fichier téléchargé).</summary>
+        public bool CheckLinksInSimulation { get; set; }
+
         private string SimulatedFailure(string step) => _simulation && SimulatedFailures.TryGetValue(step, out var mode) ? mode : null;
 
         /// <summary>
@@ -151,6 +154,7 @@ namespace RoboConfigurator.Core
                 {
                     if (_simulation && SimulatedFailure(step) == "download")
                         throw new Exception(Lang.T($"Could not download {payload.File}: simulated failure (-SimulateFail)", $"Impossible de télécharger {payload.File} : échec simulé (-SimulateFail)"));
+                    if (_simulation && CheckLinksInSimulation) Log.Ok(Payloads.CheckLink(payload));
                     if (_simulation) Simulate(step, Lang.T($"{payload.File} ready (simulation)", $"{payload.File} prêt (simulation)"));
                     else Payloads.Ensure(payload, _workDir, p => Detail(step, p >= 0 ? Lang.T($"Downloading {payload.File}: {p}%", $"Téléchargement de {payload.File} : {p} %")
                                                                                       : Lang.T($"Downloading {payload.File}...", $"Téléchargement de {payload.File}...")));
@@ -328,19 +332,9 @@ namespace RoboConfigurator.Core
         private string Edge()
         {
             // Méthode WinUtil : un faux MicrosoftEdge.exe dans SystemApps débloque le désinstalleur officiel. WebView2 est conservé.
-            string edgeDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Microsoft\Edge\Application");
-            Log.Info(Lang.T($"Edge folder: {edgeDir} ({(Directory.Exists(edgeDir) ? "present" : "missing")})", $"Dossier d'Edge : {edgeDir} ({(Directory.Exists(edgeDir) ? "présent" : "absent")})"));
-            var setups = !Directory.Exists(edgeDir) ? new List<string>() : Directory.GetDirectories(edgeDir)
-                .Select(d => Path.Combine(d, @"Installer\setup.exe"))
-                .Where(File.Exists)
-                .OrderBy(f => Version.TryParse(Path.GetFileName(Path.GetDirectoryName(Path.GetDirectoryName(f))), out var v) ? v : new Version())
-                .ToList();
-            foreach (string s in setups) Log.Info(Lang.T($"Uninstaller found: {s}", $"Désinstalleur trouvé : {s}"));
-            string setup = setups.LastOrDefault();
+            string setup = FindEdgeUninstaller(out string edgeDir);
             if (setup == null)
             {
-                if (File.Exists(Path.Combine(edgeDir, "msedge.exe")))
-                    throw new Exception(Lang.T($"msedge.exe is present but no Installer\\setup.exe was found in {edgeDir}", $"msedge.exe est présent mais aucun Installer\\setup.exe n'a été trouvé dans {edgeDir}"));
                 Log.Ok(Lang.T("Edge is not installed", "Edge n'est pas installé"));
                 return null;
             }
@@ -428,6 +422,27 @@ namespace RoboConfigurator.Core
             Log.Ok(Lang.T("Edge uninstalled", "Edge désinstallé"));
             return null;
         }
+
+        private static string EdgeDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Microsoft\Edge\Application");
+
+        /// <summary>Désinstalleur de la version d'Edge la plus récente, ou null si Edge n'est pas installé (lecture seule).</summary>
+        private static string FindEdgeUninstaller(out string edgeDir)
+        {
+            edgeDir = EdgeDir;
+            Log.Info(Lang.T($"Edge folder: {edgeDir} ({(Directory.Exists(edgeDir) ? "present" : "missing")})", $"Dossier d'Edge : {edgeDir} ({(Directory.Exists(edgeDir) ? "présent" : "absent")})"));
+            var setups = !Directory.Exists(edgeDir) ? new List<string>() : Directory.GetDirectories(edgeDir)
+                .Select(d => Path.Combine(d, @"Installer\setup.exe"))
+                .Where(File.Exists)
+                .OrderBy(f => Version.TryParse(Path.GetFileName(Path.GetDirectoryName(Path.GetDirectoryName(f))), out var v) ? v : new Version())
+                .ToList();
+            foreach (string s in setups) Log.Info(Lang.T($"Uninstaller found: {s}", $"Désinstalleur trouvé : {s}"));
+            string setup = setups.LastOrDefault();
+            if (setup == null && File.Exists(Path.Combine(edgeDir, "msedge.exe")))
+                throw new Exception(Lang.T($"msedge.exe is present but no Installer\\setup.exe was found in {edgeDir}", $"msedge.exe est présent mais aucun Installer\\setup.exe n'a été trouvé dans {edgeDir}"));
+            return setup;
+        }
+
+        private static string TaskbarPinsFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar");
 
         private static string FakeEdgeExe => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), @"SystemApps\Microsoft.MicrosoftEdge_8wekyb3d8bbwe\MicrosoftEdge.exe");
 
@@ -593,7 +608,7 @@ namespace RoboConfigurator.Core
 
             // Un profil existant garde ses épingles malgré la stratégie : elles sont sauvegardées puis effacées
             Detail(StepNames.Taskbar, Lang.T("Applying the layout to this session...", "Application de la disposition à cette session..."));
-            string pinned = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar");
+            string pinned = TaskbarPinsFolder;
             Log.Info(Lang.T("Pins before: ", "Épingles avant : ") + PinnedList(pinned));
             ResetTaskbarPins(pinned, Path.Combine(dir, "Sauvegarde-barre-des-taches"));
             RestartExplorer();
@@ -1001,6 +1016,24 @@ namespace RoboConfigurator.Core
                 case StepNames.Ninite: actions = new[] { Lang.T("Click “Close” in Ninite when it shows “Done”.", "Cliquez sur « Close » dans Ninite quand il affiche « Done ».") }; break;
                 case StepNames.CrapFixer: actions = Enumerable.Range(1, 6).Select(i => Math.Min(i * 8, 47)).Select(n => Lang.T($"Tweak {n}/47", $"Réglage {n}/47")).ToArray(); break;
                 case StepNames.Office: actions = new[] { OfficeInstalling }; break;
+                case StepNames.Edge:
+                    string setup = FindEdgeUninstaller(out _);
+                    actions = setup == null
+                        ? new[] { Lang.T("Edge is not installed: nothing would be done", "Edge n'est pas installé : rien ne serait fait") }
+                        : new[]
+                        {
+                            Lang.T($"Would uninstall Edge {FileVersionInfo.GetVersionInfo(setup).FileVersion} with {setup}", $"Désinstallerait Edge {FileVersionInfo.GetVersionInfo(setup).FileVersion} avec {setup}"),
+                            Lang.T($"Would create {FakeEdgeExe} and {FakeDllhostPaths[0]} (copy of cmd.exe), then delete them", $"Créerait {FakeEdgeExe} et {FakeDllhostPaths[0]} (copie de cmd.exe), puis les supprimerait"),
+                        };
+                    break;
+                case StepNames.Taskbar:
+                    LogTaskbarSources();
+                    actions = new[]
+                    {
+                        Lang.T("Current pins: ", "Épingles actuelles : ") + PinnedList(TaskbarPinsFolder),
+                        Lang.T("Would write the layout, save then clear the current pins, and restart File Explorer", "Écrirait la disposition, sauvegarderait puis effacerait les épingles actuelles, et relancerait l'explorateur"),
+                    };
+                    break;
                 case StepNames.Activation:
                     string edition = SystemInfo.EditionId();
                     actions = new[]
@@ -1010,6 +1043,12 @@ namespace RoboConfigurator.Core
                         : Lang.T($"Edition {edition} kept", $"Édition {edition} conservée"),
                         Lang.T("Checking the activation...", "Vérification de l'activation..."),
                     };
+                    // Le script d'activation n'est téléchargé que si Windows n'est pas activé : son lien est vérifié sans bloquer
+                    if (CheckLinksInSimulation)
+                    {
+                        try { Log.Ok(Payloads.CheckLink(Payloads.Mas)); }
+                        catch (Exception ex) { Log.Warn(ex.Message); }
+                    }
                     break;
                 default: actions = new[] { Lang.T($"{StepNames.Display(step)}: simulation...", $"{StepNames.Display(step)} : simulation...") }; break;
             }

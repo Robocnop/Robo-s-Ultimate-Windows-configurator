@@ -144,6 +144,35 @@ namespace RoboConfigurator.Core
             throw new Exception(Lang.T($"Could not download {payload.File}: {Describe(last)}", $"Impossible de télécharger {payload.File} : {Describe(last)}"));
         }
 
+        /// <summary>
+        /// Mode simulation : vérifie le lien sans télécharger le fichier (seuls les en-têtes de la réponse sont lus).
+        /// Lève une exception avec un message clair si le lien ne répond pas comme il faut.
+        /// </summary>
+        public static string CheckLink(Payload payload)
+        {
+            using (var embedded = Assembly.GetExecutingAssembly().GetManifestResourceStream("Payload." + payload.File))
+                if (embedded != null) return Lang.T($"{payload.File}: embedded in the app, no download", $"{payload.File} : intégré à l'application, pas de téléchargement");
+            try
+            {
+                using (var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20)))
+                using (var response = Http.GetAsync(payload.Url, HttpCompletionOption.ResponseHeadersRead, timeout.Token).GetAwaiter().GetResult())
+                {
+                    if (!response.IsSuccessStatusCode) throw new DownloadHttpException((int)response.StatusCode, response.ReasonPhrase);
+                    long? size = response.Content.Headers.ContentLength;
+                    string type = response.Content.Headers.ContentType?.MediaType ?? "?";
+                    // Un partage Nextcloud expiré répond parfois par une page web
+                    if (type.StartsWith("text/html", StringComparison.OrdinalIgnoreCase))
+                        throw new InvalidPayloadException(Lang.T("the link returns a web page instead of the file", "le lien renvoie une page web au lieu du fichier"));
+                    return Lang.T($"Link OK for {payload.File}: {Host(payload.Url)}, HTTP {(int)response.StatusCode}, {(size.HasValue ? $"{size.Value / 1048576.0:0.0} MB" : "size unknown")}, {type}",
+                                  $"Lien OK pour {payload.File} : {Host(payload.Url)}, HTTP {(int)response.StatusCode}, {(size.HasValue ? $"{size.Value / 1048576.0:0.0} Mo" : "taille inconnue")}, {type}");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(Lang.T($"Link for {payload.File} ({Host(payload.Url)}): {Describe(ex)}", $"Lien de {payload.File} ({Host(payload.Url)}) : {Describe(ex)}"));
+            }
+        }
+
         private static void MoveInPlace(string part, string path)
         {
             if (System.IO.File.Exists(path)) System.IO.File.Delete(path);

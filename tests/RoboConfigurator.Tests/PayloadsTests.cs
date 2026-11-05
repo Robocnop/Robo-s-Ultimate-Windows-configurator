@@ -87,6 +87,15 @@ namespace RoboConfigurator.Tests
             Assert.False(File.Exists(_dir.File("CrapFixer.zip.part")));
         }
 
+        [Fact]
+        public void CheckLink_UnreachableServer_ClearError()
+        {
+            Lang.Set("en");
+            var ex = Assert.ThrowsAny<Exception>(() => Payloads.CheckLink(new Payload("CrapFixer.zip", "http://127.0.0.1:9/none.zip")));
+            Assert.Contains("CrapFixer.zip", ex.Message);
+            Assert.Contains("127.0.0.1", ex.Message);
+        }
+
         [Theory]
         [InlineData(404, "404")]
         [InlineData(403, "403")]

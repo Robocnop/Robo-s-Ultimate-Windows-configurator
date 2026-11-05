@@ -375,7 +375,7 @@ namespace RoboConfigurator
             RunView.Visibility = Visibility.Visible;
             OverallProgress.Maximum = _runItems.Count;
 
-            _engine = new Engine(config, _workDir, _configFile, _state, _oemKey, _options.Simulation, _items) { SimulatedFailures = _options.SimulateFail };
+            _engine = new Engine(config, _workDir, _configFile, _state, _oemKey, _options.Simulation, _items) { SimulatedFailures = _options.SimulateFail, CheckLinksInSimulation = true };
             _running = true;
             try { _result = await Task.Run(_engine.Run); }
             catch (Exception ex)
