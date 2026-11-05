@@ -44,6 +44,7 @@ Requirements: Windows 10 or 11 and the [.NET SDK](https://dotnet.microsoft.com/d
 git clone https://github.com/Robocnop/Robo-s-Ultimate-Windows-configurator.git
 cd Robo-s-Ultimate-Windows-configurator
 powershell -ExecutionPolicy Bypass -File build.ps1        # Release build -> dist\RoboConfigurator.exe
+powershell -ExecutionPolicy Bypass -File build.ps1 -Test  # same, plus unit tests (tests\RoboConfigurator.Tests) and smoke test
 dotnet build src\RoboConfigurator -c Debug                # Debug build, no administrator prompt
 ```
 
@@ -52,7 +53,12 @@ Try the interface without touching your PC with the Debug build and `-Simulation
 ```powershell
 src\RoboConfigurator\bin\Debug\net472\RoboConfigurator.exe -Simulation -Lang en
 src\RoboConfigurator\bin\Debug\net472\RoboConfigurator.exe -Simulation -Lang fr
+src\RoboConfigurator\bin\Debug\net472\RoboConfigurator.exe -Simulation -SimulateFail Edge,Office:restart   # error screens
 ```
+
+Every change should pass `build.ps1 -Test`. The pure logic (ini parsing, settings, options, versions, download
+checks, clean-up) is covered by the xUnit project in `tests\RoboConfigurator.Tests`; it only adds test
+dependencies, nothing goes into the exe.
 
 Project layout:
 
